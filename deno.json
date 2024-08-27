@@ -1,0 +1,23 @@
+{
+  "imports": {
+    "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.10.3",
+    "@pnsk-lab/sb3-types": "jsr:@pnsk-lab/sb3-types@^0.1.6",
+    "@turbowarp/types": "npm:@turbowarp/types@^0.0.12",
+    "@turbowarp/types/scratch-render": "https://raw.githubusercontent.com/TurboWarp/types/master/types/scratch-render.d.ts",
+    "esbuild": "npm:esbuild@^0.23.1",
+    "scratch-render": "npm:scratch-render@^1.0.308"
+  },
+  "fmt": {
+    "singleQuote": true,
+    "semiColons": false
+  },
+  "tasks": {
+    "dev:runtime": "deno run --watch -A runtime-demo/dev.ts"
+  },
+  "compilerOptions": {
+    "lib": [
+      "deno.window",
+      "DOM"
+    ]
+  }
+}

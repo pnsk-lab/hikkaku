@@ -1,0 +1,2 @@
+# Hikkaku
+Scratch with TypeScript.
