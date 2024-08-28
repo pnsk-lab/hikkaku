@@ -12,7 +12,7 @@
     "semiColons": false
   },
   "tasks": {
-    "dev:runtime": "deno run --watch -A runtime-demo/dev.ts"
+    "dev": "deno run --watch -A runtime-demo/dev.ts"
   },
   "compilerOptions": {
     "lib": [

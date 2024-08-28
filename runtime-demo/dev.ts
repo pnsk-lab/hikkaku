@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   }
   return new Response(`<!doctype HTML><html><head>
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
+<script>eruda.init();eruda.show();</script>
   <meta charset="UTF-8">
   </head><body>
     <script src="/src/main.ts" type="module"></script>

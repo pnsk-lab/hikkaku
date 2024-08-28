@@ -1,33 +1,33 @@
-// @deno-types="@turbowarp/types"
-import Render from 'scratch-render'
+import { gotoxy } from '../../src/blocks/motion.ts'
+import { Project } from '../../src/project.ts'
+import { Runtime } from '../../src/runtime/runtime.ts'
+
+const project = new Project({
+  stage: {
+    costumes: []
+  }
+})
+
+const cat = project.addSprite({
+  name: 'cat',
+  costumes: [
+    {
+      id: 'cat',
+      data: 'https://cdn.assets.scratch.mit.edu/internalapi/asset/b7853f557e4426412e64bb3da6531a99.svg/get/'
+    }
+  ]
+})
+
+cat.addOnFlag(() => {
+  gotoxy(0, 100)
+})
 
 const canvas = document.createElement('canvas')
 document.body.append(canvas)
-const debug = document.createElement('canvas')
-document.body.append(debug)
+const runtime = new Runtime({
+  canvas,
+  ast: project.exportAsAST()
+})
+await runtime.start()
 
-const renderer = new Render(canvas)
-renderer.setDebugCanvas(debug)
-
-renderer.resize(480, 360)
-
-const catSVG = await fetch('https://cdn.assets.scratch.mit.edu/internalapi/asset/b7853f557e4426412e64bb3da6531a99.svg/get/').then(res => res.text())
-/*const catImage = await new Promise<HTMLImageElement>(resolve => {
-  const image = new Image()
-  image.onload = () => resolve(image)
-  image.src = URL.createObjectURL(catBlob)
-})*/
-
-renderer.setLayerGroupOrdering(['my-sprite'])
-
-const skinID = renderer.createSVGSkin(catSVG)
-const drawableID = renderer.createDrawable('my-sprite')
-renderer.updateDrawableSkinId(drawableID, skinID)
-renderer.updateDrawablePosition(drawableID, [0, 0])
-
-function drawStep() {
-  renderer.draw()
-  renderer.updateDrawablePosition(drawableID, [Math.random() * 100, 2])
-  requestAnimationFrame(drawStep)
-}
-drawStep()
+console.log(runtime)

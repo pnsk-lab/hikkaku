@@ -1,22 +1,32 @@
-import { Sprite } from './sprite.ts'
-import { Stage } from './stage.ts'
+import { AbstractScratchTree } from './ast.ts'
+import { Stage, StageInit } from './stage.ts'
+import { Sprite, SpriteInit } from './sprite.ts'
+
+export interface ProjectInit {
+  stage: StageInit
+}
 
 export class Project {
   #stage: Stage
-  #sprites: Map<string, Sprite>
+  #sprites: Sprite[]
 
-  constructor() {
-    this.#stage = new Stage()
-    this.#sprites = new Map()
+  constructor(init: ProjectInit) {
+    this.#stage = new Stage(init.stage)
+    this.#sprites = []
   }
   get stage(): Stage {
     return this.#stage
   }
-  addSprite(name: string): Sprite {
-    const sprite = new Sprite()
-
-    this.#sprites.set(name, sprite)
-
+  addSprite(init: SpriteInit): Sprite {
+    const sprite = new Sprite(init)
+    this.#sprites.push(sprite)
     return sprite
+  }
+
+  exportAsAST(): AbstractScratchTree {
+    return {
+      stage: this.stage.exportAsTree(),
+      sprites: this.#sprites
+    }
   }
 }

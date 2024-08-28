@@ -1,5 +1,14 @@
-import { Sprite } from './sprite.ts'
+import { Costume } from './ast.ts'
+import { Target } from './target.ts'
 
-export class Stage extends Sprite {
-  
+export interface StageInit {
+  costumes: Costume[]
+}
+export class Stage extends Target {
+  constructor(init: StageInit) {
+    super({
+      name: 'stage',
+      costumes: init.costumes
+    })
+  }
 }
