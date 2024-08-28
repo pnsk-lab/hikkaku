@@ -9,6 +9,7 @@
       "jsr:@std/json@^0.213.1": "jsr:@std/json@0.213.1",
       "jsr:@std/jsonc@0.213": "jsr:@std/jsonc@0.213.1",
       "jsr:@std/path@0.213": "jsr:@std/path@0.213.1",
+      "npm:@turbowarp/types@^0.0.12": "npm:@turbowarp/types@0.0.12",
       "npm:esbuild@^0.23.1": "npm:esbuild@0.23.1",
       "npm:scratch-render@^1.0.308": "npm:scratch-render@1.0.308_scratch-render-fonts@1.0.91"
     },
@@ -142,6 +143,10 @@
       },
       "@esbuild/win32-x64@0.23.1": {
         "integrity": "sha512-BHpFFeslkWrXWyUPnbKm+xYYVYruCinGcftSBaa8zoF9hZO4BcSCFUvHVTtzpIY6YzUnYtuEhZ+C9iEXjxnasg==",
+        "dependencies": {}
+      },
+      "@turbowarp/types@0.0.12": {
+        "integrity": "sha512-VhYdLDyk3ZgCnGb0xN0x0sj4SXsiYknnA/b1UzJlK1EVzK8gO4c+BQg0famYUVIgfS93eBbgRTXP0EyEz0zu/Q==",
         "dependencies": {}
       },
       "@types/dompurify@3.0.5": {

@@ -1,7 +1,6 @@
 // @ts-types="@turbowarp/types"
 import Render from 'scratch-render'
-import { Project } from '../project.ts'
-import { AbstractScratchTree } from '../ast.ts'
+import type { AbstractScratchTree } from '../ast.ts'
 import { RuntimeSprite, RuntimeStage } from './target.ts'
 
 export interface RuntimeInit {
@@ -49,6 +48,7 @@ export class Runtime {
     ]
     this.renderer.setLayerGroupOrdering(targets.map(target => target.name))
     const starts = await Promise.all(targets.map(target => target.init()))
+
     for (const start of starts) {
       start()
     }

@@ -1,5 +1,5 @@
-import { AbstractInput } from '../ast.ts'
-import { BlockHelper, defineBlockFn } from './mod.ts'
+import type { AbstractInput } from '../ast.ts'
+import { BlockHelper, defineBlockFn } from './_shared.ts'
 
 /**
  * gotoxy
@@ -12,7 +12,7 @@ export const gotoxy: BlockHelper<[x: number, y: number], {
     Y: AbstractInput<'Number'>
   }
 }> = defineBlockFn({
-  id: 'motion.gotoxy',
+  opcode: 'motion_gotoxy',
   createBlock(x, y) {
     return {
       type: 'stack',
@@ -29,7 +29,41 @@ export const gotoxy: BlockHelper<[x: number, y: number], {
       }
     }
   },
-  run(block) {
-    
+  run(block, c) {
+    if (c.target.isStage) {
+      return
+    }
+    c.target.setXY(parseFloat(block.inputs.X.value), parseFloat(block.inputs.Y.value))
   }
+})
+
+export const changeXBy: BlockHelper<[v: number], {
+  type: 'stack'
+  opcode: 'motion_changexby'
+  inputs: {
+    DX: {
+      type: 'Number'
+      value: string
+    }
+  }
+}> = defineBlockFn({
+  opcode: 'motion_changexby',
+  createBlock(v) {
+    return {
+      type: 'stack',
+      opcode: 'motion_changexby',
+      inputs: {
+        DX: {
+          type: 'Number',
+          value: v.toString()
+        }
+      }
+    }
+  },
+  run(block, c) {
+    if (c.target.isStage) {
+      return
+    }
+    c.target.setXY(c.target.getXY()[0] + parseFloat(block.inputs.DX.value), null)
+  },
 })

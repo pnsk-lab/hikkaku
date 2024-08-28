@@ -1,4 +1,5 @@
-import { gotoxy } from '../../src/blocks/motion.ts'
+import { forever } from '../../src/blocks/controll.ts'
+import { changeXBy, gotoxy } from '../../src/blocks/motion.ts'
 import { Project } from '../../src/project.ts'
 import { Runtime } from '../../src/runtime/runtime.ts'
 
@@ -19,7 +20,9 @@ const cat = project.addSprite({
 })
 
 cat.addOnFlag(() => {
-  gotoxy(0, 100)
+  forever(() => {
+    changeXBy(1)
+  })
 })
 
 const canvas = document.createElement('canvas')
@@ -29,5 +32,3 @@ const runtime = new Runtime({
   ast: project.exportAsAST()
 })
 await runtime.start()
-
-console.log(runtime)

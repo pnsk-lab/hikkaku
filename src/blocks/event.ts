@@ -1,10 +1,10 @@
-import { BlockHelper, defineBlockFn } from './mod.ts'
+import { BlockHelper, defineBlockFn } from './_shared.ts'
 
 export const whenFlagClicked: BlockHelper<[], {
   type: 'hat',
   opcode: 'event_whenflagclicked'
 }> = defineBlockFn({
-  id: 'event.whenflagclicked',
+  opcode: 'event_whenflagclicked',
   createBlock() {
     return {
       type: 'hat',
