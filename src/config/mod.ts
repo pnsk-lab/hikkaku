@@ -1,8 +1,9 @@
 /**
  * Type definition and utils for project config
+ * @module
  */
 
-import { Project } from '../project.ts'
+import type { Project } from '../project.ts'
 
 /**
  * Type definition for project config

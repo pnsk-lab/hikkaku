@@ -1,5 +1,6 @@
 /**
  * Defining Sprite API
+ * @module
  */
 
 import { Target, type TargetInit } from './target.ts'

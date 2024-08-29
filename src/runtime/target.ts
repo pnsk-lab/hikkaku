@@ -3,8 +3,8 @@
  * @module
  */
 
-import { AbstractBlock, Costume } from '../ast.ts'
-import { RunContext } from '../blocks/_shared.ts'
+import type { AbstractBlock, Costume } from '../ast.ts'
+import type { RunContext } from '../blocks/_shared.ts'
 import { executeBlocks } from './execute.ts'
 import type { Runtime } from './runtime.ts'
 

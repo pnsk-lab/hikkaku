@@ -3,7 +3,7 @@
  * @module
  */
 
-import { BlockHelper, defineBlockFn } from './_shared.ts'
+import { type BlockHelper, defineBlockFn } from './_shared.ts'
 
 /**
  * When :greenflag: clicked

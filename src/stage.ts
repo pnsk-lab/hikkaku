@@ -1,8 +1,9 @@
 /**
  * Defining Stage API
+ * @module
  */
 
-import { Costume } from './ast.ts'
+import type { Costume } from './ast.ts'
 import { Target } from './target.ts'
 
 /**

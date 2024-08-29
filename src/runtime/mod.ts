@@ -3,7 +3,7 @@
  * @module
  */
 
-import { RuntimeTarget } from './target.ts'
+import type { RuntimeTarget } from './target.ts'
 
 /**
  * Runtime context definition

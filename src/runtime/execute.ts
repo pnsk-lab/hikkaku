@@ -3,7 +3,7 @@
  * @module
  */
 
-import { AbstractBlock } from '../ast.ts'
+import type { AbstractBlock } from '../ast.ts'
 import { blockHelpers } from '../blocks/_all.ts'
 import type { RunContext } from '../blocks/_shared.ts'
 

@@ -3,7 +3,7 @@
  * @modle
  */
 
-import { AbstractBlock } from '../ast.ts'
+import type { AbstractBlock } from '../ast.ts'
 import type {
   Block as ScratchBlock,
   Input as ScratchInput,

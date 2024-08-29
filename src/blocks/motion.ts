@@ -4,7 +4,7 @@
  */
 
 import type { AbstractInput } from '../ast.ts'
-import { BlockHelper, defineBlockFn } from './_shared.ts'
+import { type BlockHelper, defineBlockFn } from './_shared.ts'
 
 /**
  * gotoxy
