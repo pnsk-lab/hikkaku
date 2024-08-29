@@ -2,6 +2,7 @@
   "version": "3",
   "packages": {
     "specifiers": {
+      "jsr:@hono/hono@^4.5.9": "jsr:@hono/hono@4.5.9",
       "jsr:@luca/esbuild-deno-loader@^0.10.3": "jsr:@luca/esbuild-deno-loader@0.10.3",
       "jsr:@pnsk-lab/sb3-types@^0.1.6": "jsr:@pnsk-lab/sb3-types@0.1.6",
       "jsr:@std/assert@^0.213.1": "jsr:@std/assert@0.213.1",
@@ -14,6 +15,9 @@
       "npm:scratch-render@^1.0.308": "npm:scratch-render@1.0.308_scratch-render-fonts@1.0.91"
     },
     "jsr": {
+      "@hono/hono@4.5.9": {
+        "integrity": "47f561e67aedbd6d1e21e3a1ae26c1b80ffdb62a51c161d502e75bee17ca40af"
+      },
       "@luca/esbuild-deno-loader@0.10.3": {
         "integrity": "32fc93f7e7f78060234fd5929a740668aab1c742b808c6048b57f9aaea514921",
         "dependencies": [
@@ -1034,6 +1038,7 @@
   "remote": {},
   "workspace": {
     "dependencies": [
+      "jsr:@hono/hono@^4.5.9",
       "jsr:@luca/esbuild-deno-loader@^0.10.3",
       "jsr:@pnsk-lab/sb3-types@^0.1.6",
       "npm:@turbowarp/types@^0.0.12",

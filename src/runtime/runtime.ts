@@ -40,6 +40,7 @@ export class Runtime {
       }))
     }
     this.renderer = new Render(this.#canvas)
+    this.renderer.resize(480, 360)
   }
   async start() {
     const targets = [
