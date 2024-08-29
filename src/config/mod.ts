@@ -3,13 +3,11 @@
  * @module
  */
 
-import type { Project } from '../project.ts'
-
 /**
  * Type definition for project config
  */
 export interface Config {
-  project: Project
+  project: URL | string
   assetsDir: string
 }
 

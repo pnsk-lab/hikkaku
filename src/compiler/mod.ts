@@ -105,7 +105,7 @@ const compileTarget = async (
  * @returns sb3 file
  */
 export const compile = async (config: Config): Promise<Uint8Array> => {
-  const ast = config.project.exportAsAST()
+  const ast = (await import(config.project.toString())).default.exportAsAST()
 
   const ctx = new CompileContext(config)
 

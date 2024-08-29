@@ -27,3 +27,9 @@ flagButton.onclick = () => {
 stopButton.onclick = () => {
   runtime.stop()
 }
+
+// Hot Reload Handle
+const ws = new WebSocket('/listen')
+ws.onmessage = () => {
+  location.reload()
+}

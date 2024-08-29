@@ -8,6 +8,9 @@ import { prettyJSON } from '@hono/hono/pretty-json'
 import { build, stop } from 'esbuild'
 import type { Config } from '../config/mod.ts'
 import { compile } from '../compiler/mod.ts'
+import { dirname, fromFileUrl } from '@std/path'
+import { upgradeWebSocket } from '@hono/hono/deno'
+import type { WSContext } from '@hono/hono/ws'
 
 /**
  * Start dev server
@@ -47,8 +50,9 @@ export const startDev = (config: Config): void => {
   </html>` satisfies string,
     ))
 
-  app.get('/ast.json', (c) => {
-    const ast = config.project.exportAsAST()
+  app.get('/ast.json', async (c) => {
+    const { default: project } = await import(config.project.toString())
+    const ast = project.exportAsAST()
     return c.json(ast)
   })
 
@@ -75,6 +79,32 @@ export const startDev = (config: Config): void => {
     c.header('Content-Type', 'application/x.scratch.sb3')
     return c.body(sb3)
   })
+
+  const listeners: Map<string, WSContext> = new Map()
+  ;(async () => {
+    const dir = fromFileUrl(dirname(config.project.toString()))
+    for await (
+      const _ of Deno.watchFs(
+        dir,
+        { recursive: true },
+      )
+    ) {
+      for (const ws of listeners.values()) {
+        ws.send('reload')
+      }
+    }
+  })()
+  app.get('/listen', upgradeWebSocket((c) => {
+    const id = crypto.randomUUID()
+    return {
+      onOpen(_, ws) {
+        listeners.set(id, ws)
+      },
+      onClose() {
+        listeners.delete(id)
+      }
+    }
+  }))
 
   Deno.serve(app.fetch)
 }

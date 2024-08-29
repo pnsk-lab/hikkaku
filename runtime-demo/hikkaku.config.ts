@@ -1,7 +1,6 @@
 import { defineConfig } from '../src/config/mod.ts'
-import project from './main.ts'
 
 export default defineConfig({
-  project,
+  project: import.meta.resolve('./main.ts'),
   assetsDir: `${import.meta.dirname}/assets`,
 })

@@ -2,14 +2,14 @@
  * @example
  * ```ts
  * import { Project } from '@pnsk-lab/hikkaku'
- * 
+ *
  * const project = new Project()
- * 
+ *
  * // ...
- * 
+ *
  * export default project
  * ```
- * 
+ *
  * @module
  */
 

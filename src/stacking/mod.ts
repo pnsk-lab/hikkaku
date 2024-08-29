@@ -21,10 +21,13 @@ const stacks: Stack[] = []
  * Listen children blocks
  * @param listener new listener
  */
-export const into = (listener: BlockListener, target: Target = stacks.at(-1)?.target!): void => {
+export const into = (
+  listener: BlockListener,
+  target: Target = stacks.at(-1)?.target!,
+): void => {
   stacks.push({
     listener,
-    target
+    target,
   })
 }
 
