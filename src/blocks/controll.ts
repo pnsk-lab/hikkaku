@@ -1,8 +1,16 @@
+/**
+ * Controll blocks
+ * @module
+ */
+
 import type { AbstractBlock } from '../ast.ts'
 import { into, outof } from '../stacking/mod.ts'
 import { defineBlockFn } from './_shared.ts'
 import { BlockHelper } from './_shared.ts'
 
+/**
+ * Forever function
+ */
 export const forever: BlockHelper<[fn: () => void], {
   type: 'c'
   opcode: 'control_forever'

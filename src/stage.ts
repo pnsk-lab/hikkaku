@@ -1,9 +1,20 @@
+/**
+ * Defining Stage API
+ */
+
 import { Costume } from './ast.ts'
 import { Target } from './target.ts'
 
+/**
+ * Stage init
+ */
 export interface StageInit {
   costumes: Costume[]
 }
+
+/**
+ * Stage API
+ */
 export class Stage extends Target {
   constructor(init: StageInit) {
     super({

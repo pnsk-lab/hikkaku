@@ -1,3 +1,8 @@
+/**
+ * Defining block compiler
+ * @modle
+ */
+
 import { AbstractBlock } from '../ast.ts'
 import type { Block as ScratchBlock, Input as ScratchInput } from '@pnsk-lab/sb3-types'
 import { NotImplmentedError } from '../utils/error.ts'
@@ -75,6 +80,12 @@ const compileBlockList = (blockList: AbstractBlock[], c: CompileBlocksContext, p
 interface CompileBlocksContext {
   readonly scratchBlocks: ScratchBlocks
 }
+
+/**
+ * Compile AST to `block` of project.json
+ * @param blocks Block list
+ * @returns Compiled blocks for project.json
+ */
 export const compileBlocks = (blocks: AbstractBlock[][]): ScratchBlocks => {
   const ctx: CompileBlocksContext = {
     scratchBlocks: {}

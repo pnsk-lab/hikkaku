@@ -1,3 +1,11 @@
+/**
+ * Defining Errors
+ * @module
+ */
+
+/**
+ * NotImplmentedError
+ */
 export class NotImplmentedError extends Error {
   constructor(message?: string, options?: ErrorOptions) {
     super(message, options)

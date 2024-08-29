@@ -1,9 +1,18 @@
+/**
+ * Dev server
+ * @module
+ */
+
 import { Hono } from '@hono/hono'
 import { prettyJSON } from '@hono/hono/pretty-json'
 import { build, stop } from 'esbuild'
 import type { Config } from '../config/mod.ts'
 import { compile } from '../compiler/mod.ts'
 
+/**
+ * Start dev server
+ * @param config Project config
+ */
 export const startDev = (config: Config) => {
   const app = new Hono()
 

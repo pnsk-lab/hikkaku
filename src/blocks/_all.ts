@@ -1,3 +1,8 @@
+/**
+ * Merge all block helpers
+ * @module
+ */
+
 import * as motion from './motion.ts'
 import * as event from './event.ts'
 import * as controll from './controll.ts'
@@ -11,8 +16,11 @@ const blocksArr = [
   ...Object.values(controll)
 ] as BlockHelper<unknown[], AbstractBlock>[]
 
-const blockHelpers: Record<string, BlockHelper<unknown[], AbstractBlock>> = {}
+/**
+ * All block helpers record
+ */
+export const blockHelpers: Record<string, BlockHelper<unknown[], AbstractBlock>> = {}
+
 for (const block of blocksArr) {
   blockHelpers[block.opcode] = block
 }
-export { blockHelpers }

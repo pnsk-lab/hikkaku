@@ -1,3 +1,8 @@
+/**
+ * Motion blocks
+ * @module
+ */
+
 import type { AbstractInput } from '../ast.ts'
 import { BlockHelper, defineBlockFn } from './_shared.ts'
 
@@ -37,6 +42,9 @@ export const gotoxy: BlockHelper<[x: number, y: number], {
   }
 })
 
+/**
+ * Change X By
+ */
 export const changeXBy: BlockHelper<[v: number], {
   type: 'stack'
   opcode: 'motion_changexby'

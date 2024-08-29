@@ -1,3 +1,11 @@
+/**
+ * Utils for assets
+ * @module
+ */
+
+/**
+ * File formats map that Scratch supports.
+ */
 export const fileFormats: Record<string, string> = {
   'wav': 'audio/wav',
   'mp3': 'audio/mpeg',
@@ -5,6 +13,11 @@ export const fileFormats: Record<string, string> = {
   'svg': 'image/svg+xml'
 }
 
+/**
+ * Get file format from mimetype
+ * @param mime Mime Type
+ * @returns file ext
+ */
 export const getFormatFromMime = (mime: string): string => {
   for (const format in fileFormats) {
     if (mime.startsWith(fileFormats[format])) {
@@ -13,6 +26,12 @@ export const getFormatFromMime = (mime: string): string => {
   }
   throw new TypeError(`Mimetype ${mime} is not supported by Scratch.`)
 }
+
+/**
+ * Get mimetype from filename or filepath
+ * @param name filename or filepath
+ * @returns mimetype
+ */
 export const getMimeFromName = (name: string) => {
   for (const format in fileFormats) {
     if (name.endsWith(format)) {
@@ -22,6 +41,11 @@ export const getMimeFromName = (name: string) => {
   throw new Error(`Couldn't analize name.`)
 }
 
+/**
+ * Fetch asset from URL or filepath
+ * @param pathOrURL relative file path or file URL
+ * @returns Blob
+ */
 export const fetchAsset = async (pathOrURL: URL | string): Promise<Blob> => {
   let blob: Blob
   if (URL.canParse(pathOrURL)) {

@@ -1,3 +1,8 @@
+/**
+ * Compiler
+ * @module
+ */
+
 import type { AbstractTarget } from '../ast.ts'
 import type { Config } from '../config/mod.ts'
 import type { ScratchProject, Stage as ScratchStage, Sprite as ScratchSprite, Costume as ScratchCostume } from '@pnsk-lab/sb3-types'
@@ -27,7 +32,8 @@ class CompileContext {
   }
 }
 
-export const compileTarget = async (tree: AbstractTarget, ctx: CompileContext): Promise<(ScratchStage | ScratchSprite)> => {
+
+const compileTarget = async (tree: AbstractTarget, ctx: CompileContext): Promise<(ScratchStage | ScratchSprite)> => {
   const costumes: ScratchCostume[] = await Promise.all(tree.costumes.map(async (costume): Promise<ScratchCostume> => {
     const blob = await fetchAsset(costume.data)
     const md5 = await ctx.addAsset(blob)
@@ -78,7 +84,12 @@ export const compileTarget = async (tree: AbstractTarget, ctx: CompileContext): 
   }
 }
 
-export const compile = async (config: Config) => {
+/**
+ * Compile to sb3
+ * @param config Config
+ * @returns sb3 file
+ */
+export const compile = async (config: Config): Promise<Uint8Array> => {
   const ast = config.project.exportAsAST()
 
   const ctx = new CompileContext(config)

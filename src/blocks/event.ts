@@ -1,5 +1,13 @@
+/**
+ * Event blocks
+ * @module
+ */
+
 import { BlockHelper, defineBlockFn } from './_shared.ts'
 
+/**
+ * When :greenflag: clicked
+ */
 export const whenFlagClicked: BlockHelper<[], {
   type: 'hat',
   opcode: 'event_whenflagclicked'

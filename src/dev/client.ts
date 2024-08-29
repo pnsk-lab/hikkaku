@@ -1,3 +1,7 @@
+/**
+ * Client-side script for dev-server
+ */
+
 import { Runtime } from '../runtime/runtime.ts'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
@@ -7,7 +11,7 @@ const stopButton = document.getElementById('stop') as HTMLButtonElement
 
 let runtime: Runtime
 const start = async () => {
-  if (runtime?.isStarted) {
+  if (runtime?.isRunning) {
     runtime.stop()
   }
   runtime = new Runtime({

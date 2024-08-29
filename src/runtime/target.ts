@@ -1,3 +1,8 @@
+/**
+ * Target for runtime
+ * @module
+ */
+
 import { AbstractBlock, Costume } from '../ast.ts'
 import { RunContext } from '../blocks/_shared.ts'
 import { executeBlocks } from './execute.ts'
@@ -12,18 +17,44 @@ interface RuntimeTargetInit {
 }
 
 export abstract class RuntimeTargetBase {
+  /**
+   * If target is state, it's true
+   */
   abstract readonly isStage: boolean
 
+  /**
+   * Target name
+   */
   readonly name: string
 
+  /**
+   * Costumes that target has
+   */
   readonly costumes: Costume[]
+
+  /**
+   * Current costume index
+   */
   currentCostumeIndex: number = 0
+
+  /**
+   * Target blocks tree
+   */
   readonly blocks: AbstractBlock[][]
 
+  /**
+   * Runtime that target references
+   */
   readonly runtime: Runtime
 
+  /**
+   * AbortController for stopping
+   */
   readonly abortController: AbortController
 
+  /**
+   * @param init Options
+   */
   constructor(init: RuntimeTargetInit) {
     this.costumes = init.costumes
     this.currentCostumeIndex = init.currentCostumeIndex
@@ -33,8 +64,14 @@ export abstract class RuntimeTargetBase {
     this.abortController = new AbortController()
   }
 
+  /**
+   * Init target
+   */
   abstract init(): Promise<() => Promise<void>>
 
+  /**
+   * Stop target
+   */
   stop() {
     this.abortController.abort()
   }
@@ -45,6 +82,9 @@ interface RuntimeSpriteInit extends RuntimeTargetInit {
   y: number
 }
 
+/**
+ * Sprite for runtime
+ */
 export class RuntimeSprite extends RuntimeTargetBase {
   isStage: false = false
 
@@ -123,6 +163,9 @@ export class RuntimeSprite extends RuntimeTargetBase {
   }
 }
 
+/**
+ * Sprite for stage
+ */
 export class RuntimeStage extends RuntimeTargetBase {
   isStage: true = true
 
@@ -133,4 +176,7 @@ export class RuntimeStage extends RuntimeTargetBase {
   }
 }
 
+/**
+ * RuntimeSprite or RuntimeStage
+ */
 export type RuntimeTarget = RuntimeSprite | RuntimeStage

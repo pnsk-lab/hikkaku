@@ -1,13 +1,30 @@
+/**
+ * Runtime core
+ * @module
+ */
+
 // @ts-types="@turbowarp/types"
 import Render from 'scratch-render'
 import type { AbstractScratchTree } from '../ast.ts'
 import { RuntimeSprite, RuntimeStage } from './target.ts'
 
+/**
+ * Options for initing Runtime
+ */
 export interface RuntimeInit {
+  /**
+   * Target Canvas
+   */
   canvas: HTMLCanvasElement
+  /**
+   * AST
+   */
   ast: AbstractScratchTree
 }
 
+/**
+ * Runtime Core Class
+ */
 export class Runtime {
   #canvas: HTMLCanvasElement
   #ast: AbstractScratchTree
@@ -17,9 +34,16 @@ export class Runtime {
 
   #abortController = new AbortController()
 
-  isStarted: boolean
+  /**
+   * If runtime running, it is true
+   */
+  isRunning: boolean
 
+  /**
+   * scratch-render instance
+   */
   readonly renderer: Render
+
   constructor(init: RuntimeInit) {
     this.#canvas = init.canvas
     this.#ast = init.ast
@@ -46,12 +70,16 @@ export class Runtime {
     this.renderer = new Render(this.#canvas)
     this.renderer.resize(480, 360)
 
-    this.isStarted = false
+    this.isRunning = false
   }
 
   #startedMeta?: {
     targets: (RuntimeStage | RuntimeSprite)[]
   }
+
+  /**
+   * Start runtime
+   */
   async start() {
     this.#abortController = new AbortController()
 
@@ -79,14 +107,18 @@ export class Runtime {
       targets
     }
 
-    this.isStarted = true
+    this.isRunning = true
   }
+
+  /**
+   * Stop Runtime
+   */
   stop() {
     this.#abortController.abort()
     for (const target of this.#startedMeta?.targets ?? []) {
       target.stop()
     }
 
-    this.isStarted = false
+    this.isRunning = false
   }
 }
