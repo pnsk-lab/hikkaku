@@ -103,7 +103,10 @@ export class RuntimeSprite extends RuntimeTargetBase {
     this.#x = x ?? this.#x
     this.#y = y ?? this.#y
 
-    this.runtime.renderer.updateDrawablePosition(this.#drawableID, [this.#x, this.#y])
+    this.runtime.renderer.updateDrawablePosition(this.#drawableID, [
+      this.#x,
+      this.#y,
+    ])
   }
 
   constructor(init: RuntimeSpriteInit) {
@@ -115,14 +118,14 @@ export class RuntimeSprite extends RuntimeTargetBase {
   async init(): Promise<() => Promise<void>> {
     const runtime = this.runtime
 
-    const skinIDs = await Promise.all(this.costumes.map(async costume => {
+    const skinIDs = await Promise.all(this.costumes.map(async (costume) => {
       const res = await fetch(costume.data)
       let skinID: number
       if (res.headers.get('Content-Type') === 'image/svg+xml') {
         skinID = runtime.renderer.createSVGSkin(await res.text())
       } else {
         const src = URL.createObjectURL(await res.blob())
-        const image = await new Promise<HTMLImageElement>(resolve => {
+        const image = await new Promise<HTMLImageElement>((resolve) => {
           const image = new Image()
           image.onload = () => resolve(image)
           image.src = src
@@ -131,7 +134,7 @@ export class RuntimeSprite extends RuntimeTargetBase {
       }
       return {
         id: costume.id,
-        skinID
+        skinID,
       }
     }))
     this.#drawableID = this.runtime.renderer.createDrawable(this.name)
@@ -140,7 +143,7 @@ export class RuntimeSprite extends RuntimeTargetBase {
 
     const context: RunContext = {
       target: this,
-      async * execute(blocks) {
+      async *execute(blocks) {
         for await (const _ of executeBlocks(blocks, context)) {
           yield _
         }
@@ -151,7 +154,7 @@ export class RuntimeSprite extends RuntimeTargetBase {
       for (const blocks of this.blocks) {
         ;(async () => {
           for await (const _ of executeBlocks(blocks, context)) {
-           // console.log(this.abortController.signal)
+            // console.log(this.abortController.signal)
             if (this.abortController.signal.aborted) {
               return
             }
@@ -171,7 +174,6 @@ export class RuntimeStage extends RuntimeTargetBase {
 
   async init(): Promise<() => Promise<void>> {
     return async () => {
-
     }
   }
 }

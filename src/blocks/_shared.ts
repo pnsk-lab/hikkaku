@@ -4,7 +4,7 @@
  */
 
 import type { AbstractBlock } from '../ast.ts'
-import type  { RuntimeTarget } from '../runtime/target.ts'
+import type { RuntimeTarget } from '../runtime/target.ts'
 import { add } from '../stacking/mod.ts'
 
 /**
@@ -15,12 +15,18 @@ export interface RunContext {
   execute(blocks: AbstractBlock[]): AsyncGenerator
 }
 
-type Run <B extends AbstractBlock = AbstractBlock> = (block: B, c: RunContext) => Promise<void> | void | AsyncGenerator
+type Run<B extends AbstractBlock = AbstractBlock> = (
+  block: B,
+  c: RunContext,
+) => Promise<void> | void | AsyncGenerator
 
 /**
  * For defining blocks
  */
-export interface BlockDefinetion<Args extends unknown[], Block extends AbstractBlock> {
+export interface BlockDefinetion<
+  Args extends unknown[],
+  Block extends AbstractBlock,
+> {
   readonly opcode: string
 
   readonly createBlock: (...args: Args) => Block
@@ -32,7 +38,10 @@ export interface BlockDefinetion<Args extends unknown[], Block extends AbstractB
  * A block helper.
  * You can execute them in events.
  */
-export interface BlockHelper<Args extends unknown[], Block extends AbstractBlock> {
+export interface BlockHelper<
+  Args extends unknown[],
+  Block extends AbstractBlock,
+> {
   (...args: Args): Block
   opcode: string
   run: Run<Block>
@@ -43,7 +52,10 @@ export interface BlockHelper<Args extends unknown[], Block extends AbstractBlock
  * @param block Block definetion
  * @returns Block helper
  */
-export const defineBlockFn = <Args extends unknown[], Block extends AbstractBlock>(block: BlockDefinetion<Args, Block>): BlockHelper<Args, Block> => {
+export const defineBlockFn = <
+  Args extends unknown[],
+  Block extends AbstractBlock,
+>(block: BlockDefinetion<Args, Block>): BlockHelper<Args, Block> => {
   const fn = (...args: Args) => {
     const abstractBlock = block.createBlock(...args)
     if (abstractBlock.type !== 'reporter') {

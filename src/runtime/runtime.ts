@@ -53,19 +53,22 @@ export class Runtime {
       costumes: this.#ast.stage.costumes,
       currentCostumeIndex: 0,
       name: 'stage',
-      runtime: this
+      runtime: this,
     })
     this.#sprites = new Map()
     for (const sprite of this.#ast.sprites) {
-      this.#sprites.set(sprite.name, new RuntimeSprite({
-        blocks: sprite.blocks,
-        costumes: sprite.costumes,
-        currentCostumeIndex: 0,
-        x: 0,
-        y: 0,
-        name: sprite.name,
-        runtime: this
-      }))
+      this.#sprites.set(
+        sprite.name,
+        new RuntimeSprite({
+          blocks: sprite.blocks,
+          costumes: sprite.costumes,
+          currentCostumeIndex: 0,
+          x: 0,
+          y: 0,
+          name: sprite.name,
+          runtime: this,
+        }),
+      )
     }
     this.renderer = new Render(this.#canvas)
     this.renderer.resize(480, 360)
@@ -85,10 +88,10 @@ export class Runtime {
 
     const targets = [
       ...this.#sprites.values(),
-      this.#stage
+      this.#stage,
     ]
-    this.renderer.setLayerGroupOrdering(targets.map(target => target.name))
-    const starts = await Promise.all(targets.map(target => target.init()))
+    this.renderer.setLayerGroupOrdering(targets.map((target) => target.name))
+    const starts = await Promise.all(targets.map((target) => target.init()))
 
     for (const start of starts) {
       start()
@@ -104,7 +107,7 @@ export class Runtime {
     update()
 
     this.#startedMeta = {
-      targets
+      targets,
     }
 
     this.isRunning = true

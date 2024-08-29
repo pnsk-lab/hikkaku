@@ -10,7 +10,7 @@ export const fileFormats: Record<string, string> = {
   'wav': 'audio/wav',
   'mp3': 'audio/mpeg',
   'png': 'image/png',
-  'svg': 'image/svg+xml'
+  'svg': 'image/svg+xml',
 }
 
 /**
@@ -50,13 +50,14 @@ export const fetchAsset = async (pathOrURL: URL | string): Promise<Blob> => {
   let blob: Blob
   if (URL.canParse(pathOrURL)) {
     const res = await fetch(pathOrURL)
-    const type = res.headers.get('Content-Type') ?? getMimeFromName(pathOrURL.toString())
+    const type = res.headers.get('Content-Type') ??
+      getMimeFromName(pathOrURL.toString())
     blob = new Blob([await res.arrayBuffer()], {
-      type
+      type,
     })
   } else {
     blob = new Blob([await Deno.readFile(pathOrURL)], {
-      type: getMimeFromName(pathOrURL.toString())
+      type: getMimeFromName(pathOrURL.toString()),
     })
   }
   return blob

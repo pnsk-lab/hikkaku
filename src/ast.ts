@@ -8,24 +8,26 @@
 /**
  * AbstractInput
  */
-export type AbstractInput<T extends string = string> = ({
-  type: 'Number' | 'String'
-  value: string
-} | {
-  type: 'Color'
-  value: `#${string}`
-} | {
-  type: 'Broadcast'
-  name: string
-} | {
-  type: 'Variable' | 'List'
-  id: string
-} | {
-  type: 'Block'
-  block: AbstractBlock
-}) & {
-  type: T
-}
+export type AbstractInput<T extends string = string> =
+  & ({
+    type: 'Number' | 'String'
+    value: string
+  } | {
+    type: 'Color'
+    value: `#${string}`
+  } | {
+    type: 'Broadcast'
+    name: string
+  } | {
+    type: 'Variable' | 'List'
+    id: string
+  } | {
+    type: 'Block'
+    block: AbstractBlock
+  })
+  & {
+    type: T
+  }
 
 /**
  * AbstractBlockBase, it's extended by blocks
@@ -57,7 +59,7 @@ export interface AbstractCBlock extends AbstractBlockBase {
 /**
  * Stack Block.
  */
-export interface AbstractStackBlock extends AbstractBlockBase{
+export interface AbstractStackBlock extends AbstractBlockBase {
   type: 'stack'
 }
 
@@ -80,7 +82,11 @@ export interface AbstractHatBlock extends AbstractBlockBase {
 /**
  * Union of Blocks
  */
-export type AbstractBlock = AbstractCBlock | AbstractStackBlock | AbstractReporterBlock | AbstractHatBlock
+export type AbstractBlock =
+  | AbstractCBlock
+  | AbstractStackBlock
+  | AbstractReporterBlock
+  | AbstractHatBlock
 
 /**
  * Abstract Costume

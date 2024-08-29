@@ -5,7 +5,12 @@
 
 import type { AbstractTarget } from '../ast.ts'
 import type { Config } from '../config/mod.ts'
-import type { ScratchProject, Stage as ScratchStage, Sprite as ScratchSprite, Costume as ScratchCostume } from '@pnsk-lab/sb3-types'
+import type {
+  Costume as ScratchCostume,
+  ScratchProject,
+  Sprite as ScratchSprite,
+  Stage as ScratchStage,
+} from '@pnsk-lab/sb3-types'
 import { uint8ArrayToHex } from '../utils/hex.ts'
 import { getFormatFromMime } from './assets.ts'
 import { fetchAsset } from './assets.ts'
@@ -23,28 +28,38 @@ class CompileContext {
     blob: Blob
   }> = new Map()
   async addAsset(data: Blob) {
-    const md5 = uint8ArrayToHex(new Uint8Array(await stdCrypto.subtle.digest('MD5', await data.arrayBuffer())))
+    const md5 = uint8ArrayToHex(
+      new Uint8Array(
+        await stdCrypto.subtle.digest('MD5', await data.arrayBuffer()),
+      ),
+    )
     this.#assets.set(md5, {
       blob: data,
-      fileFormat: getFormatFromMime(data.type)
+      fileFormat: getFormatFromMime(data.type),
     })
     return md5
   }
 }
 
-
-const compileTarget = async (tree: AbstractTarget, ctx: CompileContext): Promise<(ScratchStage | ScratchSprite)> => {
-  const costumes: ScratchCostume[] = await Promise.all(tree.costumes.map(async (costume): Promise<ScratchCostume> => {
-    const blob = await fetchAsset(costume.data)
-    const md5 = await ctx.addAsset(blob)
-    const format = getFormatFromMime(blob.type) as ScratchCostume['dataFormat']
-    return {
-      name: costume.id,
-      assetId: md5,
-      dataFormat: format,
-      md5ext: `${md5}.${format}`
-    }
-  }))
+const compileTarget = async (
+  tree: AbstractTarget,
+  ctx: CompileContext,
+): Promise<(ScratchStage | ScratchSprite)> => {
+  const costumes: ScratchCostume[] = await Promise.all(
+    tree.costumes.map(async (costume): Promise<ScratchCostume> => {
+      const blob = await fetchAsset(costume.data)
+      const md5 = await ctx.addAsset(blob)
+      const format = getFormatFromMime(
+        blob.type,
+      ) as ScratchCostume['dataFormat']
+      return {
+        name: costume.id,
+        assetId: md5,
+        dataFormat: format,
+        md5ext: `${md5}.${format}`,
+      }
+    }),
+  )
   const blocks = compileBlocks(tree.blocks)
 
   if (tree.name === 'stage') {
@@ -77,9 +92,9 @@ const compileTarget = async (tree: AbstractTarget, ctx: CompileContext): Promise
           width: 256,
           height: 256,
           x: -100,
-          y: -100
-        }
-      }
+          y: -100,
+        },
+      },
     } satisfies ScratchSprite
   }
 }
@@ -96,15 +111,17 @@ export const compile = async (config: Config): Promise<Uint8Array> => {
 
   const project: ScratchProject = {
     meta: {
-      semver: "3.0.0",
-      vm: "0.2.0",
-      agent: navigator.userAgent + ', Hikkaku'
+      semver: '3.0.0',
+      vm: '0.2.0',
+      agent: navigator.userAgent + ', Hikkaku',
     },
-    targets: await Promise.all([ast.stage, ...ast.sprites].map(target => compileTarget(target, ctx)))
+    targets: await Promise.all(
+      [ast.stage, ...ast.sprites].map((target) => compileTarget(target, ctx)),
+    ),
   }
 
   const fileTree = {
-    'project.json': new TextEncoder().encode(JSON.stringify(project))
+    'project.json': new TextEncoder().encode(JSON.stringify(project)),
   }
   const sb3 = zipSync(fileTree)
 

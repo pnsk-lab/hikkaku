@@ -8,7 +8,6 @@ import { Target, type TargetInit } from './target.ts'
  * Sprite init
  */
 export interface SpriteInit extends TargetInit {
-
 }
 
 /**

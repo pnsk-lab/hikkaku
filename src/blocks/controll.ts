@@ -30,16 +30,16 @@ export const forever: BlockHelper<[fn: () => void], {
       type: 'c',
       opcode: 'control_forever',
       branches: {
-        SUBSTACK: children
-      }
+        SUBSTACK: children,
+      },
     }
   },
-  async * run(block, c) {
+  async *run(block, c) {
     while (true) {
       for await (const _ of c.execute(block.branches.SUBSTACK)) {
         yield _
       }
       yield null
     }
-  }
+  },
 })

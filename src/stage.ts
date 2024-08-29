@@ -19,7 +19,7 @@ export class Stage extends Target {
   constructor(init: StageInit) {
     super({
       name: 'stage',
-      costumes: init.costumes
+      costumes: init.costumes,
     })
   }
 }

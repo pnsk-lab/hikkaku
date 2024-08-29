@@ -23,7 +23,7 @@ export interface TargetInit {
 export abstract class Target {
   readonly name: string
   readonly costumes: Costume[]
-  constructor (init: TargetInit) {
+  constructor(init: TargetInit) {
     this.name = init.name
     this.costumes = init.costumes
   }
@@ -40,11 +40,11 @@ export abstract class Target {
     this.blocks.push(blocks)
   }
 
-  exportAsTree (): AbstractTarget {
+  exportAsTree(): AbstractTarget {
     return {
       name: this.name,
       blocks: this.blocks,
-      costumes: this.costumes
+      costumes: this.costumes,
     }
   }
 }

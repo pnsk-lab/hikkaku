@@ -4,7 +4,10 @@
  */
 
 import { AbstractBlock } from '../ast.ts'
-import type { Block as ScratchBlock, Input as ScratchInput } from '@pnsk-lab/sb3-types'
+import type {
+  Block as ScratchBlock,
+  Input as ScratchInput,
+} from '@pnsk-lab/sb3-types'
 import { NotImplmentedError } from '../utils/error.ts'
 
 interface ScratchBlocks {
@@ -14,7 +17,11 @@ interface ScratchInputs {
   [id: string]: ScratchInput
 }
 
-const compileBlockList = (blockList: AbstractBlock[], c: CompileBlocksContext, parentID: string | null = null): string[] => {
+const compileBlockList = (
+  blockList: AbstractBlock[],
+  c: CompileBlocksContext,
+  parentID: string | null = null,
+): string[] => {
   let lastBlockID: string | null = parentID
   const ids: string[] = []
   for (const block of blockList) {
@@ -36,7 +43,7 @@ const compileBlockList = (blockList: AbstractBlock[], c: CompileBlocksContext, p
           3,
           branchID,
           //@ts-expect-error @pnsk-lab/sb3-types's problem
-          null
+          null,
         ]
       }
     }
@@ -57,7 +64,9 @@ const compileBlockList = (blockList: AbstractBlock[], c: CompileBlocksContext, p
         case 'List':
         case 'Block':
         default:
-          throw new NotImplmentedError(`Input type ${inputSource.type} is not implmented.`)
+          throw new NotImplmentedError(
+            `Input type ${inputSource.type} is not implmented.`,
+          )
       }
       blockInputs[inputName] = input
     }
@@ -88,7 +97,7 @@ interface CompileBlocksContext {
  */
 export const compileBlocks = (blocks: AbstractBlock[][]): ScratchBlocks => {
   const ctx: CompileBlocksContext = {
-    scratchBlocks: {}
+    scratchBlocks: {},
   }
 
   for (const blockList of blocks) {

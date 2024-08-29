@@ -13,13 +13,16 @@ import type { AbstractBlock } from '../ast.ts'
 const blocksArr = [
   ...Object.values(motion),
   ...Object.values(event),
-  ...Object.values(controll)
+  ...Object.values(controll),
 ] as BlockHelper<unknown[], AbstractBlock>[]
 
 /**
  * All block helpers record
  */
-export const blockHelpers: Record<string, BlockHelper<unknown[], AbstractBlock>> = {}
+export const blockHelpers: Record<
+  string,
+  BlockHelper<unknown[], AbstractBlock>
+> = {}
 
 for (const block of blocksArr) {
   blockHelpers[block.opcode] = block

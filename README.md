@@ -1,2 +1,3 @@
 # Hikkaku
+
 Scratch with TypeScript.

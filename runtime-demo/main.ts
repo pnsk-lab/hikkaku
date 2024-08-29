@@ -7,10 +7,11 @@ const project = new Project({
     costumes: [
       {
         id: 'blank',
-        data: 'https://cdn.assets.scratch.mit.edu/internalapi/asset/cd21514d0531fdffb22204e0ec5ed84a.svg/get/'
-      }
-    ]
-  }
+        data:
+          'https://cdn.assets.scratch.mit.edu/internalapi/asset/cd21514d0531fdffb22204e0ec5ed84a.svg/get/',
+      },
+    ],
+  },
 })
 
 const cat = project.addSprite({
@@ -18,9 +19,10 @@ const cat = project.addSprite({
   costumes: [
     {
       id: 'cat',
-      data: 'https://cdn.assets.scratch.mit.edu/internalapi/asset/b7853f557e4426412e64bb3da6531a99.svg/get/'
-    }
-  ]
+      data:
+        'https://cdn.assets.scratch.mit.edu/internalapi/asset/b7853f557e4426412e64bb3da6531a99.svg/get/',
+    },
+  ],
 })
 
 cat.addOnFlag(() => {

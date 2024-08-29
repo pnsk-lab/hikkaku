@@ -51,7 +51,7 @@ export class Project {
   exportAsAST(): AbstractScratchTree {
     return {
       stage: this.stage.exportAsTree(),
-      sprites: this.#sprites
+      sprites: this.#sprites,
     }
   }
 }

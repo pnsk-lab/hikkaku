@@ -10,8 +10,8 @@ import { BlockHelper, defineBlockFn } from './_shared.ts'
  * gotoxy
  */
 export const gotoxy: BlockHelper<[x: number, y: number], {
-  type: 'stack',
-  opcode: 'motion_gotoxy',
+  type: 'stack'
+  opcode: 'motion_gotoxy'
   inputs: {
     X: AbstractInput<'Number'>
     Y: AbstractInput<'Number'>
@@ -25,21 +25,24 @@ export const gotoxy: BlockHelper<[x: number, y: number], {
       inputs: {
         X: {
           type: 'Number',
-          value: x.toString()
+          value: x.toString(),
         },
         Y: {
           type: 'Number',
-          value: y.toString()
-        }
-      }
+          value: y.toString(),
+        },
+      },
     }
   },
   run(block, c) {
     if (c.target.isStage) {
       return
     }
-    c.target.setXY(parseFloat(block.inputs.X.value), parseFloat(block.inputs.Y.value))
-  }
+    c.target.setXY(
+      parseFloat(block.inputs.X.value),
+      parseFloat(block.inputs.Y.value),
+    )
+  },
 })
 
 /**
@@ -63,15 +66,18 @@ export const changeXBy: BlockHelper<[v: number], {
       inputs: {
         DX: {
           type: 'Number',
-          value: v.toString()
-        }
-      }
+          value: v.toString(),
+        },
+      },
     }
   },
   run(block, c) {
     if (c.target.isStage) {
       return
     }
-    c.target.setXY(c.target.getXY()[0] + parseFloat(block.inputs.DX.value), null)
+    c.target.setXY(
+      c.target.getXY()[0] + parseFloat(block.inputs.DX.value),
+      null,
+    )
   },
 })

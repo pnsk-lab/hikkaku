@@ -3,5 +3,5 @@ import project from './main.ts'
 
 export default defineConfig({
   project,
-  assetsDir: `${import.meta.dirname}/assets`
+  assetsDir: `${import.meta.dirname}/assets`,
 })

@@ -16,7 +16,7 @@ const start = async () => {
   }
   runtime = new Runtime({
     canvas,
-    ast: await fetch('/ast.json').then(res => res.json())
+    ast: await fetch('/ast.json').then((res) => res.json()),
   })
   await runtime.start()
 }

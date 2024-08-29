@@ -18,7 +18,9 @@ export const startDev = (config: Config) => {
 
   app.use(prettyJSON())
 
-  app.get('/', c => c.html(`<!doctype HTML><html>
+  app.get('/', (c) =>
+    c.html(
+      `<!doctype HTML><html>
     <head>
       <meta charset="UTF_8" />
       <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -42,30 +44,33 @@ export const startDev = (config: Config) => {
       </div>
       <script src="/client.js" type="module"></script>
     </body>
-  </html>` satisfies string))
+  </html>` satisfies string,
+    ))
 
-  app.get('/ast.json', c => {
+  app.get('/ast.json', (c) => {
     const ast = config.project.exportAsAST()
     return c.json(ast)
   })
 
-  app.get('/client.js', async c => {
+  app.get('/client.js', async (c) => {
     const built = await build({
-      entryPoints: [import.meta.resolve('./client.ts').replace(/^file:\/\//, '')],
+      entryPoints: [
+        import.meta.resolve('./client.ts').replace(/^file:\/\//, ''),
+      ],
       alias: {
-        'scratch-render': 'https://esm.sh/scratch-render'
+        'scratch-render': 'https://esm.sh/scratch-render',
       },
       write: false,
       format: 'esm',
       bundle: true,
-      sourcemap: 'inline'
+      sourcemap: 'inline',
     })
     await stop()
     c.header('Content-Type', 'text/javascript')
     return c.body(built.outputFiles[0].text)
   })
 
-  app.get('/sb3', async c => {
+  app.get('/sb3', async (c) => {
     const sb3 = await compile(config)
     c.header('Content-Type', 'application/x.scratch.sb3')
     return c.body(sb3)
