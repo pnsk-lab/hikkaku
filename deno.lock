@@ -6,12 +6,15 @@
       "jsr:@luca/esbuild-deno-loader@^0.10.3": "jsr:@luca/esbuild-deno-loader@0.10.3",
       "jsr:@pnsk-lab/sb3-types@^0.1.6": "jsr:@pnsk-lab/sb3-types@0.1.6",
       "jsr:@std/assert@^0.213.1": "jsr:@std/assert@0.213.1",
+      "jsr:@std/crypto@^1.0.3": "jsr:@std/crypto@1.0.3",
       "jsr:@std/encoding@0.213": "jsr:@std/encoding@0.213.1",
       "jsr:@std/json@^0.213.1": "jsr:@std/json@0.213.1",
       "jsr:@std/jsonc@0.213": "jsr:@std/jsonc@0.213.1",
       "jsr:@std/path@0.213": "jsr:@std/path@0.213.1",
+      "jsr:@std/path@^1.0.3": "jsr:@std/path@1.0.3",
       "npm:@turbowarp/types@^0.0.12": "npm:@turbowarp/types@0.0.12",
       "npm:esbuild@^0.23.1": "npm:esbuild@0.23.1",
+      "npm:fflate@^0.8.2": "npm:fflate@0.8.2",
       "npm:scratch-render@^1.0.308": "npm:scratch-render@1.0.308_scratch-render-fonts@1.0.91"
     },
     "jsr": {
@@ -32,6 +35,9 @@
       "@std/assert@0.213.1": {
         "integrity": "24c28178b30c8e0782c18e8e94ea72b16282207569cdd10ffb9d1d26f2edebfe"
       },
+      "@std/crypto@1.0.3": {
+        "integrity": "a2a32f51ddef632d299e3879cd027c630dcd4d1d9a5285d6e6788072f4e51e7f"
+      },
       "@std/encoding@0.213.1": {
         "integrity": "fcbb6928713dde941a18ca5db88ca1544d0755ec8fb20fe61e2dc8144b390c62"
       },
@@ -50,6 +56,9 @@
         "dependencies": [
           "jsr:@std/assert@^0.213.1"
         ]
+      },
+      "@std/path@1.0.3": {
+        "integrity": "cd89d014ce7eb3742f2147b990f6753ee51d95276bfc211bc50c860c1bc7df6f"
       }
     },
     "npm": {
@@ -392,6 +401,10 @@
       },
       "fastestsmallesttextencoderdecoder@1.0.22": {
         "integrity": "sha512-Pb8d48e+oIuY4MaM64Cd7OW1gt4nxCHs7/ddPPZ/Ic3sg8yVGM7O9wDvZ7us6ScaUupzM+pfBolwtYhN1IxBIw==",
+        "dependencies": {}
+      },
+      "fflate@0.8.2": {
+        "integrity": "sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==",
         "dependencies": {}
       },
       "findup@0.1.5": {
@@ -1041,8 +1054,11 @@
       "jsr:@hono/hono@^4.5.9",
       "jsr:@luca/esbuild-deno-loader@^0.10.3",
       "jsr:@pnsk-lab/sb3-types@^0.1.6",
+      "jsr:@std/crypto@^1.0.3",
+      "jsr:@std/path@^1.0.3",
       "npm:@turbowarp/types@^0.0.12",
       "npm:esbuild@^0.23.1",
+      "npm:fflate@^0.8.2",
       "npm:scratch-render@^1.0.308"
     ]
   }

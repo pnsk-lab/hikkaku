@@ -1,6 +1,4 @@
 import { startDev } from '../src/dev/mod.ts'
-import project from './main.ts'
+import hikkakuConfig from './hikkaku.config.ts'
 
-await startDev({
-  project
-})
+startDev(hikkakuConfig)

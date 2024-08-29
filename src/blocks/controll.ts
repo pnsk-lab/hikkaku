@@ -1,4 +1,4 @@
-import { AbstractBlock } from '../ast.ts'
+import type { AbstractBlock } from '../ast.ts'
 import { into, outof } from '../stacking/mod.ts'
 import { defineBlockFn } from './_shared.ts'
 import { BlockHelper } from './_shared.ts'
@@ -6,7 +6,9 @@ import { BlockHelper } from './_shared.ts'
 export const forever: BlockHelper<[fn: () => void], {
   type: 'c'
   opcode: 'control_forever'
-  children: AbstractBlock[]
+  branches: {
+    SUBSTACK: AbstractBlock[]
+  }
 }> = defineBlockFn({
   opcode: 'control_forever',
   createBlock(fn) {
@@ -19,12 +21,14 @@ export const forever: BlockHelper<[fn: () => void], {
     return {
       type: 'c',
       opcode: 'control_forever',
-      children
+      branches: {
+        SUBSTACK: children
+      }
     }
   },
   async * run(block, c) {
     while (true) {
-      for await (const _ of c.execute(block.children)) {
+      for await (const _ of c.execute(block.branches.SUBSTACK)) {
         yield _
       }
       yield null

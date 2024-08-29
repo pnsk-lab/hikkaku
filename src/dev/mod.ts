@@ -1,13 +1,10 @@
-import type { Project } from '../project.ts'
 import { Hono } from '@hono/hono'
 import { prettyJSON } from '@hono/hono/pretty-json'
 import { build, stop } from 'esbuild'
+import type { Config } from '../config/mod.ts'
+import { compile } from '../compiler/mod.ts'
 
-interface DevInit {
-  project: Project
-}
-
-export const startDev = (init: DevInit) => {
+export const startDev = (config: Config) => {
   const app = new Hono()
 
   app.use(prettyJSON())
@@ -21,10 +18,13 @@ export const startDev = (init: DevInit) => {
     </head>
     <body>
       <div class="flex h-dvh flex-col justify-between items-center">
-        <div class="w-full flex">
-          <div class="grid grid-cols-2 place-items-start gap-1 text-xl">
+        <div class="w-full flex justify-between text-xl">
+          <div class="grid grid-cols-3 place-items-start gap-1">
             <button class="w-8 h-8 hover:bg-blue-100" id="flag">🚩</button>
             <button class="w-8 h-8 hover:bg-blue-100" id="stop">🛑</button>
+          </div>
+          <div class="grid grid-cols-3 place-items-end gap-1">
+            <a title="Compile to sb3" href="/sb3" download="compiled.sb3">⬇️</a>
           </div>
         </div>
         <div class="grow">
@@ -36,7 +36,7 @@ export const startDev = (init: DevInit) => {
   </html>` satisfies string))
 
   app.get('/ast.json', c => {
-    const ast = init.project.exportAsAST()
+    const ast = config.project.exportAsAST()
     return c.json(ast)
   })
 
@@ -54,6 +54,12 @@ export const startDev = (init: DevInit) => {
     await stop()
     c.header('Content-Type', 'text/javascript')
     return c.body(built.outputFiles[0].text)
+  })
+
+  app.get('/sb3', async c => {
+    const sb3 = await compile(config)
+    c.header('Content-Type', 'application/x.scratch.sb3')
+    return c.body(sb3)
   })
 
   Deno.serve(app.fetch)

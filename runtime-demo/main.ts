@@ -4,7 +4,12 @@ import { Project } from '../src/project.ts'
 
 const project = new Project({
   stage: {
-    costumes: []
+    costumes: [
+      {
+        id: 'blank',
+        data: 'https://cdn.assets.scratch.mit.edu/internalapi/asset/cd21514d0531fdffb22204e0ec5ed84a.svg/get/'
+      }
+    ]
   }
 })
 

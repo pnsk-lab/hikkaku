@@ -34,7 +34,9 @@ export interface AbstractBlockBase {
 
 export interface AbstractCBlock extends AbstractBlockBase {
   type: 'c'
-  children: AbstractBlock[]
+  branches: {
+    [k: `SUBSTACK${string}`]: AbstractBlock[]
+  }
 }
 export interface AbstractStackBlock extends AbstractBlockBase{
   type: 'stack'
