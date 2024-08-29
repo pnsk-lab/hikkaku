@@ -13,7 +13,7 @@ import { compile } from '../compiler/mod.ts'
  * Start dev server
  * @param config Project config
  */
-export const startDev = (config: Config) => {
+export const startDev = (config: Config): void => {
   const app = new Hono()
 
   app.use(prettyJSON())
