@@ -1,12 +1,22 @@
 {
+  "name": "@pnsk-lab/hikkaku",
+  "version": "0.1.0",
+  "publish": {
+    ".": "./src/mod.ts",
+    "./config": "./src/config.ts",
+    "./dev": "./src/dev/mod.ts",
+    "./compiler": "./src/compiler/mod.ts",
+
+    "./blocks/controll": "./src/blocks/controll.ts",
+    "./blocks/event": "./src/blocks/event.ts",
+    "./blocks/motion": "./src/blocks/motion.ts"
+  },
   "imports": {
     "@hono/hono": "jsr:@hono/hono@^4.5.9",
-    "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.10.3",
     "@pnsk-lab/sb3-types": "jsr:@pnsk-lab/sb3-types@^0.1.6",
     "@std/crypto": "jsr:@std/crypto@^1.0.3",
     "@std/path": "jsr:@std/path@^1.0.3",
     "@turbowarp/types": "npm:@turbowarp/types@^0.0.12",
-    "@turbowarp/types/scratch-render": "https://raw.githubusercontent.com/TurboWarp/types/master/types/scratch-render.d.ts",
     "esbuild": "npm:esbuild@^0.23.1",
     "fflate": "npm:fflate@^0.8.2",
     "scratch-render": "npm:scratch-render@^1.0.308"
