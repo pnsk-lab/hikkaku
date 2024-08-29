@@ -1,4 +1,3 @@
-import project from '../../runtime-demo/main.ts'
 import type { Project } from '../project.ts'
 import { Hono } from '@hono/hono'
 import { prettyJSON } from '@hono/hono/pretty-json'
@@ -8,7 +7,7 @@ interface DevInit {
   project: Project
 }
 
-export const startDev = async (init: DevInit) => {
+export const startDev = (init: DevInit) => {
   const app = new Hono()
 
   app.use(prettyJSON())
@@ -21,15 +20,23 @@ export const startDev = async (init: DevInit) => {
       <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body>
-      <div class="grid place-items-center w-full h-dvh p-3">
-        <canvas id="canvas" class="border rounded-md max-w-72"></canvas>
+      <div class="flex h-dvh flex-col justify-between items-center">
+        <div class="w-full flex">
+          <div class="grid grid-cols-2 place-items-start gap-1 text-xl">
+            <button class="w-8 h-8 hover:bg-blue-100" id="flag">🚩</button>
+            <button class="w-8 h-8 hover:bg-blue-100" id="stop">🛑</button>
+          </div>
+        </div>
+        <div class="grow">
+          <canvas id="canvas" class="border rounded-md max-h-80"></canvas>
+        </div>
       </div>
       <script src="/client.js" type="module"></script>
     </body>
   </html>` satisfies string))
 
   app.get('/ast.json', c => {
-    const ast = project.exportAsAST()
+    const ast = init.project.exportAsAST()
     return c.json(ast)
   })
 
@@ -44,6 +51,7 @@ export const startDev = async (init: DevInit) => {
       bundle: true,
       sourcemap: 'inline'
     })
+    await stop()
     c.header('Content-Type', 'text/javascript')
     return c.body(built.outputFiles[0].text)
   })

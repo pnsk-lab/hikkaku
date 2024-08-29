@@ -15,6 +15,10 @@ export class Runtime {
   #stage: RuntimeStage
   #sprites: Map<string, RuntimeSprite>
 
+  #abortController = new AbortController()
+
+  isStarted: boolean
+
   readonly renderer: Render
   constructor(init: RuntimeInit) {
     this.#canvas = init.canvas
@@ -41,8 +45,16 @@ export class Runtime {
     }
     this.renderer = new Render(this.#canvas)
     this.renderer.resize(480, 360)
+
+    this.isStarted = false
+  }
+
+  #startedMeta?: {
+    targets: (RuntimeStage | RuntimeSprite)[]
   }
   async start() {
+    this.#abortController = new AbortController()
+
     const targets = [
       ...this.#sprites.values(),
       this.#stage
@@ -54,10 +66,27 @@ export class Runtime {
       start()
     }
 
-    const update = async () => {
+    const update = () => {
+      if (this.#abortController.signal.aborted) {
+        return
+      }
       this.renderer.draw()
       requestAnimationFrame(() => update())
     }
     update()
+
+    this.#startedMeta = {
+      targets
+    }
+
+    this.isStarted = true
+  }
+  stop() {
+    this.#abortController.abort()
+    for (const target of this.#startedMeta?.targets ?? []) {
+      target.stop()
+    }
+
+    this.isStarted = false
   }
 }

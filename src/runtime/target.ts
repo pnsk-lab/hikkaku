@@ -22,15 +22,22 @@ export abstract class RuntimeTargetBase {
 
   readonly runtime: Runtime
 
+  readonly abortController: AbortController
+
   constructor(init: RuntimeTargetInit) {
     this.costumes = init.costumes
     this.currentCostumeIndex = init.currentCostumeIndex
     this.blocks = init.blocks
     this.name = init.name
     this.runtime = init.runtime
+    this.abortController = new AbortController()
   }
 
   abstract init(): Promise<() => Promise<void>>
+
+  stop() {
+    this.abortController.abort()
+  }
 }
 
 interface RuntimeSpriteInit extends RuntimeTargetInit {
@@ -104,6 +111,10 @@ export class RuntimeSprite extends RuntimeTargetBase {
       for (const blocks of this.blocks) {
         ;(async () => {
           for await (const _ of executeBlocks(blocks, context)) {
+           // console.log(this.abortController.signal)
+            if (this.abortController.signal.aborted) {
+              return
+            }
             await new Promise(requestAnimationFrame)
           }
         })()
