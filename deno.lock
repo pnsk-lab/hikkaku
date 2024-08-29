@@ -3,14 +3,8 @@
   "packages": {
     "specifiers": {
       "jsr:@hono/hono@^4.5.9": "jsr:@hono/hono@4.5.9",
-      "jsr:@luca/esbuild-deno-loader@^0.10.3": "jsr:@luca/esbuild-deno-loader@0.10.3",
       "jsr:@pnsk-lab/sb3-types@^0.1.6": "jsr:@pnsk-lab/sb3-types@0.1.6",
-      "jsr:@std/assert@^0.213.1": "jsr:@std/assert@0.213.1",
       "jsr:@std/crypto@^1.0.3": "jsr:@std/crypto@1.0.3",
-      "jsr:@std/encoding@0.213": "jsr:@std/encoding@0.213.1",
-      "jsr:@std/json@^0.213.1": "jsr:@std/json@0.213.1",
-      "jsr:@std/jsonc@0.213": "jsr:@std/jsonc@0.213.1",
-      "jsr:@std/path@0.213": "jsr:@std/path@0.213.1",
       "jsr:@std/path@^1.0.3": "jsr:@std/path@1.0.3",
       "npm:@turbowarp/types@^0.0.12": "npm:@turbowarp/types@0.0.12",
       "npm:esbuild@^0.23.1": "npm:esbuild@0.23.1",
@@ -21,41 +15,11 @@
       "@hono/hono@4.5.9": {
         "integrity": "47f561e67aedbd6d1e21e3a1ae26c1b80ffdb62a51c161d502e75bee17ca40af"
       },
-      "@luca/esbuild-deno-loader@0.10.3": {
-        "integrity": "32fc93f7e7f78060234fd5929a740668aab1c742b808c6048b57f9aaea514921",
-        "dependencies": [
-          "jsr:@std/encoding@0.213",
-          "jsr:@std/jsonc@0.213",
-          "jsr:@std/path@0.213"
-        ]
-      },
       "@pnsk-lab/sb3-types@0.1.6": {
         "integrity": "68ea02ff80349138d238e9940ac0d2faa0d568358cb5cf15997d7085385f67a2"
       },
-      "@std/assert@0.213.1": {
-        "integrity": "24c28178b30c8e0782c18e8e94ea72b16282207569cdd10ffb9d1d26f2edebfe"
-      },
       "@std/crypto@1.0.3": {
         "integrity": "a2a32f51ddef632d299e3879cd027c630dcd4d1d9a5285d6e6788072f4e51e7f"
-      },
-      "@std/encoding@0.213.1": {
-        "integrity": "fcbb6928713dde941a18ca5db88ca1544d0755ec8fb20fe61e2dc8144b390c62"
-      },
-      "@std/json@0.213.1": {
-        "integrity": "f572b1de605d07c4a5602445dac54bfc51b1fb87a3710a17aed2608bfca54e68"
-      },
-      "@std/jsonc@0.213.1": {
-        "integrity": "5578f21aa583b7eb7317eed077ffcde47b294f1056bdbb9aacec407758637bfe",
-        "dependencies": [
-          "jsr:@std/assert@^0.213.1",
-          "jsr:@std/json@^0.213.1"
-        ]
-      },
-      "@std/path@0.213.1": {
-        "integrity": "f187bf278a172752e02fcbacf6bd78a335ed320d080a7ed3a5a59c3e88abc673",
-        "dependencies": [
-          "jsr:@std/assert@^0.213.1"
-        ]
       },
       "@std/path@1.0.3": {
         "integrity": "cd89d014ce7eb3742f2147b990f6753ee51d95276bfc211bc50c860c1bc7df6f"
@@ -1052,7 +1016,6 @@
   "workspace": {
     "dependencies": [
       "jsr:@hono/hono@^4.5.9",
-      "jsr:@luca/esbuild-deno-loader@^0.10.3",
       "jsr:@pnsk-lab/sb3-types@^0.1.6",
       "jsr:@std/crypto@^1.0.3",
       "jsr:@std/path@^1.0.3",

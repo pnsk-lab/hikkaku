@@ -6,24 +6,33 @@
  */
 
 import type { AbstractBlock } from '../ast.ts'
+import type { Target } from '../target.ts'
 
 type BlockListener = (block: AbstractBlock) => void
 
-const listeners: BlockListener[] = []
+type Stack = {
+  listener: BlockListener
+  target: Target
+}
+
+const stacks: Stack[] = []
 
 /**
  * Listen children blocks
  * @param listener new listener
  */
-export const into = (listener: BlockListener): void => {
-  listeners.push(listener)
+export const into = (listener: BlockListener, target: Target = stacks.at(-1)?.target!): void => {
+  stacks.push({
+    listener,
+    target
+  })
 }
 
 /**
  * Out this block
  */
 export const outof = (): void => {
-  listeners.pop()
+  stacks.pop()
 }
 
 /**
@@ -31,6 +40,13 @@ export const outof = (): void => {
  * @param block New Block
  */
 export const add = (block: AbstractBlock): void => {
-  const listener = listeners.at(-1)
-  listener?.(block)
+  const stack = stacks.at(-1)
+  stack?.listener(block)
+}
+
+/**
+ * Get Target
+ */
+export const getTarget = (): Target => {
+  return stacks.at(-1)?.target!
 }

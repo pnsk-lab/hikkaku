@@ -33,7 +33,7 @@ export abstract class Target {
     const blocks: AbstractBlock[] = []
     into((block) => {
       blocks.push(block)
-    })
+    }, this)
     whenFlagClicked()
     h()
     outof()

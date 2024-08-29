@@ -3,9 +3,9 @@
  * @module
  */
 
-import { AbstractScratchTree } from './ast.ts'
-import { Stage, StageInit } from './stage.ts'
-import { Sprite, SpriteInit } from './sprite.ts'
+import type { AbstractScratchTree } from './ast.ts'
+import { Stage, type StageInit } from './stage.ts'
+import { Sprite, type SpriteInit } from './sprite.ts'
 
 /**
  * Options for initing Project
