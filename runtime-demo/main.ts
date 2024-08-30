@@ -1,5 +1,6 @@
 import { forever } from '../src/blocks/control.ts'
 import { changeXBy } from '../src/blocks/motion.ts'
+import { getMouseX } from '../src/blocks/sensing.ts'
 import { Project } from '../src/project.ts'
 
 const project = new Project({
@@ -27,7 +28,7 @@ const cat = project.addSprite({
 
 cat.addOnFlag(() => {
   forever(() => {
-    changeXBy(1)
+    changeXBy(getMouseX())
   })
 })
 

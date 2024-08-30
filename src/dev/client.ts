@@ -9,14 +9,18 @@ const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const flagButton = document.getElementById('flag') as HTMLButtonElement
 const stopButton = document.getElementById('stop') as HTMLButtonElement
 
-let runtime: Runtime
+let runtime: Runtime | null = null
+
 const start = async () => {
   if (runtime?.isRunning) {
     runtime.stop()
   }
+  const ast = await fetch('/ast.json').then((res) => res.json())
+  console.log(ast)
+
   runtime = new Runtime({
     canvas,
-    ast: await fetch('/ast.json').then((res) => res.json()),
+    ast,
   })
   await runtime.start()
 }
@@ -25,7 +29,7 @@ flagButton.onclick = () => {
   start()
 }
 stopButton.onclick = () => {
-  runtime.stop()
+  runtime?.stop()
 }
 
 // Hot Reload Handle

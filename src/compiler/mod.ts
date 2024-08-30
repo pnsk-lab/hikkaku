@@ -119,6 +119,7 @@ export const compile = async (config: Config): Promise<Uint8Array> => {
       [ast.stage, ...ast.sprites].map((target) => compileTarget(target, ctx)),
     ),
   }
+  console.log(project.targets[1].blocks)
 
   const fileTree = {
     'project.json': new TextEncoder().encode(JSON.stringify(project)),

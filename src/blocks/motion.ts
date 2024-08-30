@@ -4,43 +4,43 @@
  */
 
 import type { AbstractInput } from '../ast.ts'
+import { type BlockHelperInput, parseAsInput } from '../value.ts'
 import { type BlockHelper, defineBlockFn } from './_shared.ts'
 
 /**
  * gotoxy
  */
-export const gotoxy: BlockHelper<[x: number, y: number], {
-  type: 'stack'
-  opcode: 'motion_gotoxy'
-  inputs: {
-    X: AbstractInput<'Number'>
-    Y: AbstractInput<'Number'>
+export const gotoxy: BlockHelper<
+  [x: BlockHelperInput<'Number'>, y: BlockHelperInput<'Number'>],
+  {
+    type: 'stack'
+    opcode: 'motion_gotoxy'
+    inputs: {
+      X: AbstractInput
+      Y: AbstractInput
+    }
   }
-}> = defineBlockFn({
+> = defineBlockFn({
   opcode: 'motion_gotoxy',
   createBlock(x, y) {
     return {
       type: 'stack',
       opcode: 'motion_gotoxy',
       inputs: {
-        X: {
-          type: 'Number',
-          value: x.toString(),
-        },
-        Y: {
-          type: 'Number',
-          value: y.toString(),
-        },
+        X: parseAsInput(x, 'Number'),
+        Y: parseAsInput(y, 'Number'),
       },
     }
   },
-  run(block, c) {
+  async run(block, c) {
     if (c.target.isStage) {
       return
     }
+    const x = await c.evalInput(block.inputs.X)
+    const y = await c.evalInput(block.inputs.Y)
     c.target.setXY(
-      parseFloat(block.inputs.X.value),
-      parseFloat(block.inputs.Y.value),
+      parseFloat(x),
+      parseFloat(y),
     )
   },
 })
@@ -48,14 +48,11 @@ export const gotoxy: BlockHelper<[x: number, y: number], {
 /**
  * Change X By
  */
-export const changeXBy: BlockHelper<[v: number], {
+export const changeXBy: BlockHelper<[v: BlockHelperInput<'Number'>], {
   type: 'stack'
   opcode: 'motion_changexby'
   inputs: {
-    DX: {
-      type: 'Number'
-      value: string
-    }
+    DX: AbstractInput
   }
 }> = defineBlockFn({
   opcode: 'motion_changexby',
@@ -64,19 +61,17 @@ export const changeXBy: BlockHelper<[v: number], {
       type: 'stack',
       opcode: 'motion_changexby',
       inputs: {
-        DX: {
-          type: 'Number',
-          value: v.toString(),
-        },
+        DX: parseAsInput(v, 'Number'),
       },
     }
   },
-  run(block, c) {
+  async run(block, c) {
     if (c.target.isStage) {
       return
     }
+    const dx = await c.evalInput(block.inputs.DX)
     c.target.setXY(
-      c.target.getXY()[0] + parseFloat(block.inputs.DX.value),
+      c.target.getXY()[0] + parseFloat(dx),
       null,
     )
   },

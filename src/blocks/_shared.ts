@@ -3,7 +3,8 @@
  * @module
  */
 
-import type { AbstractBlock } from '../ast.ts'
+import type { AbstractBlock, AbstractInput } from '../ast.ts'
+import type { Runtime } from '../runtime/runtime.ts'
 import type { RuntimeTarget } from '../runtime/target.ts'
 import { add } from '../stacking/mod.ts'
 
@@ -13,12 +14,21 @@ import { add } from '../stacking/mod.ts'
 export interface RunContext {
   target: RuntimeTarget
   execute(blocks: AbstractBlock[]): AsyncGenerator
+  runtime: Runtime
+  evalInput(input: AbstractInput): Promise<string>
 }
+
+interface ReporterReturn {
+  type: 'String' | 'Number'
+  data: string | number
+}
+
+type RunReturn<T> = Promise<T> | T | AsyncGenerator<unknown, T>
 
 type Run<B extends AbstractBlock = AbstractBlock> = (
   block: B,
   c: RunContext,
-) => Promise<void> | void | AsyncGenerator
+) => RunReturn<'reporter' extends B['type'] ? ReporterReturn : void>
 
 /**
  * For defining blocks
