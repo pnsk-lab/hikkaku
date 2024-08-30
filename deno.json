@@ -7,7 +7,7 @@
     "./dev": "./src/dev/mod.ts",
     "./compiler": "./src/compiler/mod.ts",
 
-    "./blocks/controll": "./src/blocks/controll.ts",
+    "./blocks/control": "./src/blocks/control.ts",
     "./blocks/event": "./src/blocks/event.ts",
     "./blocks/motion": "./src/blocks/motion.ts"
   },

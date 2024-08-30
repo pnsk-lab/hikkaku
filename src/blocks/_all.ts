@@ -5,7 +5,7 @@
 
 import * as motion from './motion.ts'
 import * as event from './event.ts'
-import * as controll from './controll.ts'
+import * as controll from './control.ts'
 
 import type { BlockHelper } from './_shared.ts'
 import type { AbstractBlock } from '../ast.ts'

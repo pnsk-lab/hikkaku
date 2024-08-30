@@ -1,5 +1,5 @@
 /**
- * Controll blocks
+ * Control blocks
  * @module
  */
 

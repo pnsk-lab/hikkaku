@@ -1,4 +1,4 @@
-import { forever } from '../src/blocks/controll.ts'
+import { forever } from '../src/blocks/control.ts'
 import { changeXBy } from '../src/blocks/motion.ts'
 import { Project } from '../src/project.ts'
 
