@@ -1,6 +1,6 @@
 {
   "name": "@pnsk-lab/hikkaku",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "exports": {
     ".": "./src/mod.ts",
     "./config": "./src/config/mod.ts",
