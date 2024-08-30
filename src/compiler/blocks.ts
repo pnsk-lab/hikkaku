@@ -59,10 +59,23 @@ const compileBlockList = (
         case 'Color':
           input = [2, [9, inputSource.value]]
           break
+        case 'Block': {
+          const [inputBlockID] = compileBlockList(
+            [inputSource.block],
+            c,
+            blockID,
+          )
+          input = [
+            2,
+            inputBlockID,
+            //@ts-expect-error @pnsk-lab/sb3-types's problem
+            null,
+          ]
+          break
+        }
         case 'Broadcast':
         case 'Variable':
         case 'List':
-        case 'Block':
         default:
           throw new NotImplmentedError(
             `Input type ${inputSource.type} is not implmented.`,

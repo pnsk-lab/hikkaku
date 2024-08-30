@@ -7,18 +7,24 @@ import type { AbstractBlock } from '../ast.ts'
 import { blockHelpers } from '../blocks/_all.ts'
 import type { RunContext } from '../blocks/_shared.ts'
 
-async function* executeBlock(block: AbstractBlock, ctx: RunContext) {
+/**
+ * Execute a block
+ * @param block Block
+ * @param ctx Run Context
+ * @returns Reporter return
+ */
+export async function* executeBlock(block: AbstractBlock, ctx: RunContext) {
   const { run } = blockHelpers[block.opcode]
   const returned = run(block, ctx)
   if (!returned) {
-    return
+    return returned
   }
   if ('next' in returned) {
     for await (const _ of returned) {
       yield _
     }
   } else {
-    await returned
+    return await returned
   }
 }
 

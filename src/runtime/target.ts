@@ -5,7 +5,8 @@
 
 import type { AbstractBlock, Costume } from '../ast.ts'
 import type { RunContext } from '../blocks/_shared.ts'
-import { executeBlocks } from './execute.ts'
+import { NotImplmentedError } from '../utils/error.ts'
+import { executeBlock, executeBlocks } from './execute.ts'
 import type { Runtime } from './runtime.ts'
 
 interface RuntimeTargetInit {
@@ -146,6 +147,28 @@ export class RuntimeSprite extends RuntimeTargetBase {
       async *execute(blocks) {
         for await (const _ of executeBlocks(blocks, context)) {
           yield _
+        }
+      },
+      runtime,
+      async evalInput(input) {
+        switch (input.type) {
+          case 'Number':
+          case 'String':
+          case 'Color':
+            return input.value
+          case 'Block': {
+            const generator = executeBlock(input.block, context)
+            while (true) {
+              const nexted = await generator.next()
+              if (nexted.done) {
+                return nexted.value?.data.toString() ?? ''
+              }
+            }
+          }
+          case 'Broadcast':
+          case 'Variable':
+          case 'List':
+            throw new NotImplmentedError('Not Implmented')
         }
       },
     }
