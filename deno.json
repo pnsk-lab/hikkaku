@@ -19,7 +19,8 @@
     "@turbowarp/types": "npm:@turbowarp/types@^0.0.12",
     "esbuild": "npm:esbuild@^0.23.1",
     "fflate": "npm:fflate@^0.8.2",
-    "scratch-render": "npm:scratch-render@^1.0.308"
+    "scratch-render": "npm:scratch-render@^1.0.308",
+    "scratch-vm": "npm:scratch-vm@^4.5.455"
   },
   "fmt": {
     "singleQuote": true,

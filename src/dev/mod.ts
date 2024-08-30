@@ -42,7 +42,7 @@ export const startDev = (config: Config): void => {
           </div>
         </div>
         <div class="grow">
-          <canvas id="canvas" class="border rounded-md max-h-80"></canvas>
+          <canvas id="canvas" class="border rounded-md max-h-80 touch-none select-none"></canvas>
         </div>
       </div>
       <script src="/client.js" type="module"></script>
@@ -63,6 +63,7 @@ export const startDev = (config: Config): void => {
       ],
       alias: {
         'scratch-render': 'https://esm.sh/scratch-render',
+        'scratch-vm': 'https://esm.sh/scratch-vm',
       },
       write: false,
       format: 'esm',
@@ -94,17 +95,20 @@ export const startDev = (config: Config): void => {
       }
     }
   })()
-  app.get('/listen', upgradeWebSocket((c) => {
-    const id = crypto.randomUUID()
-    return {
-      onOpen(_, ws) {
-        listeners.set(id, ws)
-      },
-      onClose() {
-        listeners.delete(id)
+  app.get(
+    '/listen',
+    upgradeWebSocket((c) => {
+      const id = crypto.randomUUID()
+      return {
+        onOpen(_, ws) {
+          listeners.set(id, ws)
+        },
+        onClose() {
+          listeners.delete(id)
+        },
       }
-    }
-  }))
+    }),
+  )
 
   Deno.serve(app.fetch)
 }

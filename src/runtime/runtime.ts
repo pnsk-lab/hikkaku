@@ -7,6 +7,7 @@
 import Render from 'scratch-render'
 import type { AbstractScratchTree } from '../ast.ts'
 import { RuntimeSprite, RuntimeStage } from './target.ts'
+import { Mouse } from './io/mouse.ts'
 
 /**
  * Options for initing Runtime
@@ -74,7 +75,11 @@ export class Runtime {
     this.renderer.resize(480, 360)
 
     this.isRunning = false
+
+    this.mouse = new Mouse(this.#canvas)
   }
+
+  readonly mouse: Mouse
 
   #startedMeta?: {
     targets: (RuntimeStage | RuntimeSprite)[]
