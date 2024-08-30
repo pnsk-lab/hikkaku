@@ -3,7 +3,7 @@ export class Mouse {
   #canvasRect: DOMRect
   #resizeHandler: () => void
 
-  getScratchXY(clientX: number, clientY: number) {
+  getScratchXY(clientX: number, clientY: number): [scratchX: number, scratchY: number] {
     const delta = this.#canvasRect.width / 480
     return [
       (clientX - this.#canvasRect.x) / delta - 240,
@@ -20,7 +20,11 @@ export class Mouse {
     y: 0,
   }
 
-  get data() {
+  get data(): {
+    isDowned: boolean
+    x: number
+    y: number
+  } {
     return {
       isDowned: this.#isDowned,
       x: this.#position.x,
