@@ -182,8 +182,24 @@ export const round = (value: PrimitiveSource<number>) => {
   })
 }
 
+export type MathOpOperator =
+  | 'abs'
+  | 'floor'
+  | 'ceiling'
+  | 'sqrt'
+  | 'sin'
+  | 'cos'
+  | 'tan'
+  | 'asin'
+  | 'acos'
+  | 'atan'
+  | 'ln'
+  | 'log'
+  | 'e ^'
+  | '10 ^'
+
 export const mathop = (
-  operator: string,
+  operator: MathOpOperator,
   value: PrimitiveSource<number>
 ) => {
   return block('operator_mathop', {
