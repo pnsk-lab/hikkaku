@@ -5,6 +5,7 @@ import { Project } from "../src/compiler/project";
 import { whenFlagClicked } from "../src/blocks/events";
 import { ASSET_CAT1, ASSET_CAT2 } from "../src/utils/assets";
 import { forever } from "../src/blocks/control";
+import { getMouseX } from "../src/blocks/sensing";
 
 const project = new Project()
 
@@ -26,7 +27,7 @@ sprite1.costumes = [
 sprite1.run(() => {
   whenFlagClicked(() => {
     forever(() => {
-      moveSteps(add(10, 30))
+      moveSteps(getMouseX())
     })
   })
 })
