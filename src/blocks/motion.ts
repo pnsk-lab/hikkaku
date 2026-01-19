@@ -1,4 +1,3 @@
-import type * as sb3 from "@pnsk-lab/sb3-types"
 import { fromPrimitiveSource } from "../compiler/block-helper"
 import type { PrimitiveSource } from "../compiler/types"
 import { block } from "../compiler/composer"
@@ -50,4 +49,93 @@ export const setY = (y: PrimitiveSource<number>) => {
       Y: fromPrimitiveSource(y)
     },
   })
+}
+
+export const goTo = (target: string) => {
+  block('motion_goto', {
+    fields: {
+      TO: [target, null]
+    }
+  })
+}
+
+export const turnRight = (degrees: PrimitiveSource<number>) => {
+  block('motion_turnright', {
+    inputs: {
+      DEGREES: fromPrimitiveSource(degrees)
+    }
+  })
+}
+
+export const turnLeft = (degrees: PrimitiveSource<number>) => {
+  block('motion_turnleft', {
+    inputs: {
+      DEGREES: fromPrimitiveSource(degrees)
+    }
+  })
+}
+
+export const pointInDirection = (direction: PrimitiveSource<number>) => {
+  block('motion_pointindirection', {
+    inputs: {
+      DIRECTION: fromPrimitiveSource(direction)
+    }
+  })
+}
+
+export const pointTowards = (target: string) => {
+  block('motion_pointtowards', {
+    fields: {
+      TOWARDS: [target, null]
+    }
+  })
+}
+
+export const glide = (
+  seconds: PrimitiveSource<number>,
+  x: PrimitiveSource<number>,
+  y: PrimitiveSource<number>
+) => {
+  block('motion_glidesecstoxy', {
+    inputs: {
+      SECS: fromPrimitiveSource(seconds),
+      X: fromPrimitiveSource(x),
+      Y: fromPrimitiveSource(y)
+    }
+  })
+}
+
+export const glideTo = (seconds: PrimitiveSource<number>, target: string) => {
+  block('motion_glideto', {
+    inputs: {
+      SECS: fromPrimitiveSource(seconds)
+    },
+    fields: {
+      TO: [target, null]
+    }
+  })
+}
+
+export const ifOnEdgeBounce = () => {
+  block('motion_ifonedgebounce', {})
+}
+
+export const setRotationStyle = (style: "all around" | "left-right" | "don't rotate") => {
+  block('motion_setrotationstyle', {
+    fields: {
+      STYLE: [style, null]
+    }
+  })
+}
+
+export const getX = () => {
+  return block('motion_xposition', {})
+}
+
+export const getY = () => {
+  return block('motion_yposition', {})
+}
+
+export const getDirection = () => {
+  return block('motion_direction', {})
 }
