@@ -4,6 +4,8 @@ import { createBlocks } from "./composer"
 export class Target<IsStage extends boolean = boolean> {
   readonly isStage: IsStage
   readonly name: IsStage extends true ? 'Stage' : string
+  costumes: sb3.Costume[] | null = null
+  currentCostume = 0
 
   #blocks: Record<string, sb3.Block> = {}
   constructor(
@@ -25,18 +27,21 @@ export class Target<IsStage extends boolean = boolean> {
   }
 
   toScratch(): IsStage extends true ? sb3.Stage : sb3.Sprite {
+    const costumes = (this.costumes && this.costumes.length > 0)
+      ? this.costumes
+      : [{
+        name: this.name,
+        assetId: 'cd21514d0531fdffb22204e0ec5ed84a',
+        dataFormat: 'svg' as const
+      }]
     const target: sb3.Target = {
       blocks: this.#blocks,
       broadcasts: {},
       variables: {},
       lists: {},
       sounds: [],
-      currentCostume: 0,
-      costumes: [{
-        name: this.name,
-        assetId: 'cd21514d0531fdffb22204e0ec5ed84a',
-        dataFormat: 'svg'
-      }]
+      currentCostume: this.currentCostume,
+      costumes
     }
     if (this.isStage) {
       return {
