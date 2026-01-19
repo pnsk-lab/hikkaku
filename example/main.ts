@@ -25,8 +25,6 @@ sprite1.costumes = [
 
 sprite1.run(() => {
   whenFlagClicked(() => {
-    moveSteps(add(10, 30))
-    changeXBy(100)
     forever(() => {
       moveSteps(add(10, 30))
     })
@@ -35,4 +33,5 @@ sprite1.run(() => {
 
 export default project
 
+console.log(JSON.stringify(project.toScratch(), null, 2))
 import.meta.hot?.send('hikkaku:project', project.toScratch())

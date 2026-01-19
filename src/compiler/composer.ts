@@ -102,17 +102,24 @@ export const substack = (handler: Handler) => {
   const ctx = getRootContext()
   const blocks: sb3.Block[] = []
 
-  let firstBlockId: string | null = null
   catchNewBlocks(handler, (id, block) => {
-    if (!firstBlockId) {
-      firstBlockId = id
-    }
     ctx.blocks[id] = block
     blocks.push(block)
   })
   applyNextAndParent(blocks)
 
-  return firstBlockId as string | null
+  // Pick the first executable block (skip value blocks used as inputs).
+  for (const block of blocks) {
+    if (!block || ctx.usedAsValueSet.has(block)) {
+      continue
+    }
+    const blockId = ctx.blockToId.get(block)
+    if (blockId) {
+      return blockId
+    }
+  }
+
+  return null
 }
 
 export const createBlocks = (handler: Handler) => {
