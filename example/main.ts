@@ -1,9 +1,10 @@
-import { moveSteps } from "../src/blocks/motion";
+import { changeXBy, gotoXY, moveSteps, setX } from "../src/blocks/motion";
 import { add } from "../src/blocks/operator";
 import type * as sb3 from "@pnsk-lab/sb3-types";
 import { Project } from "../src/compiler/project";
 import { whenFlagClicked } from "../src/blocks/events";
 import { ASSET_CAT1, ASSET_CAT2 } from "../src/utils/assets";
+import { forever } from "../src/blocks/control";
 
 const project = new Project()
 
@@ -24,8 +25,11 @@ sprite1.costumes = [
 
 sprite1.run(() => {
   whenFlagClicked(() => {
-    moveSteps(add(10, 20))
     moveSteps(add(10, 30))
+    changeXBy(100)
+    forever(() => {
+      moveSteps(add(10, 30))
+    })
   })
 })
 
