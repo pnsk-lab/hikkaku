@@ -1,5 +1,9 @@
 import type * as sb3 from "@pnsk-lab/sb3-types"
 import { createBlocks } from "./composer"
+import type { ListReference, VariableReference } from "./types"
+
+let nextAssetId = 0
+const createAssetId = () => `asset-${(++nextAssetId).toString(16)}`
 
 export class Target<IsStage extends boolean = boolean> {
   readonly isStage: IsStage
@@ -8,6 +12,8 @@ export class Target<IsStage extends boolean = boolean> {
   currentCostume = 0
 
   #blocks: Record<string, sb3.Block> = {}
+  #variables: Record<string, sb3.ScalarVariable> = {}
+  #lists: Record<string, sb3.List> = {}
   constructor(
     isStage: IsStage,
     name: IsStage extends true ? 'Stage' : string
@@ -26,6 +32,33 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
+  createVariable (
+    name: string,
+    defaultValue: sb3.ScalarVal = 0,
+    isCloudVariable = false
+  ): VariableReference {
+    const id = createAssetId()
+    this.#variables[id] = [name, defaultValue, isCloudVariable]
+    return {
+      id,
+      name,
+      type: 'variable'
+    }
+  }
+
+  createList (
+    name: string,
+    defaultValue: sb3.ScalarVal[] = []
+  ): ListReference {
+    const id = createAssetId()
+    this.#lists[id] = [name, defaultValue]
+    return {
+      id,
+      name,
+      type: 'list'
+    }
+  }
+
   toScratch(): IsStage extends true ? sb3.Stage : sb3.Sprite {
     const costumes = (this.costumes && this.costumes.length > 0)
       ? this.costumes
@@ -37,8 +70,8 @@ export class Target<IsStage extends boolean = boolean> {
     const target: sb3.Target = {
       blocks: this.#blocks,
       broadcasts: {},
-      variables: {},
-      lists: {},
+      variables: this.#variables,
+      lists: this.#lists,
       sounds: [],
       currentCostume: this.currentCostume,
       costumes

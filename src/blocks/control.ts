@@ -1,5 +1,5 @@
 import { fromPrimitiveSource } from "../compiler/block-helper"
-import type { PrimitiveSource } from "../compiler/types"
+import type { PrimitiveSource, VariableReference } from "../compiler/types"
 import { block, substack } from "../compiler/composer"
 
 export type StopOption =
@@ -7,8 +7,6 @@ export type StopOption =
   | 'this script'
   | 'other scripts in sprite'
   | 'other scripts in stage'
-
-export type VariableField = [string, string]
 
 export const repeat = (
   times: PrimitiveSource<number>,
@@ -50,7 +48,7 @@ export const repeatWhile = (
 }
 
 export const forEach = (
-  variable: VariableField,
+  variable: VariableReference,
   value: PrimitiveSource<number>,
   handler: () => void
 ) => {
@@ -61,7 +59,7 @@ export const forEach = (
       ...(substackId ? { SUBSTACK: [2, substackId] } : {})
     },
     fields: {
-      VARIABLE: variable
+      VARIABLE: [variable.name, variable.id]
     }
   })
 }
