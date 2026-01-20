@@ -1,5 +1,5 @@
 import * as sb3 from "@pnsk-lab/sb3-types";
-import type { CostumeSource, PrimitiveAvailableOnScratch, PrimitiveSource } from "./types";
+import type { CostumeSource, PrimitiveAvailableOnScratch, PrimitiveSource, SoundSource } from "./types";
 
 export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
   source: PrimitiveSource<T>,
@@ -19,6 +19,14 @@ export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
 
 export const fromCostumeSource = (source: CostumeSource): sb3.Input => {
   if (typeof source === 'object' && source !== null && 'type' in source && source.type === 'costume') {
+    return fromPrimitiveSource(source.name)
+  }
+
+  return fromPrimitiveSource(source)
+}
+
+export const fromSoundSource = (source: SoundSource): sb3.Input => {
+  if (typeof source === 'object' && source !== null && 'type' in source && source.type === 'sound') {
     return fromPrimitiveSource(source.name)
   }
 

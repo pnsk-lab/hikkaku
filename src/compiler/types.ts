@@ -24,6 +24,13 @@ export interface CostumeReference {
 
 export type CostumeSource = PrimitiveSource<string> | CostumeReference
 
+export interface SoundReference {
+  name: string
+  type: 'sound'
+}
+
+export type SoundSource = PrimitiveSource<string> | SoundReference
+
 export interface HikkakuBlock {
   id: string
 }
