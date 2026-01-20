@@ -1,16 +1,17 @@
 import { fromPrimitiveSource } from "../compiler/block-helper"
 import { block } from "../compiler/composer"
-import type { PrimitiveSource } from "../compiler/types"
-import type { Fields } from "@pnsk-lab/sb3-types"
+import type { PrimitiveSource, ListReference, VariableReference } from "../compiler/types"
 
-export type VariableField = Fields
-export type ListField = Fields
+export type VariableField = VariableReference
+export type ListField = ListReference
 export type ListIndex = PrimitiveSource<number | string>
+
+const toField = (field: VariableField | ListField) => [field.name, field.id] as const
 
 export const getVariable = (variable: VariableField) => {
   return block('data_variable', {
     fields: {
-      VARIABLE: variable
+      VARIABLE: toField(variable)
     }
   })
 }
@@ -24,7 +25,7 @@ export const setVariableTo = (
       VALUE: fromPrimitiveSource(value)
     },
     fields: {
-      VARIABLE: variable
+      VARIABLE: toField(variable)
     }
   })
 }
@@ -38,7 +39,7 @@ export const changeVariableBy = (
       VALUE: fromPrimitiveSource(value)
     },
     fields: {
-      VARIABLE: variable
+      VARIABLE: toField(variable)
     }
   })
 }
@@ -46,7 +47,7 @@ export const changeVariableBy = (
 export const showVariable = (variable: VariableField) => {
   return block('data_showvariable', {
     fields: {
-      VARIABLE: variable
+      VARIABLE: toField(variable)
     }
   })
 }
@@ -54,7 +55,7 @@ export const showVariable = (variable: VariableField) => {
 export const hideVariable = (variable: VariableField) => {
   return block('data_hidevariable', {
     fields: {
-      VARIABLE: variable
+      VARIABLE: toField(variable)
     }
   })
 }
@@ -62,7 +63,7 @@ export const hideVariable = (variable: VariableField) => {
 export const getListContents = (list: ListField) => {
   return block('data_listcontents', {
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -76,7 +77,7 @@ export const addToList = (
       ITEM: fromPrimitiveSource(item)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -87,7 +88,7 @@ export const deleteOfList = (list: ListField, index: ListIndex) => {
       INDEX: fromPrimitiveSource(index)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -95,7 +96,7 @@ export const deleteOfList = (list: ListField, index: ListIndex) => {
 export const deleteAllOfList = (list: ListField) => {
   return block('data_deletealloflist', {
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -111,7 +112,7 @@ export const insertAtList = (
       ITEM: fromPrimitiveSource(item)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -127,7 +128,7 @@ export const replaceItemOfList = (
       ITEM: fromPrimitiveSource(item)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -138,7 +139,7 @@ export const getItemOfList = (list: ListField, index: ListIndex) => {
       INDEX: fromPrimitiveSource(index)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -152,7 +153,7 @@ export const getItemNumOfList = (
       ITEM: fromPrimitiveSource(item)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -160,7 +161,7 @@ export const getItemNumOfList = (
 export const lengthOfList = (list: ListField) => {
   return block('data_lengthoflist', {
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -174,7 +175,7 @@ export const listContainsItem = (
       ITEM: fromPrimitiveSource(item)
     },
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -182,7 +183,7 @@ export const listContainsItem = (
 export const showList = (list: ListField) => {
   return block('data_showlist', {
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
@@ -190,7 +191,7 @@ export const showList = (list: ListField) => {
 export const hideList = (list: ListField) => {
   return block('data_hidelist', {
     fields: {
-      LIST: list
+      LIST: toField(list)
     }
   })
 }
