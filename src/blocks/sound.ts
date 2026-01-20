@@ -1,0 +1,77 @@
+import { fromPrimitiveSource } from "../compiler/block-helper"
+import { block } from "../compiler/composer"
+import type { PrimitiveSource } from "../compiler/types"
+
+export type SoundEffect = 'pitch' | 'pan'
+
+export const playSound = (sound: PrimitiveSource<string>) => {
+  return block('sound_play', {
+    inputs: {
+      SOUND_MENU: fromPrimitiveSource(sound)
+    }
+  })
+}
+
+export const playSoundUntilDone = (sound: PrimitiveSource<string>) => {
+  return block('sound_playuntildone', {
+    inputs: {
+      SOUND_MENU: fromPrimitiveSource(sound)
+    }
+  })
+}
+
+export const stopAllSounds = () => {
+  return block('sound_stopallsounds', {})
+}
+
+export const setEffectTo = (
+  effect: SoundEffect,
+  value: PrimitiveSource<number>
+) => {
+  return block('sound_seteffectto', {
+    inputs: {
+      VALUE: fromPrimitiveSource(value)
+    },
+    fields: {
+      EFFECT: [effect, null]
+    }
+  })
+}
+
+export const changeEffectBy = (
+  effect: SoundEffect,
+  value: PrimitiveSource<number>
+) => {
+  return block('sound_changeeffectby', {
+    inputs: {
+      VALUE: fromPrimitiveSource(value)
+    },
+    fields: {
+      EFFECT: [effect, null]
+    }
+  })
+}
+
+export const clearEffects = () => {
+  return block('sound_cleareffects', {})
+}
+
+export const setVolumeTo = (value: PrimitiveSource<number>) => {
+  return block('sound_setvolumeto', {
+    inputs: {
+      VOLUME: fromPrimitiveSource(value)
+    }
+  })
+}
+
+export const changeVolumeBy = (value: PrimitiveSource<number>) => {
+  return block('sound_changevolumeby', {
+    inputs: {
+      VOLUME: fromPrimitiveSource(value)
+    }
+  })
+}
+
+export const getVolume = () => {
+  return block('sound_volume', {})
+}

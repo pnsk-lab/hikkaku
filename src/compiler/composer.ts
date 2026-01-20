@@ -24,6 +24,7 @@ export interface BlockInit {
   inputs?: Record<string, sb3.Input>
   fields?: Record<string, sb3.Fields>
   topLevel?: boolean
+  mutation?: sb3.Mutation
 }
 export const block = (opcode: string, init: BlockInit): HikkakuBlock => {
   const ctx = getRootContext()
@@ -32,6 +33,7 @@ export const block = (opcode: string, init: BlockInit): HikkakuBlock => {
     opcode,
     inputs: init.inputs ?? {},
     fields: init.fields ?? {},
+    mutation: init.mutation,
     shadow: false,
     topLevel: init.topLevel ?? false,
     x: 0,
