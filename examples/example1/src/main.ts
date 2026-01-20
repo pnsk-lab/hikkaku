@@ -1,11 +1,12 @@
 import { ASSET_CAT1, ASSET_CAT2, Project } from 'hikkaku'
 import {
-  argumentReporterBoolean,
-  defineProcedure,
-  getMouseX,
-  gotoXY,
-  procedureBoolean,
-  procedureLabel,
+  forever,
+  glide,
+  pointInDirection,
+  random,
+  setRotationStyle,
+  switchCostumeTo,
+  whenFlagClicked,
 } from 'hikkaku/blocks'
 
 const project = new Project()
@@ -25,17 +26,20 @@ const _cat1 = sprite1.addCostume({
 })
 
 sprite1.run(() => {
-  defineProcedure(
-    [procedureLabel('Move to mouse pointer'), procedureBoolean('isFast')],
-    ({ isFast }) => {
-      argumentReporterBoolean(isFast)
-
-      gotoXY(getMouseX(), 10)
-    },
-  )
+  whenFlagClicked(() => {
+    switchCostumeTo(_cat3)
+    setRotationStyle('all around')
+    forever(() => {
+      switchCostumeTo(_cat1)
+      pointInDirection(random(-180, 180))
+      glide(random(0.2, 1.2), random(-220, 220), random(-160, 160))
+      switchCostumeTo(_cat3)
+      pointInDirection(random(-180, 180))
+      glide(random(0.2, 1.2), random(-220, 220), random(-160, 160))
+    })
+  })
 })
 
 export default project
 
-console.log(JSON.stringify(project.toScratch(), null, 2))
 import.meta.hot?.send('hikkaku:project', project.toScratch())
