@@ -42,7 +42,7 @@ export class Target<IsStage extends boolean = boolean> {
     return {
       id,
       name,
-      isVariable: true
+      type: 'variable'
     }
   }
 
@@ -55,7 +55,7 @@ export class Target<IsStage extends boolean = boolean> {
     return {
       id,
       name,
-      isList: true
+      type: 'list'
     }
   }
 

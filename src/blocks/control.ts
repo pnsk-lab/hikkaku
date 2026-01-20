@@ -8,8 +8,6 @@ export type StopOption =
   | 'other scripts in sprite'
   | 'other scripts in stage'
 
-export type VariableField = VariableReference
-
 export const repeat = (
   times: PrimitiveSource<number>,
   handler: () => void
@@ -50,7 +48,7 @@ export const repeatWhile = (
 }
 
 export const forEach = (
-  variable: VariableField,
+  variable: VariableReference,
   value: PrimitiveSource<number>,
   handler: () => void
 ) => {

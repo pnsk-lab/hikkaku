@@ -4,16 +4,17 @@ export type PrimitiveAvailableOnScratch = number | boolean | string;
 
 export type PrimitiveSource<T extends PrimitiveAvailableOnScratch> = T | HikkakuBlock
 
-export type VariableReference = {
+export interface VariableBase {
   id: string
   name: string
-  isVariable: true
 }
 
-export type ListReference = {
-  id: string
-  name: string
-  isList: true
+export interface VariableReference extends VariableBase {
+  type: 'variable'
+}
+
+export interface ListReference extends VariableBase {
+  type: 'list'
 }
 
 export interface HikkakuBlock {
