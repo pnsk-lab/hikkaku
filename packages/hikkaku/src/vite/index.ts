@@ -1,5 +1,4 @@
 import { createServerModuleRunner, type DevEnvironment, type PluginOption } from 'vite'
-import { createHikkakuEnvironment } from './env'
 import type * as sb3 from '@pnsk-lab/sb3-types'
 
 const BASE_URL = 'https://scratchfoundation.github.io/scratch-gui/'

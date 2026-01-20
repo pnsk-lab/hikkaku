@@ -95,7 +95,7 @@ export const nextBackdrop = () => {
   return block('looks_nextbackdrop', {})
 }
 
-export const changeEffectBy = (
+export const changeLooksEffectBy = (
   effect: LookEffect,
   value: PrimitiveSource<number>
 ) => {
@@ -109,7 +109,7 @@ export const changeEffectBy = (
   })
 }
 
-export const setEffectTo = (
+export const setLooksEffectTo = (
   effect: LookEffect,
   value: PrimitiveSource<number>
 ) => {

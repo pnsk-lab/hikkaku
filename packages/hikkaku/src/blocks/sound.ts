@@ -24,7 +24,7 @@ export const stopAllSounds = () => {
   return block('sound_stopallsounds', {})
 }
 
-export const setEffectTo = (
+export const setSoundEffectTo = (
   effect: SoundEffect,
   value: PrimitiveSource<number>
 ) => {
@@ -38,7 +38,7 @@ export const setEffectTo = (
   })
 }
 
-export const changeEffectBy = (
+export const changeSoundEffectBy = (
   effect: SoundEffect,
   value: PrimitiveSource<number>
 ) => {
