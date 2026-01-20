@@ -1,9 +1,10 @@
 import { fromPrimitiveSource } from "../compiler/block-helper"
 import { block } from "../compiler/composer"
 import type { PrimitiveSource } from "../compiler/types"
+import type { Fields } from "@pnsk-lab/sb3-types"
 
-export type VariableField = [string, string]
-export type ListField = [string, string]
+export type VariableField = Fields
+export type ListField = Fields
 export type ListIndex = PrimitiveSource<number | string>
 
 export const getVariable = (variable: VariableField) => {

@@ -1,5 +1,6 @@
 import { fromPrimitiveSource } from "../compiler/block-helper"
 import type { PrimitiveSource } from "../compiler/types"
+import type { Fields } from "@pnsk-lab/sb3-types"
 import { block, substack } from "../compiler/composer"
 
 export type StopOption =
@@ -8,7 +9,7 @@ export type StopOption =
   | 'other scripts in sprite'
   | 'other scripts in stage'
 
-export type VariableField = [string, string]
+export type VariableField = Fields
 
 export const repeat = (
   times: PrimitiveSource<number>,
