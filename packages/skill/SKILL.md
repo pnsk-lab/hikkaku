@@ -12,5 +12,8 @@ This document provides best practices for using Hikkaku to create Scratch projec
 
 ## SKILL Structure
 
-* './rules/usage.md': Basic usage of Hikkaku.
-* './rules/blocks.md': List of available blocks.
+* './guides/usage.md': Basic usage of Hikkaku.
+* './guides/variable-usage.md': How to create and use variables and lists.
+* './guides/custom-blocks-usage.md': How to define and call custom blocks (procedures).
+* './guides/blocks/overview.md': List of available blocks and common concepts.
+* './guides/blocks/*': Block references split by category (control, data, events, looks, motion, operator, procedures, sensing, sound).

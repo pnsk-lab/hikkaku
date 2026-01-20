@@ -59,3 +59,36 @@ bg1.run(() => {
 })
 ```
 
+
+## Attention
+
+This TypeScript code is not runnable directly, this is for compilation to Scratch project file.
+This means you cannot use normal JavaScript/TypeScript features like DOM manipulation, console.log, etc.
+
+This code is safe:
+```ts
+const x = Number.parseInt(await readFile('input.txt'), 10)
+
+sprite1.run(() => {
+  whenFlagClicked(() => {
+    gotoXY(x, 10) // use variables
+  })
+})
+```
+The code runs on Node.js environment to generate Scratch project file.
+
+This code is NOT safe:
+```ts
+sprite1.run(() => {
+  whenFlagClicked(() => {
+    console.log('Hello, world!') // This does not work
+    document.body.style.backgroundColor = 'red' // This does not 
+    fetch('https://example.com') // This does not work
+    readFile('input.txt') // This does not work
+    gotoXY(Math.random() * 100, 10) // This does not work, just embed a random number in project file
+    gotoXY(getMouseX() > 0 ? -1 : 1, 10) // You cannot use `>` or other operators
+  })
+})
+```
+
+You cannot use browser or Node.js APIs inside `run()` or block handlers. These effects are running only once in compile time, not in Scratch runtime.

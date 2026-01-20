@@ -21,8 +21,8 @@ export type DragMode = 'draggable' | 'not draggable'
 
 export const touchingObject = (target: string) => {
   return valueBlock('sensing_touchingobject', {
-    fields: {
-      TOUCHINGOBJECTMENU: [target, null],
+    inputs: {
+      TOUCHINGOBJECTMENU: fromPrimitiveSource(target),
     },
   })
 }
@@ -75,10 +75,10 @@ export const getMouseDown = () => {
   return valueBlock('sensing_mousedown', {})
 }
 
-export const getKeyPressed = (key: string) => {
+export const getKeyPressed = (key: PrimitiveSource<string>) => {
   return valueBlock('sensing_keypressed', {
-    fields: {
-      KEY_OPTION: [key, null],
+    inputs: {
+      KEY_OPTION: fromPrimitiveSource(key),
     },
   })
 }

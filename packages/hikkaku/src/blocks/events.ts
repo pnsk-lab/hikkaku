@@ -1,3 +1,4 @@
+import type { Input } from '@pnsk-lab/sb3-types'
 import { fromPrimitiveSource } from '../compiler/block-helper'
 import { block } from '../compiler/composer'
 import type { PrimitiveSource } from '../compiler/types'
@@ -97,7 +98,11 @@ export const whenGreaterThan = (
 export const broadcast = (message: PrimitiveSource<string>) => {
   return block('event_broadcast', {
     inputs: {
-      BROADCAST_INPUT: fromPrimitiveSource(message),
+      BROADCAST_INPUT:
+        typeof message === 'string'
+          ? // @ts-expect-error type issue
+            ([1, [11, message]] as Input)
+          : fromPrimitiveSource(message),
     },
   })
 }

@@ -127,8 +127,8 @@ export const stop = (option: StopOption) => {
 
 export const createClone = (target: string) => {
   return block('control_create_clone_of', {
-    fields: {
-      CLONE_OPTION: [target, null],
+    inputs: {
+      CLONE_OPTION: fromPrimitiveSource(target),
     },
   })
 }
@@ -147,6 +147,14 @@ export const incrCounter = () => {
 
 export const clearCounter = () => {
   return block('control_clear_counter', {})
+}
+
+export const controlStartAsClone = (stack?: () => void) => {
+  const res = block('control_start_as_clone', {
+    topLevel: true,
+  })
+  stack?.()
+  return res
 }
 
 export const allAtOnce = (handler: () => void) => {

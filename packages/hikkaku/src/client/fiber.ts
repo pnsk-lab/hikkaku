@@ -18,6 +18,11 @@ export const findDOMAppRoot = () => {
 
 interface FiberNode {
   child: ScratchAppFiberNode | FiberNode | null
+  sibling: ScratchAppFiberNode | FiberNode | null
+  type: string | null
+  elementType?: {
+    propTypes?: Record<string, unknown>
+  }
 }
 interface ScratchGUIReduxStoreType {
   vm: ScratchVM
@@ -40,6 +45,29 @@ type ScratchRoot = {
   }
 } & Element
 
+export function getSpecifiedFiber(
+  root: FiberNode,
+  cond: (fiber: FiberNode) => boolean,
+) {
+  const stack = [root]
+  while (true) {
+    const fiber = stack.pop()
+    if (!fiber) {
+      return null
+    }
+
+    if (cond(fiber)) {
+      return fiber
+    }
+    if (fiber.child) {
+      stack.push(fiber.child)
+    }
+    if (fiber.sibling) {
+      stack.push(fiber.sibling)
+    }
+  }
+}
+
 const getAppFiberNode = (root: FiberNode): ScratchAppFiberNode => {
   let cur = root.child
   while (cur) {
@@ -58,8 +86,25 @@ export const getScratchInternalStates = (root: ScratchRoot) => {
   const reduxState = appFiberNode.memoizedProps.store.getState()
   const vm = reduxState.scratchGui.vm
 
+  const scratchBlocksFiber = getSpecifiedFiber(rootFiberNode, (fiber) => {
+    if (typeof fiber.type === 'function') {
+      const propTypes = fiber.elementType?.propTypes
+      if (propTypes && 'toolboxXML' in propTypes) {
+        return true
+      }
+    }
+    return false
+  })
+  // @ts-expect-error scratchBlocksFiber existence checked
+  const scratchBlocks = scratchBlocksFiber.stateNode.ScratchBlocks as {
+    getMainWorkspace: () => {
+      cleanUp: () => void
+    }
+  }
+
   return {
     reduxState,
     vm,
+    scratchBlocks,
   }
 }
