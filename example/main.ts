@@ -6,27 +6,29 @@ import { whenFlagClicked } from "../src/blocks/events";
 import { ASSET_CAT1, ASSET_CAT2 } from "../src/utils/assets";
 import { forever } from "../src/blocks/control";
 import { getMouseX } from "../src/blocks/sensing";
+import { switchCostumeTo } from "../src/blocks/looks";
 
 const project = new Project()
 
 const sprite1 = project.createSprite('スプライト1')
 
-sprite1.costumes = [
-  {
-    name: 'cat3',
-    assetId: ASSET_CAT1,
-    dataFormat: 'svg'
-  },
-  {
-    name: 'cat1',
-    assetId: ASSET_CAT2,
-    dataFormat: 'svg'
-  }
-]
+const cat3 = sprite1.addCostume({
+  name: 'cat3',
+  assetId: ASSET_CAT1,
+  dataFormat: 'svg'
+})
+
+const cat1 = sprite1.addCostume({
+  name: 'cat1',
+  assetId: ASSET_CAT2,
+  dataFormat: 'svg'
+})
 
 sprite1.run(() => {
   whenFlagClicked(() => {
+    switchCostumeTo(cat3)
     forever(() => {
+      switchCostumeTo(cat1)
       moveSteps(getMouseX())
     })
   })

@@ -1,6 +1,6 @@
 import type * as sb3 from "@pnsk-lab/sb3-types"
 import { createBlocks } from "./composer"
-import type { ListReference, VariableReference } from "./types"
+import type { CostumeReference, ListReference, VariableReference } from "./types"
 
 let nextAssetId = 0
 const createAssetId = () => `asset-${(++nextAssetId).toString(16)}`
@@ -8,12 +8,12 @@ const createAssetId = () => `asset-${(++nextAssetId).toString(16)}`
 export class Target<IsStage extends boolean = boolean> {
   readonly isStage: IsStage
   readonly name: IsStage extends true ? 'Stage' : string
-  costumes: sb3.Costume[] | null = null
   currentCostume = 0
 
   #blocks: Record<string, sb3.Block> = {}
   #variables: Record<string, sb3.ScalarVariable> = {}
   #lists: Record<string, sb3.List> = {}
+  #costumes: sb3.Costume[] = []
   constructor(
     isStage: IsStage,
     name: IsStage extends true ? 'Stage' : string
@@ -59,9 +59,17 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
+  addCostume (costume: sb3.Costume): CostumeReference {
+    this.#costumes.push(costume)
+    return {
+      name: costume.name,
+      type: 'costume' as const
+    }
+  }
+
   toScratch(): IsStage extends true ? sb3.Stage : sb3.Sprite {
-    const costumes = (this.costumes && this.costumes.length > 0)
-      ? this.costumes
+    const costumes = (this.#costumes.length > 0)
+      ? this.#costumes
       : [{
         name: this.name,
         assetId: 'cd21514d0531fdffb22204e0ec5ed84a',
