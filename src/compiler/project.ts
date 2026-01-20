@@ -1,6 +1,6 @@
 import type * as sb3 from "@pnsk-lab/sb3-types"
 import { createBlocks } from "./composer"
-import type { CostumeReference, ListReference, VariableReference } from "./types"
+import type { CostumeReference, ListReference, SoundReference, VariableReference } from "./types"
 
 let nextAssetId = 0
 const createAssetId = () => `asset-${(++nextAssetId).toString(16)}`
@@ -14,6 +14,7 @@ export class Target<IsStage extends boolean = boolean> {
   #variables: Record<string, sb3.ScalarVariable> = {}
   #lists: Record<string, sb3.List> = {}
   #costumes: sb3.Costume[] = []
+  #sounds: sb3.Sound[] = []
   constructor(
     isStage: IsStage,
     name: IsStage extends true ? 'Stage' : string
@@ -67,6 +68,14 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
+  addSound (sound: sb3.Sound): SoundReference {
+    this.#sounds.push(sound)
+    return {
+      name: sound.name,
+      type: 'sound' as const
+    }
+  }
+
   toScratch(): IsStage extends true ? sb3.Stage : sb3.Sprite {
     const costumes = (this.#costumes.length > 0)
       ? this.#costumes
@@ -80,7 +89,7 @@ export class Target<IsStage extends boolean = boolean> {
       broadcasts: {},
       variables: this.#variables,
       lists: this.#lists,
-      sounds: [],
+      sounds: this.#sounds,
       currentCostume: this.currentCostume,
       costumes
     }

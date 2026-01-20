@@ -1,21 +1,21 @@
-import { fromPrimitiveSource } from "../compiler/block-helper"
+import { fromPrimitiveSource, fromSoundSource } from "../compiler/block-helper"
 import { block } from "../compiler/composer"
-import type { PrimitiveSource } from "../compiler/types"
+import type { PrimitiveSource, SoundSource } from "../compiler/types"
 
 export type SoundEffect = 'pitch' | 'pan'
 
-export const playSound = (sound: PrimitiveSource<string>) => {
+export const playSound = (sound: SoundSource) => {
   return block('sound_play', {
     inputs: {
-      SOUND_MENU: fromPrimitiveSource(sound)
+      SOUND_MENU: fromSoundSource(sound)
     }
   })
 }
 
-export const playSoundUntilDone = (sound: PrimitiveSource<string>) => {
+export const playSoundUntilDone = (sound: SoundSource) => {
   return block('sound_playuntildone', {
     inputs: {
-      SOUND_MENU: fromPrimitiveSource(sound)
+      SOUND_MENU: fromSoundSource(sound)
     }
   })
 }
