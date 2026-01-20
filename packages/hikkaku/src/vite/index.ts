@@ -34,7 +34,10 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
         if (req.url === '/') {
           const html = (await fetch(BASE_URL).then(res => res.text()))
             .replace('gui.js', 'https://scratchfoundation.github.io/scratch-gui/gui.js')
-            .replace('</head>', '<script src="/@vite/client" type="module"></script><script src="/src/client/index.ts" type="module"></script></head>')
+            .replace(
+              '</head>',
+              '<script src="/@vite/client" type="module"></script><script type="module">import "hikkaku/client"</script></head>'
+            )
           res.setHeader('Content-Type', 'text/html')
           res.end(html)
           return

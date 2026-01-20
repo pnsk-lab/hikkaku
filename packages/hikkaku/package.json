@@ -1,0 +1,27 @@
+{
+  "name": "hikkaku",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "module": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client/index.ts",
+    "./vite": "./src/vite/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {},
+  "devDependencies": {
+    "@turbowarp/types": "^0.0.13",
+    "@types/bun": "latest",
+    "vite": "^6.3.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.3",
+    "@pnsk-lab/sb3-types": "npm:@jsr/pnsk-lab__sb3-types",
+    "hono": "^4.7.10"
+  }
+}

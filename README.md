@@ -1,15 +1,16 @@
 # hikkaku
 
-To install dependencies:
+## Setup
 
 ```bash
 bun install
 ```
 
-To run:
+## Development example
 
 ```bash
-bun run index.ts
+bun run dev
 ```
 
-This project was created using `bun init` in bun v1.2.14. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+This workspace contains the `hikkaku` package in `packages/hikkaku` and the dev example in
+`examples/example1`.

@@ -1,22 +1,11 @@
 {
-  "name": "hikkaku",
-  "module": "index.ts",
-  "type": "module",
+  "name": "hikkaku-workspace",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "scripts": {
-    "dev": "vite"
-  },
-  "devDependencies": {
-    "@turbowarp/types": "^0.0.13",
-    "@types/bun": "latest",
-    "vite": "^6.3.5"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "@hono/node-server": "^1.14.3",
-    "@pnsk-lab/sb3-types": "npm:@jsr/pnsk-lab__sb3-types",
-    "hono": "^4.7.10"
+    "dev": "bun --cwd examples/example1 dev"
   }
 }

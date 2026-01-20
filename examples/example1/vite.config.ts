@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
-import hikkaku from './src/vite/index'
+import hikkaku from 'hikkaku/vite'
 
 export default defineConfig({
   plugins: [
     hikkaku({
-      entry: './example/main.ts'
+      entry: './src/main.ts'
     })
   ]
 })

@@ -1,0 +1,14 @@
+{
+  "name": "example1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}

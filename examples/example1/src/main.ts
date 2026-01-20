@@ -1,12 +1,11 @@
-import { changeXBy, gotoXY, moveSteps, setX } from "../src/blocks/motion";
-import { add } from "../src/blocks/operator";
-import type * as sb3 from "@pnsk-lab/sb3-types";
-import { Project } from "../src/compiler/project";
-import { whenFlagClicked } from "../src/blocks/events";
-import { ASSET_CAT1, ASSET_CAT2 } from "../src/utils/assets";
-import { forever } from "../src/blocks/control";
-import { getMouseX } from "../src/blocks/sensing";
-import { switchCostumeTo } from "../src/blocks/looks";
+import { changeXBy, gotoXY, moveSteps, setX } from "hikkaku/blocks/motion";
+import { add } from "hikkaku/blocks/operator";
+import { Project } from "hikkaku/compiler/project";
+import { whenFlagClicked } from "hikkaku/blocks/events";
+import { ASSET_CAT1, ASSET_CAT2 } from "hikkaku/utils/assets";
+import { forever } from "hikkaku/blocks/control";
+import { getMouseX } from "hikkaku/blocks/sensing";
+import { switchCostumeTo } from "hikkaku/blocks/looks";
 
 const project = new Project()
 
