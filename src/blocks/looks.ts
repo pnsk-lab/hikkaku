@@ -1,6 +1,6 @@
-import { fromPrimitiveSource } from "../compiler/block-helper"
+import { fromCostumeSource, fromPrimitiveSource } from "../compiler/block-helper"
 import { block } from "../compiler/composer"
-import type { PrimitiveSource } from "../compiler/types"
+import type { CostumeSource, PrimitiveSource } from "../compiler/types"
 
 export type LookEffect =
   | 'color'
@@ -63,10 +63,10 @@ export const hide = () => {
   return block('looks_hide', {})
 }
 
-export const switchCostumeTo = (costume: PrimitiveSource<string>) => {
+export const switchCostumeTo = (costume: CostumeSource) => {
   return block('looks_switchcostumeto', {
     inputs: {
-      COSTUME: fromPrimitiveSource(costume)
+      COSTUME: fromCostumeSource(costume)
     }
   })
 }
