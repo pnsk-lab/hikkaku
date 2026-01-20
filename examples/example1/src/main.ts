@@ -30,7 +30,7 @@ sprite1.run(() => {
     ({ isFast }) => {
       argumentReporterBoolean(isFast)
 
-      gotoXY(getMouseX(), 0)
+      gotoXY(getMouseX(), 10)
     },
   )
 })

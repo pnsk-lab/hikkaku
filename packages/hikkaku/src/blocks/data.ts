@@ -1,6 +1,6 @@
 import type { Fields } from '@pnsk-lab/sb3-types'
 import { fromPrimitiveSource } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { block, valueBlock } from '../compiler/composer'
 import type {
   ListReference,
   PrimitiveSource,
@@ -15,7 +15,7 @@ const toField = (field: VariableReference | ListReference): Fields => [
 ]
 
 export const getVariable = (variable: VariableReference) => {
-  return block('data_variable', {
+  return valueBlock('data_variable', {
     fields: {
       VARIABLE: toField(variable),
     },
@@ -67,7 +67,7 @@ export const hideVariable = (variable: VariableReference) => {
 }
 
 export const getListContents = (list: ListReference) => {
-  return block('data_listcontents', {
+  return valueBlock('data_listcontents', {
     fields: {
       LIST: toField(list),
     },
@@ -140,7 +140,7 @@ export const replaceItemOfList = (
 }
 
 export const getItemOfList = (list: ListReference, index: ListIndex) => {
-  return block('data_itemoflist', {
+  return valueBlock('data_itemoflist', {
     inputs: {
       INDEX: fromPrimitiveSource(index),
     },
@@ -154,7 +154,7 @@ export const getItemNumOfList = (
   list: ListReference,
   item: PrimitiveSource<string | number>,
 ) => {
-  return block('data_itemnumoflist', {
+  return valueBlock('data_itemnumoflist', {
     inputs: {
       ITEM: fromPrimitiveSource(item),
     },
@@ -165,7 +165,7 @@ export const getItemNumOfList = (
 }
 
 export const lengthOfList = (list: ListReference) => {
-  return block('data_lengthoflist', {
+  return valueBlock('data_lengthoflist', {
     fields: {
       LIST: toField(list),
     },
@@ -176,7 +176,7 @@ export const listContainsItem = (
   list: ListReference,
   item: PrimitiveSource<string | number>,
 ) => {
-  return block('data_listcontainsitem', {
+  return valueBlock('data_listcontainsitem', {
     inputs: {
       ITEM: fromPrimitiveSource(item),
     },

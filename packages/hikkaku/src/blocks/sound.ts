@@ -1,5 +1,5 @@
 import { fromPrimitiveSource, fromSoundSource } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { block, valueBlock } from '../compiler/composer'
 import type { PrimitiveSource, SoundSource } from '../compiler/types'
 
 export type SoundEffect = 'pitch' | 'pan'
@@ -73,5 +73,5 @@ export const changeVolumeBy = (value: PrimitiveSource<number>) => {
 }
 
 export const getVolume = () => {
-  return block('sound_volume', {})
+  return valueBlock('sound_volume', {})
 }

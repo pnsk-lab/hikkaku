@@ -2,7 +2,7 @@ import {
   fromCostumeSource,
   fromPrimitiveSource,
 } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { block, valueBlock } from '../compiler/composer'
 import type { CostumeSource, PrimitiveSource } from '../compiler/types'
 
 export type LookEffect =
@@ -169,11 +169,11 @@ export const goForwardBackwardLayers = (
 }
 
 export const getSize = () => {
-  return block('looks_size', {})
+  return valueBlock('looks_size', {})
 }
 
 export const getCostumeNumberName = (value: NumberName) => {
-  return block('looks_costumenumbername', {
+  return valueBlock('looks_costumenumbername', {
     fields: {
       NUMBER_NAME: [value, null],
     },
@@ -181,7 +181,7 @@ export const getCostumeNumberName = (value: NumberName) => {
 }
 
 export const getBackdropNumberName = (value: NumberName) => {
-  return block('looks_backdropnumbername', {
+  return valueBlock('looks_backdropnumbername', {
     fields: {
       NUMBER_NAME: [value, null],
     },

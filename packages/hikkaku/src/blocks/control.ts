@@ -1,5 +1,5 @@
 import { fromPrimitiveSource } from '../compiler/block-helper'
-import { block, substack } from '../compiler/composer'
+import { block, substack, valueBlock } from '../compiler/composer'
 import type { PrimitiveSource, VariableReference } from '../compiler/types'
 
 export type StopOption =
@@ -138,7 +138,7 @@ export const deleteThisClone = () => {
 }
 
 export const getCounter = () => {
-  return block('control_get_counter', {})
+  return valueBlock('control_get_counter', {})
 }
 
 export const incrCounter = () => {

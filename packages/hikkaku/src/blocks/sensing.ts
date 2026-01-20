@@ -1,12 +1,12 @@
 import { fromPrimitiveSource } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { block, valueBlock } from '../compiler/composer'
 import type { PrimitiveSource } from '../compiler/types'
 
 export const getMouseX = () => {
-  return block('sensing_mousex', {})
+  return valueBlock('sensing_mousex', {})
 }
 export const getMouseY = () => {
-  return block('sensing_mousey', {})
+  return valueBlock('sensing_mousey', {})
 }
 
 export type CurrentMenu =
@@ -20,7 +20,7 @@ export type CurrentMenu =
 export type DragMode = 'draggable' | 'not draggable'
 
 export const touchingObject = (target: string) => {
-  return block('sensing_touchingobject', {
+  return valueBlock('sensing_touchingobject', {
     fields: {
       TOUCHINGOBJECTMENU: [target, null],
     },
@@ -28,7 +28,7 @@ export const touchingObject = (target: string) => {
 }
 
 export const touchingColor = (color: PrimitiveSource<string>) => {
-  return block('sensing_touchingcolor', {
+  return valueBlock('sensing_touchingcolor', {
     inputs: {
       COLOR: fromPrimitiveSource(color),
     },
@@ -39,7 +39,7 @@ export const colorTouchingColor = (
   color: PrimitiveSource<string>,
   targetColor: PrimitiveSource<string>,
 ) => {
-  return block('sensing_coloristouchingcolor', {
+  return valueBlock('sensing_coloristouchingcolor', {
     inputs: {
       COLOR: fromPrimitiveSource(color),
       COLOR2: fromPrimitiveSource(targetColor),
@@ -48,7 +48,7 @@ export const colorTouchingColor = (
 }
 
 export const distanceTo = (target: string) => {
-  return block('sensing_distanceto', {
+  return valueBlock('sensing_distanceto', {
     fields: {
       DISTANCETOMENU: [target, null],
     },
@@ -56,7 +56,7 @@ export const distanceTo = (target: string) => {
 }
 
 export const getTimer = () => {
-  return block('sensing_timer', {})
+  return valueBlock('sensing_timer', {})
 }
 
 export const resetTimer = () => {
@@ -72,11 +72,11 @@ export const setDragMode = (mode: DragMode) => {
 }
 
 export const getMouseDown = () => {
-  return block('sensing_mousedown', {})
+  return valueBlock('sensing_mousedown', {})
 }
 
 export const getKeyPressed = (key: string) => {
-  return block('sensing_keypressed', {
+  return valueBlock('sensing_keypressed', {
     fields: {
       KEY_OPTION: [key, null],
     },
@@ -84,7 +84,7 @@ export const getKeyPressed = (key: string) => {
 }
 
 export const current = (menu: CurrentMenu) => {
-  return block('sensing_current', {
+  return valueBlock('sensing_current', {
     fields: {
       CURRENTMENU: [menu, null],
     },
@@ -92,7 +92,7 @@ export const current = (menu: CurrentMenu) => {
 }
 
 export const getAttributeOf = (property: string, target: string) => {
-  return block('sensing_of', {
+  return valueBlock('sensing_of', {
     fields: {
       PROPERTY: [property, null],
       OBJECT: [target, null],
@@ -101,15 +101,15 @@ export const getAttributeOf = (property: string, target: string) => {
 }
 
 export const daysSince2000 = () => {
-  return block('sensing_dayssince2000', {})
+  return valueBlock('sensing_dayssince2000', {})
 }
 
 export const getLoudness = () => {
-  return block('sensing_loudness', {})
+  return valueBlock('sensing_loudness', {})
 }
 
 export const isLoud = () => {
-  return block('sensing_loud', {})
+  return valueBlock('sensing_loud', {})
 }
 
 export const askAndWait = (question: PrimitiveSource<string>) => {
@@ -121,9 +121,9 @@ export const askAndWait = (question: PrimitiveSource<string>) => {
 }
 
 export const getAnswer = () => {
-  return block('sensing_answer', {})
+  return valueBlock('sensing_answer', {})
 }
 
 export const getUsername = () => {
-  return block('sensing_username', {})
+  return valueBlock('sensing_username', {})
 }

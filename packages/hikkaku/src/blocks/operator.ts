@@ -1,9 +1,9 @@
 import { fromPrimitiveSource } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { valueBlock } from '../compiler/composer'
 import type { PrimitiveSource } from '../compiler/types'
 
 export const add = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
-  return block('operator_add', {
+  return valueBlock('operator_add', {
     inputs: {
       NUM1: fromPrimitiveSource(a),
       NUM2: fromPrimitiveSource(b),
@@ -15,7 +15,7 @@ export const subtract = (
   a: PrimitiveSource<number>,
   b: PrimitiveSource<number>,
 ) => {
-  return block('operator_subtract', {
+  return valueBlock('operator_subtract', {
     inputs: {
       NUM1: fromPrimitiveSource(a),
       NUM2: fromPrimitiveSource(b),
@@ -27,7 +27,7 @@ export const multiply = (
   a: PrimitiveSource<number>,
   b: PrimitiveSource<number>,
 ) => {
-  return block('operator_multiply', {
+  return valueBlock('operator_multiply', {
     inputs: {
       NUM1: fromPrimitiveSource(a),
       NUM2: fromPrimitiveSource(b),
@@ -39,7 +39,7 @@ export const divide = (
   a: PrimitiveSource<number>,
   b: PrimitiveSource<number>,
 ) => {
-  return block('operator_divide', {
+  return valueBlock('operator_divide', {
     inputs: {
       NUM1: fromPrimitiveSource(a),
       NUM2: fromPrimitiveSource(b),
@@ -51,7 +51,7 @@ export const lt = (
   a: PrimitiveSource<number | string>,
   b: PrimitiveSource<number | string>,
 ) => {
-  return block('operator_lt', {
+  return valueBlock('operator_lt', {
     inputs: {
       OPERAND1: fromPrimitiveSource(a),
       OPERAND2: fromPrimitiveSource(b),
@@ -63,7 +63,7 @@ export const equals = (
   a: PrimitiveSource<number | string>,
   b: PrimitiveSource<number | string>,
 ) => {
-  return block('operator_equals', {
+  return valueBlock('operator_equals', {
     inputs: {
       OPERAND1: fromPrimitiveSource(a),
       OPERAND2: fromPrimitiveSource(b),
@@ -75,7 +75,7 @@ export const gt = (
   a: PrimitiveSource<number | string>,
   b: PrimitiveSource<number | string>,
 ) => {
-  return block('operator_gt', {
+  return valueBlock('operator_gt', {
     inputs: {
       OPERAND1: fromPrimitiveSource(a),
       OPERAND2: fromPrimitiveSource(b),
@@ -87,7 +87,7 @@ export const and = (
   a: PrimitiveSource<boolean>,
   b: PrimitiveSource<boolean>,
 ) => {
-  return block('operator_and', {
+  return valueBlock('operator_and', {
     inputs: {
       OPERAND1: fromPrimitiveSource(a),
       OPERAND2: fromPrimitiveSource(b),
@@ -99,7 +99,7 @@ export const or = (
   a: PrimitiveSource<boolean>,
   b: PrimitiveSource<boolean>,
 ) => {
-  return block('operator_or', {
+  return valueBlock('operator_or', {
     inputs: {
       OPERAND1: fromPrimitiveSource(a),
       OPERAND2: fromPrimitiveSource(b),
@@ -108,7 +108,7 @@ export const or = (
 }
 
 export const not = (operand: PrimitiveSource<boolean>) => {
-  return block('operator_not', {
+  return valueBlock('operator_not', {
     inputs: {
       OPERAND: fromPrimitiveSource(operand),
     },
@@ -119,7 +119,7 @@ export const random = (
   from: PrimitiveSource<number>,
   to: PrimitiveSource<number>,
 ) => {
-  return block('operator_random', {
+  return valueBlock('operator_random', {
     inputs: {
       FROM: fromPrimitiveSource(from),
       TO: fromPrimitiveSource(to),
@@ -131,7 +131,7 @@ export const join = (
   a: PrimitiveSource<string>,
   b: PrimitiveSource<string>,
 ) => {
-  return block('operator_join', {
+  return valueBlock('operator_join', {
     inputs: {
       STRING1: fromPrimitiveSource(a),
       STRING2: fromPrimitiveSource(b),
@@ -143,7 +143,7 @@ export const letterOf = (
   letter: PrimitiveSource<number>,
   text: PrimitiveSource<string>,
 ) => {
-  return block('operator_letter_of', {
+  return valueBlock('operator_letter_of', {
     inputs: {
       LETTER: fromPrimitiveSource(letter),
       STRING: fromPrimitiveSource(text),
@@ -152,7 +152,7 @@ export const letterOf = (
 }
 
 export const length = (text: PrimitiveSource<string>) => {
-  return block('operator_length', {
+  return valueBlock('operator_length', {
     inputs: {
       STRING: fromPrimitiveSource(text),
     },
@@ -163,7 +163,7 @@ export const contains = (
   text: PrimitiveSource<string>,
   substring: PrimitiveSource<string>,
 ) => {
-  return block('operator_contains', {
+  return valueBlock('operator_contains', {
     inputs: {
       STRING1: fromPrimitiveSource(text),
       STRING2: fromPrimitiveSource(substring),
@@ -172,7 +172,7 @@ export const contains = (
 }
 
 export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
-  return block('operator_mod', {
+  return valueBlock('operator_mod', {
     inputs: {
       NUM1: fromPrimitiveSource(a),
       NUM2: fromPrimitiveSource(b),
@@ -181,7 +181,7 @@ export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
 }
 
 export const round = (value: PrimitiveSource<number>) => {
-  return block('operator_round', {
+  return valueBlock('operator_round', {
     inputs: {
       NUM: fromPrimitiveSource(value),
     },
@@ -208,7 +208,7 @@ export const mathop = (
   operator: MathOpOperator,
   value: PrimitiveSource<number>,
 ) => {
-  return block('operator_mathop', {
+  return valueBlock('operator_mathop', {
     inputs: {
       NUM: fromPrimitiveSource(value),
     },

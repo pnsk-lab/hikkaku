@@ -1,5 +1,5 @@
 import { fromPrimitiveSource } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { block, valueBlock } from '../compiler/composer'
 import type { PrimitiveSource } from '../compiler/types'
 
 export const moveSteps = (steps: PrimitiveSource<number>) => {
@@ -134,13 +134,13 @@ export const setRotationStyle = (
 }
 
 export const getX = () => {
-  return block('motion_xposition', {})
+  return valueBlock('motion_xposition', {})
 }
 
 export const getY = () => {
-  return block('motion_yposition', {})
+  return valueBlock('motion_yposition', {})
 }
 
 export const getDirection = () => {
-  return block('motion_direction', {})
+  return valueBlock('motion_direction', {})
 }

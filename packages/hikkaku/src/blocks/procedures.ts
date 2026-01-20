@@ -1,5 +1,5 @@
 import { fromPrimitiveSource } from '../compiler/block-helper'
-import { block } from '../compiler/composer'
+import { block, valueBlock } from '../compiler/composer'
 import type { PrimitiveSource } from '../compiler/types'
 
 export type ProcedureArgumentDefault = string | boolean
@@ -189,7 +189,7 @@ export const callProcedure = (
 export const argumentReporterStringNumber = (
   reference: ProcedureStringOrNumberReference,
 ) => {
-  return block('argument_reporter_string_number', {
+  return valueBlock('argument_reporter_string_number', {
     fields: {
       VALUE: [reference.name, null],
     },
@@ -199,7 +199,7 @@ export const argumentReporterStringNumber = (
 export const argumentReporterBoolean = (
   reference: ProcedureBooleanReference,
 ) => {
-  return block('argument_reporter_boolean', {
+  return valueBlock('argument_reporter_boolean', {
     fields: {
       VALUE: [reference.name, null],
     },

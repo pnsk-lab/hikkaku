@@ -10,6 +10,7 @@ interface RootContext {
   blocks: Record<string, sb3.Block>
   adder?: (id: string, block: sb3.Block) => void
   usedAsValueSet: WeakSet<sb3.Block>
+  valueBlockSet: WeakSet<sb3.Block>
   blockToId: WeakMap<sb3.Block, string>
 }
 let rootContext: RootContext | null = null
@@ -26,6 +27,7 @@ export interface BlockInit {
   topLevel?: boolean
   mutation?: sb3.Mutation
   isShadow?: boolean
+  isValue?: boolean
 }
 export const block = (opcode: string, init: BlockInit): HikkakuBlock => {
   const ctx = getRootContext()
@@ -44,6 +46,9 @@ export const block = (opcode: string, init: BlockInit): HikkakuBlock => {
   }
   ctx.blocks[id] = block
   ctx.blockToId.set(block, id)
+  if (init.isValue) {
+    ctx.valueBlockSet.add(block)
+  }
 
   if (init.inputs) {
     for (const [_key, value] of Object.entries(init.inputs)) {
@@ -66,6 +71,10 @@ export const block = (opcode: string, init: BlockInit): HikkakuBlock => {
     isBlock: true,
     id,
   }
+}
+
+export const valueBlock = (opcode: string, init: BlockInit): HikkakuBlock => {
+  return block(opcode, { ...init, isValue: true })
 }
 
 const applyNextAndParent = (blocks: sb3.Block[]) => {
@@ -135,6 +144,7 @@ export const createBlocks = (handler: Handler) => {
   rootContext = {
     blocks: blocks,
     usedAsValueSet: new WeakSet(),
+    valueBlockSet: new WeakSet(),
     blockToId: new WeakMap(),
   }
 
@@ -144,6 +154,23 @@ export const createBlocks = (handler: Handler) => {
     blocksForAddingNext.push(block)
   })
   applyNextAndParent(blocksForAddingNext)
+
+  const unconnectedValueBlocks: Array<{ id: string; opcode: string }> = []
+  for (const [blockId, block] of Object.entries(blocks)) {
+    if (
+      rootContext.valueBlockSet.has(block) &&
+      !rootContext.usedAsValueSet.has(block)
+    ) {
+      unconnectedValueBlocks.push({ id: blockId, opcode: block.opcode })
+    }
+  }
+  if (unconnectedValueBlocks.length > 0) {
+    const formatted = unconnectedValueBlocks
+      .map(({ id, opcode }) => `${opcode} (${id})`)
+      .join(', ')
+    rootContext = null
+    throw new Error(`Unconnected value block(s): ${formatted}`)
+  }
 
   rootContext = null
   return blocks
