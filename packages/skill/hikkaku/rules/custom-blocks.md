@@ -64,7 +64,7 @@ const greet = defineProcedure([
   procedureBoolean('excited'),
 ])
 
-callProcedure(greet.reference, [
+callProcedure(greet, [
   { reference: greet.reference.arguments.name, value: 'Ada' },
   { reference: greet.reference.arguments.excited, value: true },
 ])

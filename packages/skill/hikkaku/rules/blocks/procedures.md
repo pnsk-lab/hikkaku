@@ -80,7 +80,7 @@ defineProcedure(list as any, () => {}, undefined as any, undefined as any)
 
 Calls a custom procedure.
 
-Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`reference`, `inputsByReference`, `warp`).
+Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`definitionOrReference`, `inputsByReference`, `warp`).
 
 Output: Scratch statement block definition that is appended to the current script stack.
 

@@ -32,7 +32,7 @@ sprite.run(() => {
       }
     )
 
-    callProcedure(greet.reference, [
+    callProcedure(greet, [
       { reference: greet.reference.arguments.name, value: 'Ada' },
       { reference: greet.reference.arguments.excited, value: true }
     ])
@@ -55,7 +55,7 @@ const greet = defineProcedure([
 ])
 
 // Recommended: reference-based invocation.
-callProcedure(greet.reference, [
+callProcedure(greet, [
   { reference: greet.reference.arguments.name, value: 'Ada' }
 ])
 
