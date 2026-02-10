@@ -27,8 +27,6 @@ import {
   procedureStringOrNumber,
   replaceItemOfList,
   setVariableTo,
-  showList,
-  whenFlagClicked,
 } from 'hikkaku/blocks'
 
 const project = new Project()
@@ -114,11 +112,11 @@ const read = (v: typeof idx) => getVariable(v)
 const parseProcCode = 'parse %s'
 const getProcCode = 'get %s'
 
-let parseProcedure: ReturnType<typeof defineProcedure>
-let getProcedure: ReturnType<typeof defineProcedure>
+let _parseProcedure: ReturnType<typeof defineProcedure>
+let _getProcedure: ReturnType<typeof defineProcedure>
 
 parser.run(() => {
-  parseProcedure = defineProcedure(
+  _parseProcedure = defineProcedure(
     [procedureLabel('parse'), procedureStringOrNumber('jsonText')],
     ({ jsonText }) => {
       setVariableTo(sourceText, argumentReporterStringNumber(jsonText))
@@ -1316,7 +1314,7 @@ parser.run(() => {
     true,
   )
 
-  getProcedure = defineProcedure(
+  _getProcedure = defineProcedure(
     [procedureLabel('get'), procedureStringOrNumber('query')],
     ({ query }) => {
       deleteAllOfList(queryResult)
@@ -1744,7 +1742,6 @@ parser.run(() => {
     },
     true,
   )
-
 })
 
 export { getProcCode, parseProcCode, queryResult }
