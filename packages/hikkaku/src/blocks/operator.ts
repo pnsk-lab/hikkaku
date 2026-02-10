@@ -15,7 +15,7 @@ import type { PrimitiveSource } from '../core/types'
  * ```ts
  * import { add } from 'hikkaku/blocks'
  *
- * add([[true, () => {}]] as any, undefined as any)
+ * add(1, 2)
  * ```
  */
 export const add = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
@@ -40,7 +40,7 @@ export const add = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
  * ```ts
  * import { subtract } from 'hikkaku/blocks'
  *
- * subtract([[true, () => {}]] as any, undefined as any)
+ * subtract(5, 3)
  * ```
  */
 export const subtract = (
@@ -68,7 +68,7 @@ export const subtract = (
  * ```ts
  * import { multiply } from 'hikkaku/blocks'
  *
- * multiply([[true, () => {}]] as any, undefined as any)
+ * multiply(3, 4)
  * ```
  */
 export const multiply = (
@@ -96,7 +96,7 @@ export const multiply = (
  * ```ts
  * import { divide } from 'hikkaku/blocks'
  *
- * divide([[true, () => {}]] as any, undefined as any)
+ * divide(10, 2)
  * ```
  */
 export const divide = (
@@ -124,7 +124,7 @@ export const divide = (
  * ```ts
  * import { lt } from 'hikkaku/blocks'
  *
- * lt([[true, () => {}]] as any, undefined as any)
+ * lt(1, 2)
  * ```
  */
 export const lt = (
@@ -152,7 +152,7 @@ export const lt = (
  * ```ts
  * import { equals } from 'hikkaku/blocks'
  *
- * equals([[true, () => {}]] as any, undefined as any)
+ * equals(5, 5)
  * ```
  */
 export const equals = (
@@ -180,7 +180,7 @@ export const equals = (
  * ```ts
  * import { gt } from 'hikkaku/blocks'
  *
- * gt([[true, () => {}]] as any, undefined as any)
+ * gt(10, 5)
  * ```
  */
 export const gt = (
@@ -208,7 +208,7 @@ export const gt = (
  * ```ts
  * import { and } from 'hikkaku/blocks'
  *
- * and([[true, () => {}]] as any, undefined as any)
+ * and(true, false)
  * ```
  */
 export const and = (
@@ -236,7 +236,7 @@ export const and = (
  * ```ts
  * import { or } from 'hikkaku/blocks'
  *
- * or([[true, () => {}]] as any, undefined as any)
+ * or(true, false)
  * ```
  */
 export const or = (
@@ -263,7 +263,7 @@ export const or = (
  * ```ts
  * import { not } from 'hikkaku/blocks'
  *
- * not(undefined as any)
+ * not(false)
  * ```
  */
 export const not = (operand: PrimitiveSource<boolean>) => {
@@ -315,7 +315,7 @@ export const random = (
  * ```ts
  * import { join } from 'hikkaku/blocks'
  *
- * join([[true, () => {}]] as any, undefined as any)
+ * join('Hello', 'World')
  * ```
  */
 export const join = (
@@ -422,7 +422,7 @@ export const contains = (
  * ```ts
  * import { mod } from 'hikkaku/blocks'
  *
- * mod([[true, () => {}]] as any, undefined as any)
+ * mod(10, 3)
  * ```
  */
 export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
