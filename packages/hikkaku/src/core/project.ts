@@ -158,7 +158,7 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
-  get monitors(): readonly Array<VariableMonitor | ListMonitor> {
+  get monitors(): readonly (VariableMonitor | ListMonitor)[] {
     return this.#monitors
   }
 

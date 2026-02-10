@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 type BlockDoc = {
   name: string
@@ -35,7 +36,7 @@ const blockConfigs = [
   { file: 'sound', title: 'Blocks - Sound', heading: 'Sound' },
 ] as const
 
-const projectRoot = resolve(import.meta.dir, '../../..')
+const projectRoot = fileURLToPath(new URL('../../..', import.meta.url))
 const blocksRoot = resolve(projectRoot, 'packages/hikkaku/src/blocks')
 const docsRoot = resolve(projectRoot, 'packages/skill/hikkaku/rules/blocks')
 
@@ -161,15 +162,34 @@ const hasTopLevelArrow = (input: string) => {
   return false
 }
 
-const parseParamsFromDeclaration = (declaration: string) => {
+type ParsedParam = { name: string; type?: string }
+
+const parseParamSegment = (segment: string): ParsedParam | null => {
+  const match = segment.match(
+    /^(?:\.\.\.)?([A-Za-z_][A-Za-z0-9_]*)(?:\?)?\s*(?::\s*([\s\S]+))?$/,
+  )
+  if (!match) return null
+
+  const name = match[1]
+  if (!name) return null
+
+  return {
+    name,
+    type: match[2] ? collapseWhitespace(match[2]) : undefined,
+  }
+}
+
+const parseParamsFromDeclaration = (
+  declaration: string,
+): { signature: string; params: ParsedParam[] } => {
   const equalIndex = declaration.indexOf('=')
   if (equalIndex === -1) {
-    return { signature: '', params: [] as { name: string; type?: string }[] }
+    return { signature: '', params: [] }
   }
 
   const paramStart = declaration.indexOf('(', equalIndex)
   if (paramStart === -1) {
-    return { signature: '', params: [] as { name: string; type?: string }[] }
+    return { signature: '', params: [] }
   }
 
   let depth = 1
@@ -206,24 +226,15 @@ const parseParamsFromDeclaration = (declaration: string) => {
   }
 
   if (paramEnd === -1) {
-    return { signature: '', params: [] as { name: string; type?: string }[] }
+    return { signature: '', params: [] }
   }
 
   const paramText = declaration.slice(paramStart + 1, paramEnd)
   const segments = splitTopLevel(paramText)
 
   const params = segments
-    .map((segment) => {
-      const match = segment.match(
-        /^(?:\.\.\.)?([A-Za-z_][A-Za-z0-9_]*)(?:\?)?\s*(?::\s*([\s\S]+))?$/,
-      )
-      if (!match) return null
-      return {
-        name: match[1],
-        type: match[2] ? collapseWhitespace(match[2]) : undefined,
-      }
-    })
-    .filter((value): value is { name: string; type?: string } => value !== null)
+    .map(parseParamSegment)
+    .filter((value): value is ParsedParam => value !== null)
 
   return {
     signature: params.map((param) => param.name).join(', '),
@@ -256,6 +267,10 @@ const extractEntries = (source: string): ExtractedEntry[] => {
     }
 
     const name = match[1]
+    if (!name) {
+      i = commentEnd
+      continue
+    }
     const declarationLines = [start]
 
     if (!hasTopLevelArrow(start)) {
