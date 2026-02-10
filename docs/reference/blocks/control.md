@@ -166,15 +166,16 @@ import { ifElse } from 'hikkaku/blocks'
 ifElse(true, () => {}, () => {})
 ```
 
-## match(a)
+## match(...branches)
 
 Builds chained if / else-if / else branching from condition-handler pairs.
 
-Input: `a`.
+Input: `...branches`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `a: Input value used by this block`
+* `branches: Array<[condition: PrimitiveSource<boolean>, handler: () => void]>` - sequence of condition/handler pairs evaluated in order
+* Optional trailing `defaultHandler: () => void` - handler called when no branch condition matches
 
 Example:
 ```ts
