@@ -1,0 +1,7 @@
+---
+title: Playground
+---
+
+# Playground
+
+<Playground />

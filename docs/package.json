@@ -1,0 +1,19 @@
+{
+  "name": "hikkaku-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "dependencies": {
+    "esbuild-wasm": "^0.27.0",
+    "hikkaku": "workspace:*",
+    "vue": "^3.5.28"
+  },
+  "devDependencies": {
+    "monaco-editor": "^0.50.0",
+    "vitepress": "^1.6.3"
+  }
+}

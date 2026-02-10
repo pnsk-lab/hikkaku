@@ -3,10 +3,14 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "docs"
   ],
   "scripts": {
     "dev": "bun --cwd examples/example1 dev",
+    "docs:dev": "bun --cwd docs dev",
+    "docs:build": "bun --cwd docs build",
+    "docs:preview": "bun --cwd docs preview",
     "lint": "biome check --unsafe",
     "fmt": "biome check --fix --unsafe",
     "typecheck": "bun run --filter \"*\" typecheck"
