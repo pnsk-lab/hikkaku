@@ -60,20 +60,19 @@ procedureStringOrNumber(undefined as any)
 
 Defines a custom procedure.
 
-Input: `proclist`, `stack`, `the`, `but`.
+Input: `proclist`, `stack?`, `warp?`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `proclist: T` - ProcedureProc[]
-* `stack: (references) => void Optional`
-* `the: Input value used by this block`
-* `but: Input value used by this block`
+* `proclist: See function signature for accepted input values`
+* `stack?: See function signature for accepted input values`
+* `warp?: See function signature for accepted input values`
 
 Example:
 ```ts
 import { defineProcedure } from 'hikkaku/blocks'
 
-defineProcedure(list as any, () => {}, undefined as any, undefined as any)
+defineProcedure(list as any, () => {}, undefined as any)
 ```
 
 ## callProcedure(proccode, argumentIds, inputs)
