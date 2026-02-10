@@ -17,6 +17,7 @@ This document provides best practices for using Hikkaku to create Scratch projec
     * e.g., `control.md`, `data.md`, `motion.md`, etc.
   * `clone.md`: Guidelines for using clones in Hikkaku.
   * `custom-blocks.md`: Guidelines for creating and using custom blocks.
+  * `pen-100.md`: Performance rules for 100% pen-rendered projects.
   * `physics.md`: Guidelines for implementing 2d physics in Scratch projects.
   * `positioning.md`: Rules for positioning systems in Scratch projects.
   * `usage.md`: General usage guidelines for Hikkaku.

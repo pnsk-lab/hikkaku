@@ -1,0 +1,16 @@
+{
+  "name": "example-3d-cube",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "NODE_ENV=development vite",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+    "vite": "8.0.0-beta.8"
+  }
+}
