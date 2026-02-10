@@ -11,7 +11,7 @@ Label fragment for custom block.
 
 Input: `text`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment object used to define custom block labels (not a Scratch block).
 
 * `text: See function signature for accepted input values`
 
@@ -28,7 +28,7 @@ Boolean argument fragment.
 
 Input: `name`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment object used to define boolean arguments in custom blocks (not a Scratch block).
 
 * `name: See function signature for accepted input values`
 
@@ -45,7 +45,7 @@ String/number argument fragment.
 
 Input: `name`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment object used to define string/number arguments in custom blocks (not a Scratch block).
 
 * `name: See function signature for accepted input values`
 
