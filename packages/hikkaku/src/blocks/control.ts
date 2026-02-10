@@ -117,6 +117,45 @@ export const ifElse = (
   })
 }
 
+export const match = (
+  ...a:
+    | [condition: PrimitiveSource<boolean>, handler: () => void][]
+    | [
+        ...[condition: PrimitiveSource<boolean>, handler: () => void][],
+        () => void,
+      ]
+) => {
+  if (a.length === 0) {
+    return
+  }
+
+  const tail = a[a.length - 1]
+  const defaultHandler = typeof tail === 'function' ? tail : null
+  const branches = (defaultHandler ? a.slice(0, -1) : a) as [
+    PrimitiveSource<boolean>,
+    () => void,
+  ][]
+
+  if (branches.length === 0) {
+    return defaultHandler?.()
+  }
+
+  let elseHandler: () => void = defaultHandler ?? (() => {})
+  for (let i = branches.length - 1; i >= 0; i--) {
+    const branch = branches[i]
+    if (!branch) {
+      continue
+    }
+    const [condition, handler] = branch
+    const next = elseHandler
+    elseHandler = () => {
+      ifElse(condition, handler, next)
+    }
+  }
+
+  return elseHandler()
+}
+
 export const stop = (option: StopOption) => {
   return block('control_stop', {
     fields: {

@@ -67,6 +67,13 @@ If / else branching.
 * `thenHandler: () => void`
 * `elseHandler: () => void`
 
+## match(...branches)
+
+Builds chained if / else-if / else branching from condition-handler pairs.
+
+* `...branches: [condition: PrimitiveSource<boolean>, handler: () => void][] | [...[condition: PrimitiveSource<boolean>, handler: () => void][], () => void]`
+* If the last argument is `() => void`, it is used as the default (`else`) branch.
+
 ## stop(option)
 
 Stops scripts.
