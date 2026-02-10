@@ -4,7 +4,7 @@ type Vertex3 = readonly [number, number, number]
 type Face3 = readonly [number, number, number]
 type Edge2 = readonly [number, number]
 
-const SIMPLIFY_VOXEL_SIZE = 0.1
+const SIMPLIFY_VOXEL_SIZE = 0.2
 const TARGET_RADIUS = 78
 
 const parseObj = (source: string) => {
