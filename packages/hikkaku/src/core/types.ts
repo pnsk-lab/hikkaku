@@ -9,6 +9,36 @@ export interface VariableBase {
   name: string
 }
 
+export interface MonitorPosition {
+  x?: number | null
+  y?: number | null
+}
+
+export type VariableMonitorMode = 'default' | 'large' | 'slider'
+
+export interface VariableMonitorOptions extends MonitorPosition {
+  visible?: boolean
+  mode?: VariableMonitorMode
+  sliderMin?: number
+  sliderMax?: number
+  isDiscrete?: boolean
+}
+
+export interface ListMonitorOptions extends MonitorPosition {
+  visible?: boolean
+  width?: number
+  height?: number
+}
+
+export interface CreateVariableOptions {
+  isCloudVariable?: boolean
+  monitor?: VariableMonitorOptions
+}
+
+export interface CreateListOptions {
+  monitor?: ListMonitorOptions
+}
+
 export interface VariableReference extends VariableBase {
   type: 'variable'
 }

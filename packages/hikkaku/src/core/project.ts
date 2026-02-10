@@ -1,7 +1,15 @@
 import type * as sb3 from 'sb3-types'
 import { createBlocks } from './composer'
+import type { ListMonitor, VariableMonitor } from './monitors'
+import {
+  cloneMonitor,
+  createListMonitor,
+  createVariableMonitor,
+} from './monitors'
 import type {
   CostumeReference,
+  CreateListOptions,
+  CreateVariableOptions,
   ListReference,
   SoundReference,
   VariableReference,
@@ -56,6 +64,7 @@ export class Target<IsStage extends boolean = boolean> {
   #blocks: Record<string, sb3.Block> = {}
   #variables: Record<string, sb3.ScalarVariable> = {}
   #lists: Record<string, sb3.List> = {}
+  #monitors: Array<VariableMonitor | ListMonitor> = []
   #costumes: sb3.Costume[] = []
   #sounds: sb3.Sound[] = []
   constructor(isStage: IsStage, name: IsStage extends true ? 'Stage' : string) {
@@ -76,12 +85,29 @@ export class Target<IsStage extends boolean = boolean> {
   createVariable(
     name: string,
     defaultValue: sb3.ScalarVal = 0,
-    isCloudVariable?: boolean,
+    isCloudVariableOrOptions?: boolean | CreateVariableOptions,
   ): VariableReference {
+    const options =
+      typeof isCloudVariableOrOptions === 'boolean'
+        ? { isCloudVariable: isCloudVariableOrOptions }
+        : isCloudVariableOrOptions
     const id = createAssetId()
-    this.#variables[id] = isCloudVariable
+    this.#variables[id] = options?.isCloudVariable
       ? [name, defaultValue, true]
       : [name, defaultValue]
+
+    if (options?.monitor) {
+      this.#monitors.push(
+        createVariableMonitor(
+          id,
+          name,
+          defaultValue,
+          this.isStage ? null : this.name,
+          options.monitor,
+        ),
+      )
+    }
+
     return {
       id,
       name,
@@ -89,9 +115,26 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
-  createList(name: string, defaultValue: sb3.ScalarVal[] = []): ListReference {
+  createList(
+    name: string,
+    defaultValue: sb3.ScalarVal[] = [],
+    options?: CreateListOptions,
+  ): ListReference {
     const id = createAssetId()
     this.#lists[id] = [name, defaultValue]
+
+    if (options?.monitor) {
+      this.#monitors.push(
+        createListMonitor(
+          id,
+          name,
+          defaultValue,
+          this.isStage ? null : this.name,
+          options.monitor,
+        ),
+      )
+    }
+
     return {
       id,
       name,
@@ -113,6 +156,10 @@ export class Target<IsStage extends boolean = boolean> {
       name: sound.name,
       type: 'sound' as const,
     }
+  }
+
+  get monitors(): readonly Array<VariableMonitor | ListMonitor> {
+    return this.#monitors
   }
 
   toScratch(): IsStage extends true ? sb3.Stage : sb3.Sprite {
@@ -166,8 +213,14 @@ export class Project {
   }
   toScratch(): sb3.ScratchProject {
     const targets = this.#targets.map((target) => target.toScratch())
+    const monitors = this.#targets.flatMap((target) =>
+      target.monitors.map((monitor) => cloneMonitor(monitor)),
+    )
     const extensions = collectExtensions(targets)
-    const project: sb3.ScratchProject & { extensions?: string[] } = {
+    const project: sb3.ScratchProject & {
+      extensions?: string[]
+      monitors?: Array<VariableMonitor | ListMonitor>
+    } = {
       targets,
       meta: {
         semver: '3.0.0',
@@ -177,6 +230,10 @@ export class Project {
 
     if (extensions.length > 0) {
       project.extensions = extensions
+    }
+
+    if (monitors.length > 0) {
+      project.monitors = monitors
     }
 
     return project

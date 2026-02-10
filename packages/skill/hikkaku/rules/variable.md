@@ -37,6 +37,31 @@ sprite.run(() => {
 
 ```ts
 const cloudScore = sprite.createVariable('cloudScore', 0, true)
+const cloudScore2 = sprite.createVariable('cloudScore2', 0, {
+  isCloudVariable: true,
+})
+```
+
+### Monitor Options
+
+```ts
+const hp = sprite.createVariable('hp', 100, {
+  monitor: {
+    visible: true,
+    mode: 'slider',
+    sliderMin: 0,
+    sliderMax: 100,
+    isDiscrete: true,
+  },
+})
+
+const logs = sprite.createList('logs', [], {
+  monitor: {
+    visible: true,
+    width: 260,
+    height: 220,
+  },
+})
 ```
 
 ## Create Lists
@@ -69,6 +94,6 @@ sprite.run(() => {
 
 ## Notes
 
-* `createVariable(name, defaultValue?, isCloudVariable?)` returns a `VariableReference`.
-* `createList(name, defaultValue?)` returns a `ListReference`.
+* `createVariable(name, defaultValue?, isCloudVariableOrOptions?)` returns a `VariableReference`.
+* `createList(name, defaultValue?, options?)` returns a `ListReference`.
 * Variable and list references are scoped to the target that created them (sprite or stage).
