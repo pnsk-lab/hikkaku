@@ -1,15 +1,7 @@
 <template>
   <section class="playground">
     <header class="playground__header">
-      <div>
-        <h2 class="playground__title">Hikkaku Playground</h2>
-        <p class="playground__subtitle">
-          Use ESM imports from <code>hikkaku</code>,
-          <code>hikkaku/blocks</code>, and <code>hikkaku/assets</code>. Export
-          your project with <code>export default project</code>. Changes are
-          converted automatically.
-        </p>
-      </div>
+      <h2 class="playground__title">Hikkaku Playground</h2>
     </header>
     <div class="playground__body">
       <div ref="editorHost" class="playground__editor"></div>
@@ -381,28 +373,30 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .playground {
+  --playground-page-padding: clamp(16px, 2.8vw, 32px);
+  --playground-panel-height: max(
+    320px,
+    min(720px, calc(100dvh - var(--vp-nav-height) - 190px))
+  );
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  width: 100dvw;
+  max-width: 100dvw;
+  margin-inline: calc(50% - 50dvw);
+  padding-inline: var(--playground-page-padding);
+  box-sizing: border-box;
 }
 
 .playground__header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
 }
 
 .playground__title {
   margin: 0;
-  font-size: 1.4rem;
-}
-
-.playground__subtitle {
-  margin: 4px 0 0;
-  color: var(--vp-c-text-2);
-  font-size: 0.95rem;
+  font-size: 1.25rem;
 }
 
 .playground__loading {
@@ -418,20 +412,24 @@ onBeforeUnmount(() => {
 }
 
 .playground__editor {
-  min-height: 420px;
+  height: var(--playground-panel-height);
+  max-height: 100dvh;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .playground__output {
-  min-height: 420px;
+  height: var(--playground-panel-height);
+  max-height: 100dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--vp-c-divider);
   border-radius: 8px;
   padding: 12px;
   background: var(--vp-c-bg-soft);
+  overflow: hidden;
 }
 
 .playground__output-title {
@@ -448,10 +446,11 @@ onBeforeUnmount(() => {
 .playground__output-body {
   margin: 0;
   flex: 1;
+  min-height: 0;
   overflow: auto;
   font-size: 0.85rem;
   line-height: 1.4;
-  white-space: pre-wrap;
+  white-space: pre;
 }
 
 @media (max-width: 960px) {
