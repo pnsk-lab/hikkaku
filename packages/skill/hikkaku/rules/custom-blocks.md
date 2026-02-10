@@ -20,6 +20,7 @@ import { Project } from 'hikkaku'
 import {
   argumentReporterBoolean,
   argumentReporterStringNumber,
+  callProcedure,
   defineProcedure,
   procedureBoolean,
   procedureLabel,
@@ -33,53 +34,37 @@ const project = new Project()
 const sprite = project.createSprite('Sprite1')
 
 sprite.run(() => {
+  const greet = defineProcedure(
+    [
+      procedureLabel('greet'),
+      procedureStringOrNumber('name'),
+      procedureBoolean('excited'),
+    ],
+    ({ name, excited }) => {
+      ifThen(argumentReporterBoolean(excited), () => {
+        say(argumentReporterStringNumber(name))
+      })
+    },
+  )
+
   whenFlagClicked(() => {
-    defineProcedure(
-      [
-        procedureLabel('greet'),
-        procedureStringOrNumber('name'),
-        procedureBoolean('excited'),
-      ],
-      ({ name, excited }) => {
-        ifThen(argumentReporterBoolean(excited), () => {
-          say(argumentReporterStringNumber(name))
-        })
-      },
-    )
+    callProcedure(greet, {
+      name: 'Ada',
+      excited: true,
+    })
   })
 })
 ```
 
-## Call a Procedure (Advanced)
-
-`callProcedure` is a low-level helper. You must provide the exact `proccode` and
-`argumentIds` used by the definition block. These are stored in the
-`procedures_prototype` mutation for that custom block.
-
-A `proccode` is built by joining the procedure parts with spaces:
-
-* `procedureLabel(text)` -> `text`
-* `procedureBoolean(name)` -> `%b`
-* `procedureStringOrNumber(name)` -> `%s`
-
-Example of a `proccode` for the definition above:
+## Call a Procedure
 
 ```ts
-const proccode = 'greet %s %b'
+import { callProcedure, defineProcedure, procedureLabel } from 'hikkaku/blocks'
+
+const step = defineProcedure([procedureLabel('1step')], () => {}, true)
+
+callProcedure(step, {})
 ```
 
-Use the same `argumentIds` order as the non-label parts.
-
-```ts
-import { callProcedure } from 'hikkaku/blocks'
-
-const argumentIds = ['arg-id-1', 'arg-id-2']
-
-callProcedure(proccode, argumentIds, {
-  'arg-id-1': 'Ada',
-  'arg-id-2': true,
-})
-```
-
-If you need to call custom blocks frequently, keep the `proccode` and
-`argumentIds` together in a shared helper so the definition and calls match.
+Use the reference returned by `defineProcedure` when calling. This keeps
+procedure names and argument IDs synchronized automatically.

@@ -8,6 +8,7 @@ Use custom blocks to encapsulate repeated logic and optionally run it in warp mo
 import {
   argumentReporterBoolean,
   argumentReporterStringNumber,
+  callProcedure,
   defineProcedure,
   ifThen,
   procedureBoolean,
@@ -18,37 +19,43 @@ import {
 } from 'hikkaku/blocks'
 
 sprite.run(() => {
+  const greet = defineProcedure(
+    [
+      procedureLabel('greet'),
+      procedureStringOrNumber('name'),
+      procedureBoolean('excited')
+    ],
+    ({ name, excited }) => {
+      ifThen(argumentReporterBoolean(excited), () => {
+        say(argumentReporterStringNumber(name))
+      })
+    }
+  )
+
   whenFlagClicked(() => {
-    defineProcedure(
-      [
-        procedureLabel('greet'),
-        procedureStringOrNumber('name'),
-        procedureBoolean('excited')
-      ],
-      ({ name, excited }) => {
-        ifThen(argumentReporterBoolean(excited), () => {
-          say(argumentReporterStringNumber(name))
-        })
-      }
-    )
+    callProcedure(greet, {
+      name: 'Ada',
+      excited: true
+    })
   })
 })
 ```
 
 ## Calling Procedures
 
-Most projects should define and call procedures in one place.
-
-If you use low-level `callProcedure`, keep `proccode` and argument IDs synchronized with the definition.
+`defineProcedure` returns a procedure reference.
+Use that reference with `callProcedure` so procedure name and argument IDs stay synchronized.
 
 ```ts
-import { callProcedure } from 'hikkaku/blocks'
+import { callProcedure, defineProcedure, procedureLabel } from 'hikkaku/blocks'
 
-const proccode = 'greet %s %b'
-const argumentIds = ['arg-id-1', 'arg-id-2']
+const step = defineProcedure([procedureLabel('1step')], () => {}, true)
 
-callProcedure(proccode, argumentIds, {
-  'arg-id-1': 'Ada',
-  'arg-id-2': true
-})
+callProcedure(step, {})
+```
+
+You can still override warp mode at call time:
+
+```ts
+callProcedure(step, {}, false)
 ```

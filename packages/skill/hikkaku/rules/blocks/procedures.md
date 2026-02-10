@@ -56,44 +56,42 @@ import { procedureStringOrNumber } from 'hikkaku/blocks'
 procedureStringOrNumber(undefined as any)
 ```
 
-## defineProcedure(proclist, stack)
+## defineProcedure(proclist, stack, warp)
 
 Defines a custom procedure.
 
-Input: `proclist`, `stack`, `the`, `but`.
+Input: `proclist`, `stack?`, `warp?`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure definition reference.
 
 * `proclist: T` - ProcedureProc[]
 * `stack: (references) => void Optional`
-* `the: Input value used by this block`
-* `but: Input value used by this block`
+* `warp: boolean Optional`
 
 Example:
 ```ts
 import { defineProcedure } from 'hikkaku/blocks'
 
-defineProcedure(list as any, () => {}, undefined as any, undefined as any)
+defineProcedure(list as any, () => {}, true)
 ```
 
-## callProcedure(proccode, argumentIds, inputs)
+## callProcedure(procedure, inputs, warp)
 
 Calls a custom procedure.
 
-Input: `proccode`, `argumentIds`, `inputs`, `warp`.
+Input: `procedure`, `inputs`, `warp?`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `proccode: See function signature for accepted input values`
-* `argumentIds: See function signature for accepted input values`
+* `procedure: See function signature for accepted input values`
 * `inputs: See function signature for accepted input values`
-* `warp: See function signature for accepted input values`
+* `warp: Optional override for procedure warp mode`
 
 Example:
 ```ts
 import { callProcedure } from 'hikkaku/blocks'
 
-callProcedure([] as any, undefined as any, undefined as any, undefined as any)
+callProcedure(procedure as any, {} as any)
 ```
 
 ## argumentReporterStringNumber(reference)

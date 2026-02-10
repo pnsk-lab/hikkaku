@@ -97,21 +97,13 @@ const queryResult = project.stage.createList('queryResult', [])
 
 const read = (v: typeof idx) => getVariable(v)
 
-const parseProcCode = 'parse %s'
-const getProcCode = 'get %s'
-const parseArgumentIds: string[] = []
-const getArgumentIds: string[] = []
-
-let _parseProcedure: ReturnType<typeof defineProcedure>
-let _getProcedure: ReturnType<typeof defineProcedure>
+const parseProcCode = 'parse'
+const getProcCode = 'get'
 
 parser.run(() => {
-  _parseProcedure = defineProcedure(
-    [procedureLabel('parse'), procedureStringOrNumber('jsonText')],
+  const parseProcedure = defineProcedure(
+    [procedureLabel(parseProcCode), procedureStringOrNumber('jsonText')],
     ({ jsonText }) => {
-      if (parseArgumentIds.length === 0) {
-        parseArgumentIds.push(jsonText.id)
-      }
       setVariableTo(sourceText, argumentReporterStringNumber(jsonText))
       setVariableTo(parseOk, 0)
       setVariableTo(errorCode, '')
@@ -1315,12 +1307,9 @@ parser.run(() => {
     true,
   )
 
-  _getProcedure = defineProcedure(
-    [procedureLabel('get'), procedureStringOrNumber('query')],
+  const getProcedure = defineProcedure(
+    [procedureLabel(getProcCode), procedureStringOrNumber('query')],
     ({ query }) => {
-      if (getArgumentIds.length === 0) {
-        getArgumentIds.push(query.id)
-      }
       deleteAllOfList(queryResult)
       deleteAllOfList(queryNodes)
       deleteAllOfList(queryNextNodes)
@@ -2146,15 +2135,13 @@ parser.run(() => {
       ],
     })
     // Parse the JSON
-    const parseArgId = parseArgumentIds[0] ?? ''
-    callProcedure(parseProcCode, parseArgumentIds, {
-      [parseArgId]: sampleJSON,
+    callProcedure(parseProcedure, {
+      jsonText: sampleJSON,
     })
     // Query the data (examples)
-    const getArgId = getArgumentIds[0] ?? ''
     // Get name: .name
-    callProcedure(getProcCode, getArgumentIds, {
-      [getArgId]: '.meta',
+    callProcedure(getProcedure, {
+      query: '.meta',
     })
   })
 })

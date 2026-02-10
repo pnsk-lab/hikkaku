@@ -92,6 +92,13 @@ export const procedureStringOrNumber = <T extends string>(
 }
 
 type OnlyArgProc<T> = T extends { type: 'label' } ? never : T
+type ProcedureArgumentProc = OnlyArgProc<ProcedureProc>
+type ProcedureArgumentName<T extends readonly ProcedureProc[]> =
+  OnlyArgProc<T[number]>['name']
+type ProcedureArgumentProcByName<
+  T extends readonly ProcedureProc[],
+  Name extends ProcedureArgumentName<T>,
+> = Extract<OnlyArgProc<T[number]>, { name: Name }>
 
 export interface ProcedureReferenceBase {
   isProcedureArgument: true
@@ -107,32 +114,58 @@ export interface ProcedureStringOrNumberReference
   extends ProcedureReferenceBase {
   type: 'stringOrNumber'
 }
-export type ProcedureReference =
+export type ProcedureArgumentReference =
   | ProcedureBooleanReference
   | ProcedureStringOrNumberReference
+export type ProcedureReference = ProcedureArgumentReference
 
-type ReferencesByProcs<T extends ProcedureProc[]> = {
-  [K in OnlyArgProc<T[number]>['name']]: OnlyArgProc<T[number]> extends {
-    type: infer U
-  }
-    ? U extends 'boolean'
-      ? ProcedureBooleanReference
-      : U extends 'stringOrNumber'
-        ? ProcedureStringOrNumberReference
-        : never
+type ProcedureArgumentReferenceByProc<
+  T extends ProcedureArgumentProc,
+> = T extends ProcedureProcBoolean
+  ? ProcedureBooleanReference
+  : T extends ProcedureProcStringOrNumber
+    ? ProcedureStringOrNumberReference
     : never
+
+type ReferencesByProcs<T extends readonly ProcedureProc[]> = {
+  [Name in ProcedureArgumentName<T>]: ProcedureArgumentReferenceByProc<
+    ProcedureArgumentProcByName<T, Name>
+  >
+}
+
+type ProcedureCallInputByReference<
+  T extends ProcedureArgumentReference,
+> = T extends ProcedureBooleanReference
+  ? PrimitiveSource<boolean>
+  : PrimitiveSource<string | number>
+
+export type ProcedureCallInputs<T extends readonly ProcedureProc[]> = {
+  [Name in keyof ReferencesByProcs<T>]: ProcedureCallInputByReference<
+    ReferencesByProcs<T>[Name]
+  >
+}
+
+export interface ProcedureDefinitionReference<
+  T extends readonly ProcedureProc[] = ProcedureProc[],
+> {
+  type: 'procedure'
+  id: string
+  proccode: string
+  argumentIds: string[]
+  arguments: ReferencesByProcs<T>
+  warp: boolean
 }
 
 /**
  * Defines a custom procedure.
  *
  * Input: `proclist`, `stack?`, `warp?`.
- * Output: Scratch statement block definition that is appended to the current script stack.
+ * Output: Procedure definition reference.
  *
  * @param proclist List of procedure parts (labels and arguments) that define the procedure's signature.
  * @param stack Optional callback that receives references to the procedure arguments and composes the body of the procedure.
  * @param warp Optional flag (default `false`). If true, the procedure will run without screen refresh until it completes.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @returns Procedure definition reference that can be passed to {@link callProcedure}.
  * @example
  * ```ts
  * import { defineProcedure } from 'hikkaku/blocks'
@@ -164,7 +197,16 @@ export const defineProcedure = <T extends ProcedureProc[]>(
     })
     .join(' ')
 
-  const argumentProcs = proclist.filter((proc) => proc.type !== 'label')
+  const argumentProcs = proclist.filter(
+    (proc): proc is ProcedureArgumentProc => proc.type !== 'label',
+  )
+  const seenArgumentNames = new Set<string>()
+  for (const proc of argumentProcs) {
+    if (seenArgumentNames.has(proc.name)) {
+      throw new Error(`Duplicate procedure argument name: ${proc.name}`)
+    }
+    seenArgumentNames.add(proc.name)
+  }
 
   const argumentids = argumentProcs.map(() => {
     // Generate a random ID for each argument
@@ -215,58 +257,85 @@ export const defineProcedure = <T extends ProcedureProc[]>(
           name: proc.name,
           type: proc.type,
           id: argumentids[index],
-        } as ProcedureReference,
+        } as ProcedureArgumentReference,
       ]
     }),
-  )
+  ) as ReferencesByProcs<T>
 
   if (stack) {
     attachStack(definition.id, () => {
-      stack(references as ReferencesByProcs<T>)
+      stack(references)
     })
   }
 
-  return definition
+  return {
+    type: 'procedure',
+    id: definition.id,
+    proccode,
+    argumentIds: argumentids,
+    arguments: references,
+    warp,
+  } satisfies ProcedureDefinitionReference<T>
 }
 
 /**
  * Calls a custom procedure.
  *
- * Input: `proccode`, `argumentIds`, `inputs`, `warp`.
+ * Input: `procedure`, `inputs`, `warp?`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param proccode See function signature for accepted input values.
- * @param argumentIds See function signature for accepted input values.
+ * @param procedure See function signature for accepted input values.
  * @param inputs See function signature for accepted input values.
- * @param warp See function signature for accepted input values.
+ * @param warp Optional override for procedure warp mode. Defaults to the procedure definition warp flag.
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
  * import { callProcedure } from 'hikkaku/blocks'
  *
- * callProcedure([] as any, undefined as any, undefined as any, undefined as any)
+ * callProcedure(procedure as any, {} as any)
  * ```
  */
-export const callProcedure = (
-  proccode: string,
-  argumentIds: string[],
-  inputs: Record<string, PrimitiveSource<string | number | boolean>>,
-  warp = false,
+export const callProcedure = <T extends readonly ProcedureProc[]>(
+  procedure: ProcedureDefinitionReference<T>,
+  inputs: ProcedureCallInputs<T>,
+  warp = procedure.warp,
 ) => {
   const resolvedInputs: Record<
     string,
     ReturnType<typeof fromPrimitiveSource>
   > = {}
-  for (const [key, value] of Object.entries(inputs)) {
-    resolvedInputs[key] = fromPrimitiveSource(value)
+
+  const argumentNames = Object.keys(procedure.arguments)
+  for (const argumentName of argumentNames) {
+    if (!(argumentName in inputs)) {
+      throw new Error(`Missing procedure argument input: ${argumentName}`)
+    }
   }
+  for (const inputName of Object.keys(inputs)) {
+    if (!(inputName in procedure.arguments)) {
+      throw new Error(`Unknown procedure argument input: ${inputName}`)
+    }
+  }
+
+  for (const [argumentName, argumentReference] of Object.entries(
+    procedure.arguments,
+  ) as [string, ProcedureArgumentReference][]) {
+    const value = (
+      inputs as Record<string, PrimitiveSource<string | number | boolean>>
+    )[argumentName]
+    if (value === undefined) {
+      throw new Error(`Missing procedure argument input: ${argumentName}`)
+    }
+    resolvedInputs[argumentReference.id] = fromPrimitiveSource(value)
+  }
+
   return block('procedures_call', {
     inputs: resolvedInputs,
     mutation: {
       tagName: 'mutation',
       children: [],
-      proccode,
-      argumentids: JSON.stringify(argumentIds),
+      proccode: procedure.proccode,
+      argumentids: JSON.stringify(procedure.argumentIds),
       warp,
     },
   })

@@ -95,12 +95,10 @@ const rowCheckedList = renderer.createList(
 )
 
 const readVar = (variable: VariableReference) => getVariable(variable)
-const stepProcCode = '1step'
-const stepArgumentIds: string[] = []
 
 renderer.run(() => {
-  defineProcedure(
-    [procedureLabel(stepProcCode)],
+  const stepProcedure = defineProcedure(
+    [procedureLabel('1step')],
     () => {
       ifElse(
         equals(readVar(gameOver), 0),
@@ -446,7 +444,7 @@ renderer.run(() => {
     })
 
     forever(() => {
-      callProcedure(stepProcCode, stepArgumentIds, {}, true)
+      callProcedure(stepProcedure, {})
     })
   })
 })
