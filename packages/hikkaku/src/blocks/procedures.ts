@@ -93,8 +93,9 @@ export const procedureStringOrNumber = <T extends string>(
 
 type OnlyArgProc<T> = T extends { type: 'label' } ? never : T
 type ProcedureArgumentProc = OnlyArgProc<ProcedureProc>
-type ProcedureArgumentName<T extends readonly ProcedureProc[]> =
-  OnlyArgProc<T[number]>['name']
+type ProcedureArgumentName<T extends readonly ProcedureProc[]> = OnlyArgProc<
+  T[number]
+>['name']
 type ProcedureArgumentProcByName<
   T extends readonly ProcedureProc[],
   Name extends ProcedureArgumentName<T>,
@@ -119,13 +120,12 @@ export type ProcedureArgumentReference =
   | ProcedureStringOrNumberReference
 export type ProcedureReference = ProcedureArgumentReference
 
-type ProcedureArgumentReferenceByProc<
-  T extends ProcedureArgumentProc,
-> = T extends ProcedureProcBoolean
-  ? ProcedureBooleanReference
-  : T extends ProcedureProcStringOrNumber
-    ? ProcedureStringOrNumberReference
-    : never
+type ProcedureArgumentReferenceByProc<T extends ProcedureArgumentProc> =
+  T extends ProcedureProcBoolean
+    ? ProcedureBooleanReference
+    : T extends ProcedureProcStringOrNumber
+      ? ProcedureStringOrNumberReference
+      : never
 
 type ReferencesByProcs<T extends readonly ProcedureProc[]> = {
   [Name in ProcedureArgumentName<T>]: ProcedureArgumentReferenceByProc<
@@ -133,11 +133,10 @@ type ReferencesByProcs<T extends readonly ProcedureProc[]> = {
   >
 }
 
-type ProcedureCallInputByReference<
-  T extends ProcedureArgumentReference,
-> = T extends ProcedureBooleanReference
-  ? PrimitiveSource<boolean>
-  : PrimitiveSource<string | number>
+type ProcedureCallInputByReference<T extends ProcedureArgumentReference> =
+  T extends ProcedureBooleanReference
+    ? PrimitiveSource<boolean>
+    : PrimitiveSource<string | number>
 
 export type ProcedureCallInputs<T extends readonly ProcedureProc[]> = {
   [Name in keyof ReferencesByProcs<T>]: ProcedureCallInputByReference<
