@@ -69,7 +69,7 @@ Example:
 ```ts
 import { setSoundEffectTo } from 'hikkaku/blocks'
 
-setSoundEffectTo('color', 10)
+setSoundEffectTo('pitch', 10)
 ```
 
 ## changeSoundEffectBy(effect, value)
@@ -87,7 +87,7 @@ Example:
 ```ts
 import { changeSoundEffectBy } from 'hikkaku/blocks'
 
-changeSoundEffectBy('color', 10)
+changeSoundEffectBy('pitch', 10)
 ```
 
 ## clearEffects()
