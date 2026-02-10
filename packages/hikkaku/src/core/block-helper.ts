@@ -16,6 +16,9 @@ export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
     return [1, [6, source ? 1 : 0]]
   }
   if (typeof source === 'string') {
+    if (source.includes('\f')) {
+      throw new Error('Form feed character is not supported in Scratch strings.')
+    }
     return [1, [10, source]]
   }
 
