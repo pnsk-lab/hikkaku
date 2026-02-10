@@ -25,10 +25,10 @@ export type ProcedureProc =
  * Label fragment for custom block.
  *
  * Input: `text`.
- * Output: Scratch statement block definition that is appended to the current script stack.
+ * Output: Procedure signature fragment object used to define custom block labels (not a Scratch block).
  *
  * @param text See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @returns Procedure signature fragment object used to define custom block labels.
  * @example
  * ```ts
  * import { procedureLabel } from 'hikkaku/blocks'
@@ -47,10 +47,10 @@ export const procedureLabel = (text: string): ProcedureProcLabel => {
  * Boolean argument fragment.
  *
  * Input: `name`.
- * Output: Scratch statement block definition that is appended to the current script stack.
+ * Output: Procedure signature fragment object used to define boolean arguments in custom blocks (not a Scratch block).
  *
  * @param name See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @returns Procedure signature fragment object used to define boolean arguments in custom blocks.
  * @example
  * ```ts
  * import { procedureBoolean } from 'hikkaku/blocks'
@@ -71,10 +71,10 @@ export const procedureBoolean = <T extends string>(
  * String/number argument fragment.
  *
  * Input: `name`.
- * Output: Scratch statement block definition that is appended to the current script stack.
+ * Output: Procedure signature fragment object used to define string/number arguments in custom blocks (not a Scratch block).
  *
  * @param name See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @returns Procedure signature fragment object used to define string/number arguments in custom blocks.
  * @example
  * ```ts
  * import { procedureStringOrNumber } from 'hikkaku/blocks'
