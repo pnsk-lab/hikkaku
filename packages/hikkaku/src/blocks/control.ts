@@ -263,10 +263,10 @@ export const ifElse = (
 /**
  * Builds chained if / else-if / else branching from condition-handler pairs.
  *
- * Input: `a`.
+ * Input: `branches`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param a Input value used by this block.
+ * @param branches Input value used by this block.
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -276,31 +276,31 @@ export const ifElse = (
  * ```
  */
 export const match = (
-  ...a:
+  ...branches:
     | [condition: PrimitiveSource<boolean>, handler: () => void][]
     | [
         ...[condition: PrimitiveSource<boolean>, handler: () => void][],
         () => void,
       ]
 ) => {
-  if (a.length === 0) {
+  if (branches.length === 0) {
     return
   }
 
-  const tail = a[a.length - 1]
+  const tail = branches[branches.length - 1]
   const defaultHandler = typeof tail === 'function' ? tail : null
-  const branches = (defaultHandler ? a.slice(0, -1) : a) as [
+  const branchList = (defaultHandler ? branches.slice(0, -1) : branches) as [
     PrimitiveSource<boolean>,
     () => void,
   ][]
 
-  if (branches.length === 0) {
+  if (branchList.length === 0) {
     return defaultHandler?.()
   }
 
   let elseHandler: () => void = defaultHandler ?? (() => {})
-  for (let i = branches.length - 1; i >= 0; i--) {
-    const branch = branches[i]
+  for (let i = branchList.length - 1; i >= 0; i--) {
+    const branch = branchList[i]
     if (!branch) {
       continue
     }
