@@ -197,7 +197,7 @@ Example:
 ```ts
 import { current } from 'hikkaku/blocks'
 
-current('loudness')
+current('year')
 ```
 
 ## getAttributeOf(property, target)
