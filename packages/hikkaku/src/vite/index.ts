@@ -105,7 +105,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
       if (!runner) {
         throw new Error('Module runner is not initialized.')
       }
-      const project: Project = (await runner.import(options.file)).default
+      const project: Project = (await runner.import(init.entry)).default
       options.server.environments.client.hot.send(
         'hikkaku:project',
         project.toScratch(),
