@@ -76,24 +76,24 @@ import { defineProcedure } from 'hikkaku/blocks'
 defineProcedure(list as any, () => {}, undefined as any, undefined as any)
 ```
 
-## callProcedure(proccode, argumentIds, inputs)
+## callProcedure(...)
 
 Calls a custom procedure.
 
-Input: `proccode`, `argumentIds`, `inputs`, `warp`.
+Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`reference`, `inputsByReference`, `warp`).
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `proccode: See function signature for accepted input values`
-* `argumentIds: See function signature for accepted input values`
-* `inputs: See function signature for accepted input values`
+* `proccodeOrReference: See function signature for accepted input values`
+* `argumentIdsOrInputs: See function signature for accepted input values`
+* `inputsOrWarp: See function signature for accepted input values`
 * `warp: See function signature for accepted input values`
 
 Example:
 ```ts
 import { callProcedure } from 'hikkaku/blocks'
 
-callProcedure([] as any, undefined as any, undefined as any, undefined as any)
+callProcedure(reference as any, [] as any, undefined as any)
 ```
 
 ## argumentReporterStringNumber(reference)

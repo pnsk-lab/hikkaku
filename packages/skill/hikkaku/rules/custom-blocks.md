@@ -50,36 +50,25 @@ sprite.run(() => {
 })
 ```
 
-## Call a Procedure (Advanced)
+## Call a Procedure
 
-`callProcedure` is a low-level helper. You must provide the exact `proccode` and
-`argumentIds` used by the definition block. These are stored in the
-`procedures_prototype` mutation for that custom block.
-
-A `proccode` is built by joining the procedure parts with spaces:
-
-* `procedureLabel(text)` -> `text`
-* `procedureBoolean(name)` -> `%b`
-* `procedureStringOrNumber(name)` -> `%s`
-
-Example of a `proccode` for the definition above:
-
-```ts
-const proccode = 'greet %s %b'
-```
-
-Use the same `argumentIds` order as the non-label parts.
+`callProcedure` supports a safer reference-based style. `defineProcedure` returns
+a `reference` object that includes the procedure code and each argument reference.
 
 ```ts
 import { callProcedure } from 'hikkaku/blocks'
 
-const argumentIds = ['arg-id-1', 'arg-id-2']
+const greet = defineProcedure([
+  procedureLabel('greet'),
+  procedureStringOrNumber('name'),
+  procedureBoolean('excited'),
+])
 
-callProcedure(proccode, argumentIds, {
-  'arg-id-1': 'Ada',
-  'arg-id-2': true,
-})
+callProcedure(greet.reference, [
+  { reference: greet.reference.arguments.name, value: 'Ada' },
+  { reference: greet.reference.arguments.excited, value: true },
+])
 ```
 
-If you need to call custom blocks frequently, keep the `proccode` and
-`argumentIds` together in a shared helper so the definition and calls match.
+Low-level invocation with explicit `proccode` / `argumentIds` still works for
+interop scenarios, but prefer references when possible to avoid mismatches.

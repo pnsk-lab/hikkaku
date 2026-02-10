@@ -19,7 +19,7 @@ import {
 
 sprite.run(() => {
   whenFlagClicked(() => {
-    defineProcedure(
+    const greet = defineProcedure(
       [
         procedureLabel('greet'),
         procedureStringOrNumber('name'),
@@ -31,6 +31,11 @@ sprite.run(() => {
         })
       }
     )
+
+    callProcedure(greet.reference, [
+      { reference: greet.reference.arguments.name, value: 'Ada' },
+      { reference: greet.reference.arguments.excited, value: true }
+    ])
   })
 })
 ```
@@ -39,16 +44,23 @@ sprite.run(() => {
 
 Most projects should define and call procedures in one place.
 
-If you use low-level `callProcedure`, keep `proccode` and argument IDs synchronized with the definition.
+`callProcedure` supports both low-level ID-based calls and safer reference-based calls from `defineProcedure`.
 
 ```ts
-import { callProcedure } from 'hikkaku/blocks'
+import { callProcedure, defineProcedure, procedureLabel, procedureStringOrNumber } from 'hikkaku/blocks'
 
-const proccode = 'greet %s %b'
-const argumentIds = ['arg-id-1', 'arg-id-2']
+const greet = defineProcedure([
+  procedureLabel('greet'),
+  procedureStringOrNumber('name')
+])
 
-callProcedure(proccode, argumentIds, {
-  'arg-id-1': 'Ada',
-  'arg-id-2': true
+// Recommended: reference-based invocation.
+callProcedure(greet.reference, [
+  { reference: greet.reference.arguments.name, value: 'Ada' }
+])
+
+// Low-level: still available when you need to interop with existing code.
+callProcedure('greet %s', ['arg-id-1'], {
+  'arg-id-1': 'Ada'
 })
 ```

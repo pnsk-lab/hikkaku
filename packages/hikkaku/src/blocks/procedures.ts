@@ -111,6 +111,21 @@ export type ProcedureReference =
   | ProcedureBooleanReference
   | ProcedureStringOrNumberReference
 
+export interface ProcedureDefinitionReference<
+  T extends ProcedureProc[] = ProcedureProc[],
+> {
+  type: 'procedure'
+  proccode: string
+  warp: boolean
+  argumentids: string[]
+  arguments: ReferencesByProcs<T>
+}
+
+export type ProcedureCallInput = {
+  reference: ProcedureReference
+  value: PrimitiveSource<string | number | boolean>
+}
+
 type ReferencesByProcs<T extends ProcedureProc[]> = {
   [K in OnlyArgProc<T[number]>['name']]: OnlyArgProc<T[number]> extends {
     type: infer U
@@ -218,26 +233,37 @@ export const defineProcedure = <T extends ProcedureProc[]>(
         } as ProcedureReference,
       ]
     }),
-  )
+  ) as ReferencesByProcs<T>
+
+  const reference: ProcedureDefinitionReference<T> = {
+    type: 'procedure',
+    proccode,
+    argumentids,
+    warp,
+    arguments: references,
+  }
 
   if (stack) {
     attachStack(definition.id, () => {
-      stack(references as ReferencesByProcs<T>)
+      stack(references)
     })
   }
 
-  return definition
+  return {
+    ...definition,
+    reference,
+  }
 }
 
 /**
  * Calls a custom procedure.
  *
- * Input: `proccode`, `argumentIds`, `inputs`, `warp`.
+ * Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`reference`, `inputsByReference`, `warp`).
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param proccode See function signature for accepted input values.
- * @param argumentIds See function signature for accepted input values.
- * @param inputs See function signature for accepted input values.
+ * @param proccodeOrReference See function signature for accepted input values.
+ * @param argumentIdsOrInputs See function signature for accepted input values.
+ * @param inputsOrWarp See function signature for accepted input values.
  * @param warp See function signature for accepted input values.
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
@@ -248,11 +274,51 @@ export const defineProcedure = <T extends ProcedureProc[]>(
  * ```
  */
 export const callProcedure = (
-  proccode: string,
-  argumentIds: string[],
-  inputs: Record<string, PrimitiveSource<string | number | boolean>>,
+  proccodeOrReference: string | ProcedureDefinitionReference,
+  argumentIdsOrInputs:
+    | string[]
+    | ProcedureCallInput[]
+    | Record<string, PrimitiveSource<string | number | boolean>>,
+  inputsOrWarp?:
+    | Record<string, PrimitiveSource<string | number | boolean>>
+    | boolean,
   warp = false,
 ) => {
+  let proccode = ''
+  let argumentIds: string[] = []
+  let inputs: Record<string, PrimitiveSource<string | number | boolean>> = {}
+
+  if (typeof proccodeOrReference === 'string') {
+    proccode = proccodeOrReference
+    argumentIds = argumentIdsOrInputs as string[]
+    inputs = (typeof inputsOrWarp === 'object' ? inputsOrWarp : undefined) ?? {}
+    warp = typeof inputsOrWarp === 'boolean' ? inputsOrWarp : warp
+  } else {
+    proccode = proccodeOrReference.proccode
+    argumentIds = proccodeOrReference.argumentids
+    warp =
+      typeof inputsOrWarp === 'boolean'
+        ? inputsOrWarp
+        : proccodeOrReference.warp
+
+    if (
+      Array.isArray(argumentIdsOrInputs) &&
+      argumentIdsOrInputs.every(
+        (input): input is ProcedureCallInput =>
+          typeof input === 'object' &&
+          input !== null &&
+          'reference' in input &&
+          'value' in input,
+      )
+    ) {
+      for (const input of argumentIdsOrInputs) {
+        inputs[input.reference.id] = input.value
+      }
+    } else if (!Array.isArray(argumentIdsOrInputs)) {
+      inputs = argumentIdsOrInputs
+    }
+  }
+
   const resolvedInputs: Record<
     string,
     ReturnType<typeof fromPrimitiveSource>
