@@ -1,3 +1,7 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import * as path from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { zip } from 'fflate'
 import { createServerModuleRunner, type PluginOption } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { Project } from '../core'
@@ -15,10 +19,74 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
     config() {
       return {
         environments: {
-          hikkaku: {},
+          hikkaku: {
+            build: {
+              rolldownOptions: {
+                input: init.entry,
+                output: {
+                  entryFileNames: 'project.mjs',
+                  format: 'es',
+                },
+              },
+            },
+          },
           client: {},
         },
+        builder: {
+          async buildApp(builder) {
+            const env = builder.environments.hikkaku
+            if (!env) {
+              throw new Error('Hikkaku environment is not configured.')
+            }
+            await builder.build(env)
+          },
+        },
       }
+    },
+    async generateBundle(_options, bundle) {
+      const tmpDir = path.join(process.cwd(), 'dist', '.tmp')
+      for (const [filePath, file] of Object.entries(bundle)) {
+        if (file.type === 'chunk') {
+          const fullPath = path.join(tmpDir, filePath)
+          await mkdir(path.dirname(fullPath), { recursive: true })
+          await writeFile(fullPath, file.code)
+        }
+      }
+
+      const filePath = path.join(process.cwd(), 'dist/.tmp', 'project.mjs')
+      const fileURL = pathToFileURL(filePath)
+      const { default: project } = await import(fileURL.href)
+      const projectJSON = project.toScratch()
+      const zipData = await new Promise<Uint8Array>((resolve, reject) => {
+        zip(
+          {
+            'project.json': new TextEncoder().encode(
+              JSON.stringify(projectJSON),
+            ),
+          },
+          (err, data) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(data)
+            }
+          },
+        )
+      })
+      this.emitFile({
+        type: 'asset',
+        fileName: 'project.sb3',
+        name: 'project.sb3',
+        source: zipData,
+      })
+      this.emitFile({
+        type: 'asset',
+        fileName: 'project.json',
+        name: 'project.json',
+        source: JSON.stringify(projectJSON, null, 2),
+      })
+
+      await rm(tmpDir, { recursive: true, force: true })
     },
     resolveId(source) {
       if (source === '/@virtual/hikkaku-client') {
