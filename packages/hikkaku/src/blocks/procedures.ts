@@ -126,19 +126,18 @@ type ReferencesByProcs<T extends ProcedureProc[]> = {
 /**
  * Defines a custom procedure.
  *
- * Input: `proclist`, `stack`, `the`, `but`.
+ * Input: `proclist`, `stack?`, `warp?`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param proclist ProcedureProc[]
- * @param stack (references) => void Optional.
- * @param the Input value used by this block.
- * @param but Input value used by this block.
+ * @param proclist List of procedure parts (labels and arguments) that define the procedure's signature.
+ * @param stack Optional callback that receives references to the procedure arguments and composes the body of the procedure.
+ * @param warp Optional flag (default `false`). If true, the procedure will run without screen refresh until it completes.
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
  * import { defineProcedure } from 'hikkaku/blocks'
  *
- * defineProcedure(list as any, () => {}, undefined as any, undefined as any)
+ * defineProcedure(list as any, () => {}, true)
  * ```
  */
 export const defineProcedure = <T extends ProcedureProc[]>(

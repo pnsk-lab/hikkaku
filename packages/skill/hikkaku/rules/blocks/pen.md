@@ -22,11 +22,11 @@ eraseAll()
 
 ## clear()
 
-Alias for {@link eraseAll}.
+Alias for `eraseAll()`.
 
 Input: none.
 
-Output: Same Scratch statement block definition as {@link eraseAll}.
+Output: Same Scratch statement block definition as `eraseAll()`.
 
 Example:
 ```ts
