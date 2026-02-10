@@ -36,6 +36,8 @@ export interface ListMonitor {
   visible: boolean
 }
 
+export type Monitor = VariableMonitor | ListMonitor
+
 export const createVariableMonitor = (
   id: string,
   name: string,
@@ -90,9 +92,7 @@ export const createListMonitor = (
   }
 }
 
-export const cloneMonitor = (
-  monitor: VariableMonitor | ListMonitor,
-): VariableMonitor | ListMonitor => {
+export const cloneMonitor = (monitor: Monitor): Monitor => {
   if (monitor.mode === 'list') {
     return {
       ...monitor,

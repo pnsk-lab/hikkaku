@@ -1,6 +1,6 @@
 import type * as sb3 from 'sb3-types'
 import { createBlocks } from './composer'
-import type { ListMonitor, VariableMonitor } from './monitors'
+import type { ListMonitor, Monitor, VariableMonitor } from './monitors'
 import {
   cloneMonitor,
   createListMonitor,
@@ -64,7 +64,7 @@ export class Target<IsStage extends boolean = boolean> {
   #blocks: Record<string, sb3.Block> = {}
   #variables: Record<string, sb3.ScalarVariable> = {}
   #lists: Record<string, sb3.List> = {}
-  #monitors: Array<VariableMonitor | ListMonitor> = []
+  #monitors: Monitor[] = []
   #costumes: sb3.Costume[] = []
   #sounds: sb3.Sound[] = []
   constructor(isStage: IsStage, name: IsStage extends true ? 'Stage' : string) {
@@ -158,7 +158,7 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
-  get monitors(): readonly (VariableMonitor | ListMonitor)[] {
+  get monitors(): readonly Monitor[] {
     return this.#monitors
   }
 
@@ -219,7 +219,7 @@ export class Project {
     const extensions = collectExtensions(targets)
     const project: sb3.ScratchProject & {
       extensions?: string[]
-      monitors?: Array<VariableMonitor | ListMonitor>
+      monitors?: Monitor[]
     } = {
       targets,
       meta: {
