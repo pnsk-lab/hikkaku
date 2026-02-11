@@ -542,24 +542,8 @@ const buildOverviewMarkdown = (target: TargetConfig): string => {
   lines.push('## Block Categories')
   lines.push('')
 
-  const categoryLabels = new Map<string, string>()
-
-  // Derive category labels from blockConfigs to avoid duplicating category metadata.
-  for (const [category, config] of Object.entries(blockConfigs as Record<string, any>)) {
-    if (!categoryLabels.has(category)) {
-      const title =
-        (config && (config as any).title) ||
-        (config && (config as any).heading) ||
-        (category[0]?.toUpperCase() + category.slice(1))
-      categoryLabels.set(category, title)
-    }
-  }
-
-  const sortedCategories = Array.from(categoryLabels.entries()).sort(([a], [b]) =>
-    a.localeCompare(b),
-  )
-
-  for (const [category, title] of sortedCategories) {
+  for (const category of blockCategories) {
+    const title = category[0]?.toUpperCase() + category.slice(1)
     lines.push(`- [${title}](${target.categoryLink(category)})`)
   }
 
