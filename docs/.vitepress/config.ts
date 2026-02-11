@@ -63,6 +63,6 @@ export default defineConfig({
     logo: {
       src: '/assets/logo.svg',
       alt: 'Hikkaku Logo',
-    }
+    },
   },
 })
