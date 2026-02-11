@@ -37,3 +37,8 @@
     ```
 * You can use git command and gh command to commit, push and create PR.
 * Use "Squash and merge" to merge the PR on GitHub.
+
+* commands you have to use before commiting:
+  * `bun fmt`: apply formatting
+  * `bun typecheck`: run type checking
+  * `bun ref:build`: update the docs
