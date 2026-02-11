@@ -1,5 +1,5 @@
 {
-  "name": "example1",
+  "name": "reversi",
   "private": true,
   "type": "module",
   "scripts": {
