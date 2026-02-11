@@ -22,13 +22,10 @@ export type ProcedureProc =
   | ProcedureProcStringOrNumber
 
 /**
- * Label fragment for custom block.
+ * Creates a label fragment used in `defineProcedure`.
  *
- * Input: `text`.
- * Output: Scratch statement block definition that is appended to the current script stack.
- *
- * @param text See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @param text Static text shown in the custom block signature.
+ * @returns A procedure fragment describing a label segment.
  * @example
  * ```ts
  * import { procedureLabel } from 'hikkaku/blocks'
@@ -44,13 +41,10 @@ export const procedureLabel = (text: string): ProcedureProcLabel => {
 }
 
 /**
- * Boolean argument fragment.
+ * Creates a boolean argument fragment used in `defineProcedure`.
  *
- * Input: `name`.
- * Output: Scratch statement block definition that is appended to the current script stack.
- *
- * @param name See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @param name Argument name shown in the custom block signature.
+ * @returns A procedure fragment describing a boolean input.
  * @example
  * ```ts
  * import { procedureBoolean } from 'hikkaku/blocks'
@@ -68,13 +62,10 @@ export const procedureBoolean = <T extends string>(
 }
 
 /**
- * String/number argument fragment.
+ * Creates a string/number argument fragment used in `defineProcedure`.
  *
- * Input: `name`.
- * Output: Scratch statement block definition that is appended to the current script stack.
- *
- * @param name See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @param name Argument name shown in the custom block signature.
+ * @returns A procedure fragment describing a string/number input.
  * @example
  * ```ts
  * import { procedureStringOrNumber } from 'hikkaku/blocks'
@@ -99,6 +90,11 @@ export interface ProcedureReferenceBase {
   name: string
   type: 'boolean' | 'stringOrNumber'
   id: string
+
+  /**
+   * Creates a reporter block for this argument reference.
+   */
+  getter(): HikkakuBlock
 }
 export interface ProcedureBooleanReference extends ProcedureReferenceBase {
   type: 'boolean'
@@ -145,25 +141,29 @@ type ReferencesByProcs<T extends ProcedureProc[]> = {
 }
 
 /**
- * Defines a custom procedure.
- *
- * Input: `proclist`, `stack?`, `warp?`.
- * Output: Scratch statement block definition that is appended to the current script stack.
+ * Defines a custom procedure and returns its definition block.
  *
  * @param proclist List of procedure parts (labels and arguments) that define the procedure's signature.
- * @param stack Optional callback that receives references to the procedure arguments and composes the body of the procedure.
- * @param warp Optional flag (default `false`). If true, the procedure will run without screen refresh until it completes.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @param stack Optional callback that composes the procedure body. Return `undefined` from this callback (implicit return is fine).
+ * Argument references include `getter()` to create reporter blocks.
+ * @param warp If `true`, run the procedure without screen refresh until completion.
+ * @returns A procedure definition block with `reference` metadata for safe calls.
  * @example
  * ```ts
- * import { defineProcedure } from 'hikkaku/blocks'
+ * import { defineProcedure, procedureLabel, procedureStringOrNumber, say } from 'hikkaku/blocks'
  *
- * defineProcedure(list as any, () => {}, true)
+ * const greet = defineProcedure(
+ *   [procedureLabel('greet'), procedureStringOrNumber('name')],
+ *   ({ name }) => {
+ *     say(name.getter())
+ *   },
+ * )
  * ```
  */
 export const defineProcedure = <T extends ProcedureProc[]>(
   proclist: T,
-  stack?: (references: ReferencesByProcs<T>) => void,
+  // specify returning undefined to avoid returning value in procedure body
+  stack?: (references: ReferencesByProcs<T>) => undefined,
   /**
    * If true, the procedure will run without screen refresh until it completes.
    * This can make the procedure run faster, but the screen will not update until the procedure is done.
@@ -229,15 +229,33 @@ export const defineProcedure = <T extends ProcedureProc[]>(
   })
   const references = Object.fromEntries(
     argumentProcs.map((proc, index) => {
-      return [
-        proc.name,
-        {
-          isProcedureArgument: true,
+      const argumentid = argumentids[index]
+      if (!argumentid) {
+        throw new Error('Argument ID not found')
+      }
+      let reference: ProcedureReference
+      if (proc.type === 'boolean') {
+        const boolReference: ProcedureBooleanReference = {
+          isProcedureArgument: true as const,
           name: proc.name,
           type: proc.type,
-          id: argumentids[index],
-        } as ProcedureReference,
-      ]
+          id: argumentid,
+          getter: () => argumentReporterBoolean(boolReference),
+        }
+        reference = boolReference
+      } else if (proc.type === 'stringOrNumber') {
+        const strNumReference: ProcedureStringOrNumberReference = {
+          isProcedureArgument: true as const,
+          name: proc.name,
+          type: proc.type,
+          id: argumentid,
+          getter: () => argumentReporterStringNumber(strNumReference),
+        }
+        reference = strNumReference
+      } else {
+        throw new Error('Unknown procedure proc type')
+      }
+      return [proc.name, reference]
     }),
   ) as ReferencesByProcs<T>
 
@@ -263,20 +281,28 @@ export const defineProcedure = <T extends ProcedureProc[]>(
 
 /**
  * Calls a custom procedure.
+ * Supports three call styles:
+ * 1) Low-level: `callProcedure(proccode, argumentIds, inputs?, warp?)`
+ * 2) Reference + array: `callProcedure(definitionOrReference, [{ reference, value }], warp?)`
+ * 3) Reference + object: `callProcedure(definitionOrReference, { [argumentId]: value }, warp?)`
  *
- * Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`definitionOrReference`, `inputsByReference`, `warp`).
- * Output: Scratch statement block definition that is appended to the current script stack.
- *
- * @param proccodeOrReference See function signature for accepted input values.
- * @param argumentIdsOrInputs See function signature for accepted input values.
- * @param inputsOrWarp See function signature for accepted input values.
- * @param warp See function signature for accepted input values.
- * @returns Scratch statement block definition that is appended to the current script stack.
+ * @param proccodeOrReference Procedure code or the definition/reference returned by `defineProcedure`.
+ * @param argumentIdsOrInputs Argument IDs for low-level calls, or argument inputs for reference-based calls.
+ * @param inputsOrWarp Optional low-level inputs object or a warp override for reference-based calls.
+ * @param warp Warp flag used by low-level calls.
+ * @returns A `procedures_call` block.
  * @example
  * ```ts
- * import { callProcedure } from 'hikkaku/blocks'
+ * import { callProcedure, defineProcedure, procedureLabel, procedureStringOrNumber } from 'hikkaku/blocks'
  *
- * callProcedure([] as any, undefined as any, undefined as any, undefined as any)
+ * const greet = defineProcedure([
+ *   procedureLabel('greet'),
+ *   procedureStringOrNumber('name'),
+ * ])
+ *
+ * callProcedure(greet, [
+ *   { reference: greet.reference.arguments.name, value: 'Ada' },
+ * ])
  * ```
  */
 export const callProcedure = (
@@ -351,13 +377,10 @@ export const callProcedure = (
 }
 
 /**
- * Reporter for string/number argument.
+ * Creates a reporter block for a string/number procedure argument.
  *
- * Input: `reference`.
- * Output: Scratch reporter block definition that can be used as an input value in other blocks.
- *
- * @param reference See function signature for accepted input values.
- * @returns Scratch reporter block definition that can be used as an input value in other blocks.
+ * @param reference String/number argument reference from `defineProcedure`.
+ * @returns A reporter block that reads the current argument value.
  * @example
  * ```ts
  * import { argumentReporterStringNumber } from 'hikkaku/blocks'
@@ -376,13 +399,10 @@ export const argumentReporterStringNumber = (
 }
 
 /**
- * Reporter for boolean argument.
+ * Creates a reporter block for a boolean procedure argument.
  *
- * Input: `reference`.
- * Output: Scratch reporter block definition that can be used as an input value in other blocks.
- *
- * @param reference See function signature for accepted input values.
- * @returns Scratch reporter block definition that can be used as an input value in other blocks.
+ * @param reference Boolean argument reference from `defineProcedure`.
+ * @returns A reporter block that reads the current argument value.
  * @example
  * ```ts
  * import { argumentReporterBoolean } from 'hikkaku/blocks'

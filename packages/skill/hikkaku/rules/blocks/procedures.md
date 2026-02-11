@@ -7,11 +7,11 @@ impact: HIGH
 
 ## procedureLabel(text)
 
-Label fragment for custom block.
+Create a static label fragment for a custom block signature.
 
 Input: `text`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment.
 
 * `text: See function signature for accepted input values`
 
@@ -24,11 +24,11 @@ procedureLabel('Hello')
 
 ## procedureBoolean(name)
 
-Boolean argument fragment.
+Create a boolean argument fragment for a custom block signature.
 
 Input: `name`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment.
 
 * `name: See function signature for accepted input values`
 
@@ -41,11 +41,11 @@ procedureBoolean(undefined as any)
 
 ## procedureStringOrNumber(name)
 
-String/number argument fragment.
+Create a string/number argument fragment for a custom block signature.
 
 Input: `name`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment.
 
 * `name: See function signature for accepted input values`
 
@@ -56,24 +56,34 @@ import { procedureStringOrNumber } from 'hikkaku/blocks'
 procedureStringOrNumber(undefined as any)
 ```
 
-## defineProcedure(proclist, stack)
+## defineProcedure(proclist, stack?, warp?)
 
-Defines a custom procedure.
+Define a custom procedure from signature fragments.
 
-Input: `proclist`, `stack`, `the`, `but`.
+Input: `proclist`, optional `stack`, optional `warp`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
 * `proclist: T` - ProcedureProc[]
-* `stack: (references) => void Optional`
-* `the: Input value used by this block`
-* `but: Input value used by this block`
+* `stack: (references) => undefined Optional`
+* `warp: boolean Optional. If true, run without screen refresh until completion.`
+* `references.*.getter(): HikkakuBlock` is available inside `stack` to read arguments.
 
 Example:
 ```ts
-import { defineProcedure } from 'hikkaku/blocks'
+import {
+  defineProcedure,
+  procedureLabel,
+  procedureStringOrNumber,
+  say,
+} from 'hikkaku/blocks'
 
-defineProcedure(list as any, () => {}, undefined as any, undefined as any)
+defineProcedure(
+  [procedureLabel('greet'), procedureStringOrNumber('name')],
+  ({ name }) => {
+    say(name.getter())
+  },
+)
 ```
 
 ## callProcedure(...)
@@ -84,16 +94,30 @@ Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`definitionOrRef
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `proccodeOrReference: See function signature for accepted input values`
-* `argumentIdsOrInputs: See function signature for accepted input values`
-* `inputsOrWarp: See function signature for accepted input values`
-* `warp: See function signature for accepted input values`
+* Low-level style:
+  `callProcedure(proccode, argumentIds, inputs?, warp?)`
+* Reference style (recommended):
+  `callProcedure(definitionOrReference, [{ reference, value }], warp?)`
+* Reference style with object:
+  `callProcedure(definitionOrReference, { [argumentId]: value }, warp?)`
 
 Example:
 ```ts
-import { callProcedure } from 'hikkaku/blocks'
+import {
+  callProcedure,
+  defineProcedure,
+  procedureLabel,
+  procedureStringOrNumber,
+} from 'hikkaku/blocks'
 
-callProcedure(reference as any, [] as any, undefined as any)
+const greet = defineProcedure([
+  procedureLabel('greet'),
+  procedureStringOrNumber('name'),
+])
+
+callProcedure(greet, [
+  { reference: greet.reference.arguments.name, value: 'Ada' },
+])
 ```
 
 ## argumentReporterStringNumber(reference)
