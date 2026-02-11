@@ -21,6 +21,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260210.1",
     "monaco-editor": "^0.50.0",
     "typescript": "^5",
+    "vite": "8.0.0-beta.13",
     "vitepress": "^1.6.3",
     "vue-tsc": "^3.2.4"
   },
