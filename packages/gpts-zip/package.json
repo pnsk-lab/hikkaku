@@ -5,7 +5,8 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.2",
+    "sb3-types": "^0.1.16"
   },
   "peerDependencies": {
     "typescript": "^5"
