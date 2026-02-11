@@ -113,11 +113,7 @@ export function hikkaku(pluginOptions: HikkakuOptions): any {
       if (pluginOptions.packager) {
         Object.assign(packager.options, pluginOptions.packager)
       }
-      if (loadProject) {
-        packager.project = await loadProject(zipData.buffer)
-      } else {
-        await packager.loadProject(zipData.buffer)
-      }
+      packager.project = await loadProject(zipData)
       const result = await packager.package()
       this.emitFile({
         type: 'asset',

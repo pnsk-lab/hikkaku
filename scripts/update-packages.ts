@@ -19,7 +19,12 @@ async function updateExamples() {
                 await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
                 console.log(`Updated ${pkgPath}`);
             } catch (e) {
-                // Skip if not a project with package.json
+                const err = e as NodeJS.ErrnoException;
+                if (err && err.code === 'ENOENT') {
+                    // Skip if not a project with package.json
+                } else {
+                    console.error(`Failed to update ${pkgPath}`, e);
+                }
             }
         }
     }
