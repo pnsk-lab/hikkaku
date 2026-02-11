@@ -14,8 +14,6 @@ The returned references are then passed into data blocks from `hikkaku/blocks`.
 import { Project } from 'hikkaku'
 import {
   changeVariableBy,
-  getVariable,
-  setVariableTo,
   whenFlagClicked,
 } from 'hikkaku/blocks'
 
@@ -26,9 +24,9 @@ const score = sprite.createVariable('score', 0)
 
 sprite.run(() => {
   whenFlagClicked(() => {
-    setVariableTo(score, 0)
+    score.set(0)
     changeVariableBy(score, 1)
-    getVariable(score)
+    score.get()
   })
 })
 ```
@@ -94,6 +92,6 @@ sprite.run(() => {
 
 ## Notes
 
-* `createVariable(name, defaultValue?, isCloudVariableOrOptions?)` returns a `VariableReference`.
+* `createVariable(name, defaultValue?, isCloudVariableOrOptions?)` returns a `VariableDefinition` (`VariableReference` + `.get()` / `.set()` helpers).
 * `createList(name, defaultValue?, options?)` returns a `ListReference`.
 * Variable and list references are scoped to the target that created them (sprite or stage).

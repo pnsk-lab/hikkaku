@@ -43,6 +43,11 @@ export interface VariableReference extends VariableBase {
   type: 'variable'
 }
 
+export interface VariableDefinition extends VariableReference {
+  get(): HikkakuBlock
+  set(value: PrimitiveSource<number | string>): HikkakuBlock
+}
+
 export interface ListReference extends VariableBase {
   type: 'list'
 }

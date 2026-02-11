@@ -5,15 +5,15 @@ Variables and lists are created per target (sprite or stage) and then used in da
 ## Variables
 
 ```ts
-import { changeVariableBy, getVariable, setVariableTo, whenFlagClicked } from 'hikkaku/blocks'
+import { changeVariableBy, whenFlagClicked } from 'hikkaku/blocks'
 
 const score = sprite.createVariable('score', 0)
 
 sprite.run(() => {
   whenFlagClicked(() => {
-    setVariableTo(score, 0)
+    score.set(0)
     changeVariableBy(score, 1)
-    getVariable(score)
+    score.get()
   })
 })
 ```

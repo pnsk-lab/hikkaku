@@ -1,5 +1,6 @@
 import type * as sb3 from 'sb3-types'
-import { createBlocks } from './composer'
+import { fromPrimitiveSource } from './block-helper'
+import { block, createBlocks, valueBlock } from './composer'
 import type { Monitor } from './monitors'
 import {
   cloneMonitor,
@@ -12,7 +13,7 @@ import type {
   CreateVariableOptions,
   ListReference,
   SoundReference,
-  VariableReference,
+  VariableDefinition,
 } from './types'
 
 let nextAssetId = 0
@@ -86,7 +87,7 @@ export class Target<IsStage extends boolean = boolean> {
     name: string,
     defaultValue: sb3.ScalarVal = 0,
     isCloudVariableOrOptions?: boolean | CreateVariableOptions,
-  ): VariableReference {
+  ): VariableDefinition {
     const options =
       typeof isCloudVariableOrOptions === 'boolean'
         ? { isCloudVariable: isCloudVariableOrOptions }
@@ -112,6 +113,21 @@ export class Target<IsStage extends boolean = boolean> {
       id,
       name,
       type: 'variable',
+      get: () =>
+        valueBlock('data_variable', {
+          fields: {
+            VARIABLE: [name, id],
+          },
+        }),
+      set: (value) =>
+        block('data_setvariableto', {
+          inputs: {
+            VALUE: fromPrimitiveSource(value),
+          },
+          fields: {
+            VARIABLE: [name, id],
+          },
+        }),
     }
   }
 
