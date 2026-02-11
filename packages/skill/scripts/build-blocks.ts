@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 type BlockDoc = {
@@ -19,6 +19,14 @@ type ExtractedEntry = {
   declaration: string
 }
 
+type TargetName = 'docs' | 'skill'
+
+type TargetConfig = {
+  name: TargetName
+  outputRoot: string
+  categoryLink: (category: string) => string
+}
+
 const blockConfigs = [
   { file: 'control', title: 'Blocks - Control', heading: 'Control Blocks' },
   { file: 'data', title: 'Blocks - Data', heading: 'Variables & Lists' },
@@ -36,9 +44,34 @@ const blockConfigs = [
   { file: 'sound', title: 'Blocks - Sound', heading: 'Sound' },
 ] as const
 
+const blockCategories = [
+  'control',
+  'data',
+  'events',
+  'looks',
+  'motion',
+  'operator',
+  'procedures',
+  'sensing',
+  'sound',
+  'pen',
+] as const
+
 const projectRoot = fileURLToPath(new URL('../../..', import.meta.url))
 const blocksRoot = resolve(projectRoot, 'packages/hikkaku/src/blocks')
-const docsRoot = resolve(projectRoot, 'packages/skill/hikkaku/rules/blocks')
+
+const targetConfigs: Record<TargetName, TargetConfig> = {
+  docs: {
+    name: 'docs',
+    outputRoot: resolve(projectRoot, 'docs/reference/blocks'),
+    categoryLink: (category) => `/reference/blocks/${category}`,
+  },
+  skill: {
+    name: 'skill',
+    outputRoot: resolve(projectRoot, 'packages/skill/hikkaku/rules/blocks'),
+    categoryLink: (category) => `rules/blocks/${category}.md`,
+  },
+}
 
 const normalize = (value: string) => value.replaceAll('\r\n', '\n')
 const collapseWhitespace = (value: string) => value.replace(/\s+/g, ' ').trim()
@@ -257,8 +290,10 @@ const extractEntries = (source: string): ExtractedEntry[] => {
     }
 
     let exportLine = commentEnd + 1
-    while (exportLine < lines.length && !(lines[exportLine] ?? '').trim())
+    while (exportLine < lines.length && !(lines[exportLine] ?? '').trim()) {
       exportLine++
+    }
+
     const start = lines[exportLine] ?? ''
     const match = start.match(/^export const\s+([A-Za-z0-9_]+)\s*=\s*(.*)$/)
     if (!match) {
@@ -408,6 +443,12 @@ const parseDoc = (entry: ExtractedEntry): BlockDoc => {
   }
 }
 
+const buildGeneratedNote = () => [
+  '<!-- AUTO-GENERATED FILE. Do not edit manually.',
+  'Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->',
+  '',
+]
+
 const buildMarkdown = (
   title: string,
   heading: string,
@@ -420,6 +461,7 @@ const buildMarkdown = (
   lines.push('impact: HIGH')
   lines.push('---')
   lines.push('')
+  lines.push(...buildGeneratedNote())
   lines.push(`# ${heading}`)
   lines.push('')
 
@@ -464,20 +506,158 @@ const buildMarkdown = (
   return `${lines.join('\n').trimEnd()}\n`
 }
 
-const buildCategory = (config: (typeof blockConfigs)[number]) => {
+const buildOverviewMarkdown = (target: TargetConfig): string => {
+  const lines: string[] = []
+
+  lines.push('---')
+  lines.push('title: Blocks Overview')
+  lines.push('impact: HIGH')
+  lines.push('---')
+  lines.push('')
+  lines.push(...buildGeneratedNote())
+  lines.push('# List of Available Blocks')
+  lines.push('')
+  lines.push(
+    'This document explains the function names, arguments, and behavior of exported helpers.',
+  )
+  lines.push('Each function maps closely to a Scratch 3.0 block.')
+  lines.push('')
+  lines.push('Example:')
+  lines.push('')
+  lines.push('```ts')
+  lines.push("import { add, gotoXY } from 'hikkaku/blocks'")
+  lines.push('```')
+  lines.push('')
+  lines.push('## Common Concepts')
+  lines.push('')
+  lines.push(
+    '- `PrimitiveSource<T>`: literal values, variable reporters, or value blocks',
+  )
+  lines.push('- `block(...)`: creates a statement block')
+  lines.push('- `valueBlock(...)`: creates a reporter block')
+  lines.push(
+    '- `substack(handler)`: captures nested block stacks for C-shaped blocks',
+  )
+  lines.push('')
+  lines.push('## Block Categories')
+  lines.push('')
+
+  for (const category of blockCategories) {
+    const title = category[0]?.toUpperCase() + category.slice(1)
+    lines.push(`- [${title}](${target.categoryLink(category)})`)
+  }
+
+  return `${lines.join('\n').trimEnd()}\n`
+}
+
+const parseArgs = () => {
+  let target: 'all' | TargetName = 'all'
+  let check = false
+
+  for (const arg of process.argv.slice(2)) {
+    if (arg === '--check') {
+      check = true
+      continue
+    }
+    if (arg.startsWith('--target=')) {
+      const value = arg.slice('--target='.length)
+      if (value === 'all' || value === 'docs' || value === 'skill') {
+        target = value
+        continue
+      }
+      throw new Error(`Invalid --target value: ${value}`)
+    }
+    throw new Error(`Unknown argument: ${arg}`)
+  }
+
+  return { target, check }
+}
+
+const writeOrCheck = (outputPath: string, content: string, check: boolean) => {
+  const current = (() => {
+    try {
+      return readFileSync(outputPath, 'utf8')
+    } catch {
+      return ''
+    }
+  })()
+
+  if (current === content) {
+    return { changed: false }
+  }
+
+  if (check) {
+    return { changed: true }
+  }
+
+  mkdirSync(dirname(outputPath), { recursive: true })
+  writeFileSync(outputPath, content, 'utf8')
+  return { changed: true }
+}
+
+const buildCategoryForTarget = (
+  target: TargetConfig,
+  config: (typeof blockConfigs)[number],
+  options: { check: boolean },
+) => {
   const sourcePath = resolve(blocksRoot, `${config.file}.ts`)
-  const outputPath = resolve(docsRoot, `${config.file}.md`)
+  const outputPath = resolve(target.outputRoot, `${config.file}.md`)
   const source = readFileSync(sourcePath, 'utf8')
 
   const entries = extractEntries(source)
   const docs = entries.map(parseDoc)
   const markdown = buildMarkdown(config.title, config.heading, docs)
+  const result = writeOrCheck(outputPath, markdown, options.check)
 
-  writeFileSync(outputPath, markdown, 'utf8')
-  return { outputPath, count: docs.length }
+  return { outputPath, count: docs.length, changed: result.changed }
 }
 
-for (const config of blockConfigs) {
-  const result = buildCategory(config)
-  console.log(`updated: ${result.outputPath} (${result.count} entries)`)
+const buildOverviewForTarget = (
+  target: TargetConfig,
+  options: { check: boolean },
+) => {
+  const outputPath = resolve(target.outputRoot, 'overview.md')
+  const markdown = buildOverviewMarkdown(target)
+  const result = writeOrCheck(outputPath, markdown, options.check)
+  return { outputPath, changed: result.changed }
 }
+
+const run = () => {
+  const args = parseArgs()
+  const targets: TargetConfig[] =
+    args.target === 'all'
+      ? Object.values(targetConfigs)
+      : [targetConfigs[args.target]]
+
+  let changedCount = 0
+
+  for (const target of targets) {
+    for (const config of blockConfigs) {
+      const result = buildCategoryForTarget(target, config, {
+        check: args.check,
+      })
+      if (result.changed) changedCount++
+      console.log(
+        `${args.check ? 'checked' : 'updated'}: ${result.outputPath} (${result.count} entries)${
+          result.changed ? ' *changed' : ''
+        }`,
+      )
+    }
+
+    const overviewResult = buildOverviewForTarget(target, { check: args.check })
+    if (overviewResult.changed) changedCount++
+    console.log(
+      `${args.check ? 'checked' : 'updated'}: ${overviewResult.outputPath}${
+        overviewResult.changed ? ' *changed' : ''
+      }`,
+    )
+  }
+
+  if (args.check && changedCount > 0) {
+    throw new Error(
+      `Generated block references are out of date (${changedCount} files)`,
+    )
+  }
+}
+
+run()

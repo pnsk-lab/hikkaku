@@ -3,6 +3,9 @@ title: Blocks - Control
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Control Blocks
 
 ## repeat(times, handler)
@@ -166,15 +169,15 @@ import { ifElse } from 'hikkaku/blocks'
 ifElse(true, () => {}, () => {})
 ```
 
-## match(a)
+## match(branches)
 
 Builds chained if / else-if / else branching from condition-handler pairs.
 
-Input: `a`.
+Input: `branches`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `a: Input value used by this block`
+* `branches: Input value used by this block`
 
 Example:
 ```ts

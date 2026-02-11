@@ -3,6 +3,9 @@ title: Blocks - Sensing
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Sensing
 
 ## getMouseX()
@@ -197,7 +200,7 @@ Example:
 ```ts
 import { current } from 'hikkaku/blocks'
 
-current('year')
+current('loudness')
 ```
 
 ## getAttributeOf(property, target)

@@ -3,17 +3,18 @@ title: Blocks - Procedures
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Custom Blocks
 
 ## procedureLabel(text)
 
-Create a static label fragment for a custom block signature.
+Creates a label fragment used in `defineProcedure`.
 
-Input: `text`.
+Output: A procedure fragment describing a label segment.
 
-Output: Procedure signature fragment.
-
-* `text: See function signature for accepted input values`
+* `text: Static text shown in the custom block signature`
 
 Example:
 ```ts
@@ -24,13 +25,11 @@ procedureLabel('Hello')
 
 ## procedureBoolean(name)
 
-Create a boolean argument fragment for a custom block signature.
+Creates a boolean argument fragment used in `defineProcedure`.
 
-Input: `name`.
+Output: A procedure fragment describing a boolean input.
 
-Output: Procedure signature fragment.
-
-* `name: See function signature for accepted input values`
+* `name: Argument name shown in the custom block signature`
 
 Example:
 ```ts
@@ -41,13 +40,11 @@ procedureBoolean(undefined as any)
 
 ## procedureStringOrNumber(name)
 
-Create a string/number argument fragment for a custom block signature.
+Creates a string/number argument fragment used in `defineProcedure`.
 
-Input: `name`.
+Output: A procedure fragment describing a string/number input.
 
-Output: Procedure signature fragment.
-
-* `name: See function signature for accepted input values`
+* `name: Argument name shown in the custom block signature`
 
 Example:
 ```ts
@@ -56,79 +53,60 @@ import { procedureStringOrNumber } from 'hikkaku/blocks'
 procedureStringOrNumber(undefined as any)
 ```
 
-## defineProcedure(proclist, stack?, warp?)
+## defineProcedure(proclist)
 
-Define a custom procedure from signature fragments.
+Defines a custom procedure and returns its definition block.
 
-Input: `proclist`, optional `stack`, optional `warp`.
+Output: A procedure definition block with `reference` metadata for safe calls.
 
-Output: Scratch statement block definition that is appended to the current script stack.
-
-* `proclist: T` - ProcedureProc[]
-* `stack: (references) => undefined Optional`
-* `warp: boolean Optional. If true, run without screen refresh until completion.`
-* `references.*.getter(): HikkakuBlock` is available inside `stack` to read arguments.
+* `proclist: List of procedure parts (labels and arguments) that define the procedure's signature`
+* `stack: Optional callback that composes the procedure body` - Return `undefined` from this callback (implicit return is fine).
+* `warp: If `true`, run the procedure without screen refresh until completion`
 
 Example:
 ```ts
-import {
-  defineProcedure,
-  procedureLabel,
-  procedureStringOrNumber,
-  say,
-} from 'hikkaku/blocks'
+import { defineProcedure, procedureLabel, procedureStringOrNumber, say } from 'hikkaku/blocks'
 
-defineProcedure(
-  [procedureLabel('greet'), procedureStringOrNumber('name')],
-  ({ name }) => {
-    say(name.getter())
-  },
+const greet = defineProcedure(
+[procedureLabel('greet'), procedureStringOrNumber('name')],
+({ name }) => {
+say(name.getter())
+},
 )
 ```
 
-## callProcedure(...)
+## callProcedure(proccodeOrReference, argumentIdsOrInputs, inputsOrWarp)
 
 Calls a custom procedure.
 
-Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`definitionOrReference`, `inputsByReference`, `warp`).
+Output: A `procedures_call` block.
 
-Output: Scratch statement block definition that is appended to the current script stack.
-
-* Low-level style:
-  `callProcedure(proccode, argumentIds, inputs?, warp?)`
-* Reference style (recommended):
-  `callProcedure(definitionOrReference, [{ reference, value }], warp?)`
-* Reference style with object:
-  `callProcedure(definitionOrReference, { [argumentId]: value }, warp?)`
+* `proccodeOrReference: Procedure code or the definition/reference returned by `defineProcedure``
+* `argumentIdsOrInputs: Argument IDs for low-level calls, or argument inputs for reference-based calls`
+* `inputsOrWarp: Optional low-level inputs object or a warp override for reference-based calls`
+* `warp: Warp flag used by low-level calls`
 
 Example:
 ```ts
-import {
-  callProcedure,
-  defineProcedure,
-  procedureLabel,
-  procedureStringOrNumber,
-} from 'hikkaku/blocks'
+import { callProcedure, defineProcedure, procedureLabel, procedureStringOrNumber } from 'hikkaku/blocks'
 
 const greet = defineProcedure([
-  procedureLabel('greet'),
-  procedureStringOrNumber('name'),
+procedureLabel('greet'),
+procedureStringOrNumber('name'),
 ])
 
 callProcedure(greet, [
-  { reference: greet.reference.arguments.name, value: 'Ada' },
+{ reference: greet.reference.arguments.name, value: 'Ada' },
 ])
 ```
 
 ## argumentReporterStringNumber(reference)
 
-Reporter for string/number argument.
+Creates a reporter block for a string/number procedure argument.
 
-Input: `reference`.
+Output: A reporter block that reads the current argument value.
 
-Output: Scratch reporter block definition that can be used as an input value in other blocks.
-
-* `reference: See function signature for accepted input values`
+* `reference: String/number argument reference from `defineProcedure``
 
 Example:
 ```ts
@@ -139,13 +117,11 @@ argumentReporterStringNumber(reference as any)
 
 ## argumentReporterBoolean(reference)
 
-Reporter for boolean argument.
+Creates a reporter block for a boolean procedure argument.
 
-Input: `reference`.
+Output: A reporter block that reads the current argument value.
 
-Output: Scratch reporter block definition that can be used as an input value in other blocks.
-
-* `reference: See function signature for accepted input values`
+* `reference: Boolean argument reference from `defineProcedure``
 
 Example:
 ```ts

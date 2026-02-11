@@ -1,0 +1,48 @@
+name: Sync Generated References
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/hikkaku/src/blocks/**
+      - packages/skill/scripts/build-blocks.ts
+      - packages/skill/package.json
+      - package.json
+      - bun.lock
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate references
+        run: bun run ref:build
+
+      - name: Commit generated references
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add docs/reference/blocks packages/skill/hikkaku/rules/blocks
+          git commit -m "chore: sync generated block references"
+          git push
