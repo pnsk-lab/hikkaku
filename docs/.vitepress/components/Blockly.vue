@@ -17,6 +17,7 @@ const props = defineProps<{
 
 interface BlocklyWorkspace {
   clear: () => void
+  // biome-ignore lint/suspicious/noExplicitAny: any
   newBlock: (opcode: string) => any
   setVisible: (visible: boolean) => void
   resize: () => void
