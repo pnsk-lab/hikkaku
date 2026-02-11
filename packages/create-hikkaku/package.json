@@ -2,7 +2,7 @@
   "name": "create-hikkaku",
   "version": "0.1.9",
   "type": "module",
-  "private": false,
+  "private": true,
   "scripts": {
     "build": "bun build src/main.ts --outdir dist --target=node"
   },
@@ -16,5 +16,12 @@
     "package-manager-detector": "^1.6.0",
     "tar": "^7.4.3",
     "picocolors": "^1.1.1"
+  },
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

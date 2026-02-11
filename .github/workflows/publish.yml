@@ -7,13 +7,13 @@ on:
 
 permissions:
   id-token: write  # Required for OIDC
-  contents: read
+  contents: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
@@ -55,6 +55,14 @@ jobs:
         run: bun run --filter hikkaku build
       - name: Build create-hikkaku
         run: bun run --filter create-hikkaku build
+
+      - name: Build gpts zip
+        run: bun run --filter gpts-zip build
+
+      - name: Upload gpts.zip release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload '${{ github.event.release.tag_name }}' 'packages/gpts-zip/dist.zip#gpts.zip' --clobber
 
       - name: Publish hikkaku to npm
         run: npm publish --provenance --access public
