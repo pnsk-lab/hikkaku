@@ -3,17 +3,29 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "bun --cwd ../packages/hikkaku build",
     "dev": "vitepress dev",
+    "prebuild": "bun --cwd ../packages/hikkaku build",
     "build": "vitepress build",
-    "preview": "vitepress preview"
+    "preview": "vitepress preview",
+    "typecheck": "vue-tsc"
   },
   "dependencies": {
+    "@evex/scratch-blocks": "npm:@jsr/evex__scratch-blocks",
     "esbuild-wasm": "^0.27.0",
     "hikkaku": "workspace:*",
     "vue": "^3.5.28"
   },
   "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260210.1",
     "monaco-editor": "^0.50.0",
-    "vitepress": "^1.6.3"
+    "vite": "8.0.0-beta.13",
+    "vitepress": "^1.6.3",
+    "vue-tsc": "^3.2.4"
+  },
+  "module": "index.ts",
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

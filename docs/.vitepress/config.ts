@@ -1,3 +1,5 @@
+/// <reference types="vitepress" />
+/// <reference types="vite/client" />
 import { defineConfig } from 'vitepress'
 
 const guideSidebar = [
