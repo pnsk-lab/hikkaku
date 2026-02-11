@@ -20,12 +20,9 @@
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20260210.1",
     "monaco-editor": "^0.50.0",
-    "vite": "8.0.0-beta.13",
+    "typescript": "^5",
     "vitepress": "^1.6.3",
     "vue-tsc": "^3.2.4"
   },
-  "module": "index.ts",
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+  "module": "index.ts"
 }

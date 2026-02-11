@@ -7,8 +7,8 @@ import ScratchBlocks from '@evex/scratch-blocks'
 import { onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import {
   compilePackedBlocksToXml,
-  stripUnsupportedNextNodes,
   type PackedBlockMap,
+  stripUnsupportedNextNodes,
 } from './blocklyXmlCompiler'
 
 const props = defineProps<{
@@ -104,7 +104,7 @@ const renderBlocks = (blocks: PackedBlockMap | null | undefined) => {
 onMounted(() => {
   if (!blocklyContainer.value) return
 
-  // @ts-ignore Type wrong
+  // @ts-expect-error Type wrong
   const workspace = ScratchBlocks.inject(blocklyContainer.value, {
     toolbox: {},
     scrollbars: true,
@@ -131,7 +131,6 @@ watch(
   (nextBlocks) => {
     renderBlocks(nextBlocks)
   },
-  { deep: true },
 )
 </script>
 <style lang="css">

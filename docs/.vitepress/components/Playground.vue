@@ -163,11 +163,7 @@ const sb3TypeSourceModules = import.meta.glob(
   },
 ) as Record<string, string>
 
-const replacePrefix = (
-  value: string,
-  prefix: string,
-  replacement: string,
-) => {
+const replacePrefix = (value: string, prefix: string, replacement: string) => {
   if (!value.startsWith(prefix)) return null
   return `${replacement}${value.slice(prefix.length)}`
 }
@@ -216,7 +212,7 @@ const registerMonacoTypeLibraries = (monaco: MonacoModule) => {
 
   if (Object.keys(hikkakuTypeSourceModules).length === 0) {
     console.warn(
-      '[playground] no hikkaku dist declarations found. Run `bun --cwd docs/packages/hikkaku build`.',
+      '[playground] no hikkaku dist declarations found. Run `bun --cwd ../packages/hikkaku build`.',
     )
   }
   if (Object.keys(sb3TypeSourceModules).length === 0) {
@@ -238,6 +234,7 @@ const BlocklyLoading = defineComponent({
   },
 })
 
+// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const BlocklyAsync = defineAsyncComponent({
   loader: () => import('./Blockly.vue'),
   loadingComponent: BlocklyLoading,
@@ -268,6 +265,7 @@ const resizeObserver = shallowRef<ResizeObserver | null>(null)
 const output = ref('')
 const error = ref('')
 const isInitialLoading = ref(true)
+// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const activeOutputTab = ref<'json' | 'blocks'>('json')
 const compiledProject = ref<ScratchProjectJsonLike | null>(null)
 const selectedTargetKey = ref<string | null>(null)
@@ -294,11 +292,7 @@ const isProjectLike = (value: unknown): value is ScratchProjectLike => {
 }
 
 const isPackedBlockMap = (value: unknown): value is PackedBlockMap => {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value)
-  )
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 const isScratchProjectJsonLike = (
@@ -331,13 +325,18 @@ const blockTargets = computed<ScratchTargetView[]>(() => {
 const selectedTarget = computed<ScratchTargetView | null>(() => {
   if (!selectedTargetKey.value) return null
   return (
-    blockTargets.value.find((target) => target.key === selectedTargetKey.value) ??
-    null
+    blockTargets.value.find(
+      (target) => target.key === selectedTargetKey.value,
+    ) ?? null
   )
 })
 
-const selectedTargetLabel = computed(() => selectedTarget.value?.name ?? 'Target')
+// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
+const selectedTargetLabel = computed(
+  () => selectedTarget.value?.name ?? 'Target',
+)
 
+// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const selectedTargetBlocks = computed<PackedBlockMap | null>(() => {
   const blocks = selectedTarget.value?.blocks
   return isPackedBlockMap(blocks) ? blocks : null
@@ -591,8 +590,12 @@ onMounted(async () => {
       import('monaco-editor/esm/vs/editor/editor.api'),
       import('monaco-editor/esm/vs/editor/editor.worker?worker'),
       import('monaco-editor/esm/vs/language/typescript/ts.worker?worker'),
-      import('monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController'),
-      import('monaco-editor/esm/vs/editor/contrib/hover/browser/hoverContribution'),
+      import(
+        'monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController'
+      ),
+      import(
+        'monaco-editor/esm/vs/editor/contrib/hover/browser/hoverContribution'
+      ),
       import(
         'monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution'
       ),
@@ -600,16 +603,20 @@ onMounted(async () => {
     ])
 
   const existingMonacoEnvironment =
-    (globalThis as {
+    (
+      globalThis as {
+        MonacoEnvironment?: {
+          getWorker?: (moduleId: string, label: string) => Worker
+        }
+      }
+    ).MonacoEnvironment ?? {}
+  ;(
+    globalThis as {
       MonacoEnvironment?: {
         getWorker?: (moduleId: string, label: string) => Worker
       }
-    }).MonacoEnvironment ?? {}
-  ;(globalThis as {
-    MonacoEnvironment?: {
-      getWorker?: (moduleId: string, label: string) => Worker
     }
-  }).MonacoEnvironment = {
+  ).MonacoEnvironment = {
     ...existingMonacoEnvironment,
     getWorker: (_, label) => {
       if (

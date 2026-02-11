@@ -23,6 +23,7 @@ import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import pc from 'picocolors'
+import { x as extractTarball } from 'tar'
 
 const REPO_OWNER = 'pnsk-lab'
 const REPO_NAME = 'hikkaku'
@@ -383,6 +384,14 @@ const downloadTarball = async (url, destinationPath) => {
   )
 }
 
+const extractTemplateTarball = async (archivePath, destinationPath) => {
+  await extractTarball({
+    cwd: destinationPath,
+    file: archivePath,
+    strict: true,
+  })
+}
+
 const resolveRepositoryRoot = async (tempDir) => {
   const entries = await readdir(tempDir, { withFileTypes: true })
   const repoDir = entries.find(
@@ -406,7 +415,7 @@ const fetchAndCopyTemplate = async ({ targetDir, ref }) => {
     await downloadTarball(url, tarballPath)
 
     log('Extracting template')
-    await runCommand('tar', ['-xzf', tarballPath, '-C', tempDir])
+    await extractTemplateTarball(tarballPath, tempDir)
 
     const repositoryRoot = await resolveRepositoryRoot(tempDir)
     const templateDir = path.join(repositoryRoot, ...TEMPLATE_DIR_IN_REPO)

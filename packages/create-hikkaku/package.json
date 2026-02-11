@@ -14,6 +14,7 @@
   ],
   "dependencies": {
     "package-manager-detector": "^1.6.0",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "tar": "^7.4.3"
   }
 }
