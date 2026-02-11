@@ -1,12 +1,16 @@
 import { InputType as RawInputType, Shadow as RawShadow } from 'sb3-types/enum'
 
 const toNumericEnum = (value: unknown, fallback: number) => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (typeof value === 'number' && Number.isInteger(value)) {
     return value
   }
   if (typeof value === 'string') {
-    const parsed = Number(value)
-    if (Number.isFinite(parsed)) {
+    const normalized = value.trim()
+    if (normalized.length === 0) {
+      return fallback
+    }
+    const parsed = Number(normalized)
+    if (Number.isInteger(parsed)) {
       return parsed
     }
   }
