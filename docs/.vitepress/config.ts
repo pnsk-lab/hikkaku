@@ -60,5 +60,9 @@ export default defineConfig({
     search: {
       provider: 'local',
     },
+    logo: {
+      src: '/assets/logo.svg',
+      alt: 'Hikkaku Logo',
+    },
   },
 })

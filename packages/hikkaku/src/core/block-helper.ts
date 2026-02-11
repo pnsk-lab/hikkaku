@@ -1,4 +1,5 @@
 import type * as sb3 from 'sb3-types'
+import { InputType, Shadow } from 'sb3-types/enum'
 import type {
   CostumeSource,
   PrimitiveAvailableOnScratch,
@@ -10,16 +11,17 @@ export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
   source: PrimitiveSource<T>,
 ): sb3.Input => {
   if (typeof source === 'number') {
-    return [1, [4, source]]
+    return [Shadow.SameBlockShadow, [InputType.Number, source]]
   }
   if (typeof source === 'boolean') {
-    return [1, [6, source ? 1 : 0]]
+    // 不思議に見えますが、内部ではPositiveIntegerで扱われてます
+    return [Shadow.SameBlockShadow, [InputType.PositiveInteger, source ? 1 : 0]]
   }
   if (typeof source === 'string') {
-    return [1, [10, source]]
+    return [Shadow.SameBlockShadow, [InputType.String, source]]
   }
 
-  return [1, source.id]
+  return [Shadow.SameBlockShadow, source.id]
 }
 
 export const fromCostumeSource = (source: CostumeSource): sb3.Input => {

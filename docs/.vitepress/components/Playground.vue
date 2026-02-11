@@ -266,7 +266,7 @@ const output = ref('')
 const error = ref('')
 const isInitialLoading = ref(true)
 // biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
-const activeOutputTab = ref<'json' | 'blocks'>('json')
+const activeOutputTab = ref<'json' | 'blocks'>('blocks')
 const compiledProject = ref<ScratchProjectJsonLike | null>(null)
 const selectedTargetKey = ref<string | null>(null)
 let runDebounceTimer: ReturnType<typeof setTimeout> | null = null

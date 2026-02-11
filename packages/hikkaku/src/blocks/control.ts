@@ -1,3 +1,4 @@
+import { Shadow } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, substack, valueBlock } from '../core/composer'
 import type { PrimitiveSource, VariableReference } from '../core/types'
@@ -29,7 +30,7 @@ export const repeat = (times: PrimitiveSource<number>, handler: () => void) => {
   return block('control_repeat', {
     inputs: {
       TIMES: fromPrimitiveSource(times),
-      ...(substackId ? { SUBSTACK: [2, substackId] } : {}),
+      ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
 }
@@ -58,7 +59,7 @@ export const repeatUntil = (
   return block('control_repeat_until', {
     inputs: {
       CONDITION: fromPrimitiveSource(condition),
-      ...(substackId ? { SUBSTACK: [2, substackId] } : {}),
+      ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
 }
@@ -87,7 +88,7 @@ export const repeatWhile = (
   return block('control_while', {
     inputs: {
       CONDITION: fromPrimitiveSource(condition),
-      ...(substackId ? { SUBSTACK: [2, substackId] } : {}),
+      ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
 }
@@ -118,7 +119,7 @@ export const forEach = (
   return block('control_for_each', {
     inputs: {
       VALUE: fromPrimitiveSource(value),
-      ...(substackId ? { SUBSTACK: [2, substackId] } : {}),
+      ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
     fields: {
       VARIABLE: [variable.name, variable.id],
@@ -146,7 +147,7 @@ export const forever = (handler: () => void) => {
   return block('control_forever', {
     inputs: substackId
       ? {
-          SUBSTACK: [2, substackId],
+          SUBSTACK: [Shadow.NoShadow, substackId],
         }
       : {},
   })
@@ -222,7 +223,7 @@ export const ifThen = (
   return block('control_if', {
     inputs: {
       CONDITION: fromPrimitiveSource(condition),
-      ...(substackId ? { SUBSTACK: [2, substackId] } : {}),
+      ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
 }
@@ -254,8 +255,12 @@ export const ifElse = (
   return block('control_if_else', {
     inputs: {
       CONDITION: fromPrimitiveSource(condition),
-      ...(thenSubstackId ? { SUBSTACK: [2, thenSubstackId] } : {}),
-      ...(elseSubstackId ? { SUBSTACK2: [2, elseSubstackId] } : {}),
+      ...(thenSubstackId
+        ? { SUBSTACK: [Shadow.NoShadow, thenSubstackId] }
+        : {}),
+      ...(elseSubstackId
+        ? { SUBSTACK2: [Shadow.NoShadow, elseSubstackId] }
+        : {}),
     },
   })
 }
@@ -489,7 +494,7 @@ export const allAtOnce = (handler: () => void) => {
   return block('control_all_at_once', {
     inputs: substackId
       ? {
-          SUBSTACK: [2, substackId],
+          SUBSTACK: [Shadow.NoShadow, substackId],
         }
       : {},
   })

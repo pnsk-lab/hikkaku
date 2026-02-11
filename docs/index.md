@@ -15,6 +15,9 @@ hero:
     - theme: alt
       text: Open Reference
       link: /reference/
+  image:
+    src: /assets/logo.svg
+    alt: Hikkaku logo
 
 features:
   - title: Clear Compile-Time Model

@@ -1,3 +1,4 @@
+import { Shadow } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, valueBlock } from '../core/composer'
 import type { HikkakuBlock, PrimitiveSource } from '../core/types'
@@ -223,7 +224,7 @@ export const defineProcedure = <T extends ProcedureProc[]>(
 
   const definition = block('procedures_definition', {
     inputs: {
-      custom_block: [1, prototype.id],
+      custom_block: [Shadow.SameBlockShadow, prototype.id],
     },
     topLevel: true,
   })
