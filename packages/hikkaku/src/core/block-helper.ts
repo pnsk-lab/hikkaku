@@ -1,5 +1,5 @@
 import type * as sb3 from 'sb3-types'
-import { InputType, Shadow } from 'sb3-types/enum'
+import { InputType, Shadow } from './sb3-enum'
 import type {
   CostumeSource,
   PrimitiveAvailableOnScratch,

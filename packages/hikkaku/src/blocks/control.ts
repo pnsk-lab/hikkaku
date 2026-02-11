@@ -1,4 +1,4 @@
-import { Shadow } from 'sb3-types/enum'
+import { Shadow } from '../core/sb3-enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, substack, valueBlock } from '../core/composer'
 import type { PrimitiveSource, VariableReference } from '../core/types'

@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/pnsk-lab/hikkaku/refs/heads/feat/main/docs/assets/logo.svg" alt="Hikkaku Logo" width="128" height="128" align="right" />
+<img src="https://raw.githubusercontent.com/pnsk-lab/hikkaku/refs/heads/main/docs/assets/logo.svg" alt="Hikkaku Logo" width="128" height="128" align="right" />
 
 # Hikkaku
 

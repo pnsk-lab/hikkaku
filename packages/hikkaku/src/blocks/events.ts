@@ -1,5 +1,5 @@
 import type { Input } from 'sb3-types'
-import { InputType, Shadow } from 'sb3-types/enum'
+import { InputType, Shadow } from '../core/sb3-enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
@@ -242,8 +242,10 @@ export const broadcast = (message: PrimitiveSource<string>) => {
     inputs: {
       BROADCAST_INPUT:
         typeof message === 'string'
-          ? // @ts-expect-error type issue
-            ([Shadow.SameBlockShadow, [InputType.Broadcast, message]] as Input)
+          ? ([
+              Shadow.SameBlockShadow,
+              [InputType.Broadcast, message, message],
+            ] as Input)
           : fromPrimitiveSource(message),
     },
   })
