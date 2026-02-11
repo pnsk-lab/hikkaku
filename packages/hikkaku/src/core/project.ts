@@ -183,12 +183,12 @@ export class Target<IsStage extends boolean = boolean> {
       this.#costumes.length > 0
         ? this.#costumes
         : [
-          {
-            name: this.name,
-            assetId: 'cd21514d0531fdffb22204e0ec5ed84a',
-            dataFormat: 'svg' as const,
-          },
-        ]
+            {
+              name: this.name,
+              assetId: 'cd21514d0531fdffb22204e0ec5ed84a',
+              dataFormat: 'svg' as const,
+            },
+          ]
     const target: sb3.Target = {
       blocks: this.#blocks,
       broadcasts: {},

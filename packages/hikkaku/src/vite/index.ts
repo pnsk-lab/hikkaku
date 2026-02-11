@@ -1,14 +1,10 @@
-import type { PackagerOptions } from '@turbowarp/packager'
-import { zip } from 'fflate'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import type { PackagerOptions } from '@turbowarp/packager'
+import { zip } from 'fflate'
 import type { NormalizedOutputOptions, OutputBundle } from 'rolldown'
-import type {
-  HotUpdateOptions,
-  Plugin,
-  ViteDevServer
-} from 'vite'
+import type { HotUpdateOptions, Plugin, ViteDevServer } from 'vite'
 import { createServerModuleRunner } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { Project } from '../core'
@@ -69,7 +65,9 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
         (m as any).default?.packager?.loadProject
 
       if (!Packager || !loadProject) {
-        throw new Error('Could not find Packager or loadProject in @turbowarp/packager module. Keys: ' + Object.keys(m))
+        throw new Error(
+          `Could not find Packager or loadProject in @turbowarp/packager module. Keys: ${Object.keys(m)}`,
+        )
       }
 
       const tmpDir = path.join(process.cwd(), 'dist', '.tmp')
@@ -90,7 +88,7 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
         const teapotPath = path.join(entryDir, 'teapot.obj')
         const teapotData = await readFile(teapotPath)
         await writeFile(path.join(tmpDir, 'teapot.obj'), teapotData)
-      } catch (e) {
+      } catch (_e) {
         // ignore if not found
       }
 
@@ -160,7 +158,8 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
       if (!runner) {
         throw new Error('Module runner is not initialized.')
       }
-      const project: Project = (await runner.import(pluginOptions.entry)).default
+      const project: Project = (await runner.import(pluginOptions.entry))
+        .default
       options.server.environments.client.hot.send(
         'hikkaku:project',
         project.toScratch(),
@@ -178,7 +177,8 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
         if (!runner) {
           throw new Error('Module runner is not initialized.')
         }
-        const project: Project = (await runner.import(pluginOptions.entry)).default
+        const project: Project = (await runner.import(pluginOptions.entry))
+          .default
         server.environments.client.hot.send(
           'hikkaku:project',
           project.toScratch(),

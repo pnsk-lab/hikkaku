@@ -1,7 +1,7 @@
 import type { Input } from 'sb3-types'
-import { InputType, Shadow } from '../core/sb3-enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block } from '../core/composer'
+import { InputType, Shadow } from '../core/sb3-enum'
 import type { PrimitiveSource } from '../core/types'
 
 /**
