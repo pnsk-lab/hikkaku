@@ -3,6 +3,12 @@ import { zip } from 'fflate'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import type { NormalizedOutputOptions, OutputBundle } from 'rolldown'
+import type {
+  HotUpdateOptions,
+  Plugin,
+  ViteDevServer,
+} from 'vite'
 import { createServerModuleRunner } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { Project } from '../core'
@@ -13,7 +19,7 @@ export interface HikkakuOptions {
   entry: string
   packager?: Partial<PackagerOptions>
 }
-export function hikkaku(pluginOptions: HikkakuOptions): any {
+export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
   let runner: ModuleRunner | null = null
 
   return {
@@ -45,10 +51,22 @@ export function hikkaku(pluginOptions: HikkakuOptions): any {
         },
       }
     },
-    async generateBundle(_options: any, bundle: any) {
-      const m = (await import('@turbowarp/packager'))
-      const Packager = m.Packager || m.packager?.Packager || (m as any).default?.Packager || (m as any).default?.packager?.Packager
-      const loadProject = m.loadProject || m.packager?.loadProject || (m as any).default?.loadProject || (m as any).default?.packager?.loadProject
+    async generateBundle(
+      _options: NormalizedOutputOptions,
+      bundle: OutputBundle,
+      _isWrite: boolean,
+    ) {
+      const m = await import('@turbowarp/packager')
+      const Packager =
+        m.Packager ||
+        m.packager?.Packager ||
+        (m as any).default?.Packager ||
+        (m as any).default?.packager?.Packager
+      const loadProject =
+        m.loadProject ||
+        m.packager?.loadProject ||
+        (m as any).default?.loadProject ||
+        (m as any).default?.packager?.loadProject
 
       if (!Packager || !loadProject) {
         throw new Error('Could not find Packager or loadProject in @turbowarp/packager module. Keys: ' + Object.keys(m))
@@ -136,8 +154,9 @@ export function hikkaku(pluginOptions: HikkakuOptions): any {
         `
       }
     },
-    async hotUpdate(options: any) {
-      if ((this as any).environment.name !== 'hikkaku') return
+    async hotUpdate(options: HotUpdateOptions) {
+      const environment = (this as any).environment
+      if (environment?.name !== 'hikkaku') return
       if (!runner) {
         throw new Error('Module runner is not initialized.')
       }
@@ -147,7 +166,7 @@ export function hikkaku(pluginOptions: HikkakuOptions): any {
         project.toScratch(),
       )
     },
-    async configureServer(server) {
+    async configureServer(server: ViteDevServer) {
       const hikkakuEnv = server.environments.hikkaku
       if (!hikkakuEnv) {
         throw new Error('Hikkaku environment is not configured.')

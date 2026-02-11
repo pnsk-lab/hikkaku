@@ -234,7 +234,10 @@ export class Project {
       target.monitors.map((monitor) => cloneMonitor(monitor)),
     )
     const extensions = collectExtensions(targets)
-    const project: sb3.ScratchProject = {
+    const project: sb3.ScratchProject & {
+      monitors: Monitor[]
+      extensions: string[]
+    } = {
       targets,
       monitors,
       extensions,

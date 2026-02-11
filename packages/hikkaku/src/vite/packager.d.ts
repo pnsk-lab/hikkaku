@@ -97,7 +97,7 @@ declare module '@turbowarp/packager' {
         options: PackagerOptions
         project: any
         loadProject(data: ArrayBuffer | Uint8Array | ArrayBufferLike): Promise<void>
-        package(): Promise<{ data: ArrayBuffer | string; type: string }>
+        package(): Promise<{ data: Uint8Array | string; type: string }>
     }
 
     export function loadProject(data: ArrayBuffer | Uint8Array | ArrayBufferLike): Promise<any>
