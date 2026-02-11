@@ -10,11 +10,11 @@ Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts inst
 
 ## procedureLabel(text)
 
-Label fragment for custom block.
+Create a static label fragment for a custom block signature.
 
 Input: `text`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment.
 
 * `text: See function signature for accepted input values`
 
@@ -27,11 +27,11 @@ procedureLabel('Hello')
 
 ## procedureBoolean(name)
 
-Boolean argument fragment.
+Create a boolean argument fragment for a custom block signature.
 
 Input: `name`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment.
 
 * `name: See function signature for accepted input values`
 
@@ -44,11 +44,11 @@ procedureBoolean(undefined as any)
 
 ## procedureStringOrNumber(name)
 
-String/number argument fragment.
+Create a string/number argument fragment for a custom block signature.
 
 Input: `name`.
 
-Output: Scratch statement block definition that is appended to the current script stack.
+Output: Procedure signature fragment.
 
 * `name: See function signature for accepted input values`
 
@@ -59,9 +59,9 @@ import { procedureStringOrNumber } from 'hikkaku/blocks'
 procedureStringOrNumber(undefined as any)
 ```
 
-## defineProcedure(proclist, stack)
+## defineProcedure(proclist, stack?, warp?)
 
-Defines a custom procedure.
+Define a custom procedure from signature fragments.
 
 Input: `proclist`, `stack?`, `warp?`.
 
@@ -86,10 +86,12 @@ Input: either (`proccode`, `argumentIds`, `inputs`, `warp`) or (`definitionOrRef
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `proccodeOrReference: See function signature for accepted input values`
-* `argumentIdsOrInputs: See function signature for accepted input values`
-* `inputsOrWarp: See function signature for accepted input values`
-* `warp: See function signature for accepted input values`
+* Low-level style:
+  `callProcedure(proccode, argumentIds, inputs?, warp?)`
+* Reference style (recommended):
+  `callProcedure(definitionOrReference, [{ reference, value }], warp?)`
+* Reference style with object:
+  `callProcedure(definitionOrReference, { [argumentId]: value }, warp?)`
 
 Example:
 ```ts

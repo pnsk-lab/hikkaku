@@ -12,14 +12,13 @@ Custom blocks are defined with `defineProcedure` using a list of procedure parts
 * `procedureStringOrNumber(name)` for string/number inputs
 
 Inside the procedure body, use argument reporter blocks to read inputs.
+`defineProcedure` argument references also provide `.getter()` as a shorthand.
 
 ## Define a Procedure
 
 ```ts
 import { Project } from 'hikkaku'
 import {
-  argumentReporterBoolean,
-  argumentReporterStringNumber,
   defineProcedure,
   procedureBoolean,
   procedureLabel,
@@ -41,8 +40,8 @@ sprite.run(() => {
         procedureBoolean('excited'),
       ],
       ({ name, excited }) => {
-        ifThen(argumentReporterBoolean(excited), () => {
-          say(argumentReporterStringNumber(name))
+        ifThen(excited.getter(), () => {
+          say(name.getter())
         })
       },
     )
@@ -70,5 +69,13 @@ callProcedure(greet, [
 ])
 ```
 
-Low-level invocation with explicit `proccode` / `argumentIds` still works for
-interop scenarios, but prefer references when possible to avoid mismatches.
+You can also pass an object keyed by argument ID:
+
+```ts
+callProcedure(greet, {
+  [greet.reference.arguments.name.id]: 'Ada',
+  [greet.reference.arguments.excited.id]: true,
+})
+```
+
+Low-level invocation with explicit `proccode` / `argumentIds` still works for interop scenarios, but prefer references when possible to avoid mismatches.
