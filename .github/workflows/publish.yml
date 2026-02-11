@@ -48,11 +48,18 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Update package version
-        run: node -e "const fs=require('fs');const path='packages/hikkaku/package.json';const pkg=JSON.parse(fs.readFileSync(path,'utf8'));pkg.version='${{ steps.release_version.outputs.version }}';fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');"
+        run: |
+          node -e "const fs=require('fs');const version='${{ steps.release_version.outputs.version }}';for (const path of ['packages/hikkaku/package.json','packages/create-hikkaku/package.json']) {const pkg=JSON.parse(fs.readFileSync(path,'utf8'));pkg.version=version;fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');}"
 
-      - name: Build package
+      - name: Build packages
         run: bun run --filter hikkaku build
+      - name: Build create-hikkaku
+        run: bun run --filter create-hikkaku build
 
-      - name: Publish to npm
+      - name: Publish hikkaku to npm
         run: npm publish --provenance --access public
         working-directory: packages/hikkaku/dist
+
+      - name: Publish create-hikkaku to npm
+        run: npm publish --provenance --access public
+        working-directory: packages/create-hikkaku

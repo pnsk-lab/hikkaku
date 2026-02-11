@@ -1,0 +1,19 @@
+{
+  "name": "create-hikkaku",
+  "version": "0.1.9",
+  "type": "module",
+  "private": false,
+  "scripts": {
+    "build": "bun build src/main.ts --outdir dist --target=node"
+  },
+  "bin": {
+    "create-hikkaku": "./dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "package-manager-detector": "^1.6.0",
+    "picocolors": "^1.1.1"
+  }
+}
