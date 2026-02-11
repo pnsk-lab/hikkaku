@@ -1,4 +1,7 @@
+<img src="../../docs/assets/logo.svg" alt="Hikkaku Logo" width="128" height="128" align="right" />
+
 # Hikkaku
+
 
 Scratch with TypeScript.
 
