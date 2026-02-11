@@ -96,6 +96,16 @@
         "vite": "8.0.0-beta.8",
       },
     },
+    "examples/tesseract": {
+      "name": "tesseract",
+      "dependencies": {
+        "hikkaku": "workspace:*",
+      },
+      "devDependencies": {
+        "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+        "vite": "8.0.0-beta.8",
+      },
+    },
     "examples/tetris": {
       "name": "tetris",
       "dependencies": {
@@ -699,6 +709,8 @@
     "tabbable": ["tabbable@6.4.0", "", {}, "sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg=="],
 
     "tar": ["tar@7.5.7", "", { "dependencies": { "@isaacs/fs-minipass": "^4.0.0", "chownr": "^3.0.0", "minipass": "^7.1.2", "minizlib": "^3.1.0", "yallist": "^5.0.0" } }, "sha512-fov56fJiRuThVFXD6o6/Q354S7pnWMJIVlDBYijsTNx6jKSE4pvrDTs6lUnmGvNyfJwFQQwWy3owKz1ucIhveQ=="],
+
+    "tesseract": ["tesseract@workspace:examples/tesseract"],
 
     "tetris": ["tetris@workspace:examples/tetris"],
 
