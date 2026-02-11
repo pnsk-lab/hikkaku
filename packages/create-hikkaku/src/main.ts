@@ -292,7 +292,8 @@ Options:
   -h, --help                   Show this help
   --pm, --package-manager <pm> Force package manager (${PM_VALUES.join(', ')})
   --agents / --no-agents       Include AGENTS.md
-  --link-claude                Create CLAUDE.md -> AGENTS.md symlink
+  --link-claude / --no-link-claude
+                               Create CLAUDE.md -> AGENTS.md symlink
   --skills / --no-skills       Add hikkaku skills after scaffolding
   --ref <git-tag>              GitHub tag to download (default: package version)
 `,
@@ -405,9 +406,7 @@ const fetchAndCopyTemplate = async ({ targetDir, ref }) => {
     await downloadTarball(url, tarballPath)
 
     log('Extracting template')
-    await runCommand('tar', ['-xzf', tarballPath, '-C', tempDir], {
-      stdio: 'ignore',
-    })
+    await runCommand('tar', ['-xzf', tarballPath, '-C', tempDir])
 
     const repositoryRoot = await resolveRepositoryRoot(tempDir)
     const templateDir = path.join(repositoryRoot, ...TEMPLATE_DIR_IN_REPO)
