@@ -384,14 +384,6 @@ const downloadTarball = async (url, destinationPath) => {
   )
 }
 
-const extractTemplateTarball = async (archivePath, destinationPath) => {
-  await extractTarball({
-    cwd: destinationPath,
-    file: archivePath,
-    strict: true,
-  })
-}
-
 const resolveRepositoryRoot = async (tempDir) => {
   const entries = await readdir(tempDir, { withFileTypes: true })
   const repoDir = entries.find(
@@ -415,7 +407,7 @@ const fetchAndCopyTemplate = async ({ targetDir, ref }) => {
     await downloadTarball(url, tarballPath)
 
     log('Extracting template')
-    await extractTemplateTarball(tarballPath, tempDir)
+    await runCommand('tar', ['-xzf', tarballPath, '-C', tempDir])
 
     const repositoryRoot = await resolveRepositoryRoot(tempDir)
     const templateDir = path.join(repositoryRoot, ...TEMPLATE_DIR_IN_REPO)
