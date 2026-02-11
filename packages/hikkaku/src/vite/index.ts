@@ -11,11 +11,11 @@ import type { Project } from '../core'
 
 const BASE_URL = 'https://scratchfoundation.github.io/scratch-gui/'
 
-export interface HikkakuOptions {
+export interface HikkakuViteInit {
   entry: string
   packager?: Partial<PackagerOptions>
 }
-export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
+export function hikkaku(init: HikkakuViteInit): Plugin {
   let runner: ModuleRunner | null = null
 
   return {
@@ -26,7 +26,7 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
           hikkaku: {
             build: {
               rolldownOptions: {
-                input: pluginOptions.entry,
+                input: init.entry,
                 output: {
                   entryFileNames: 'project.mjs',
                   format: 'es',
@@ -82,7 +82,7 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
       }
 
       // Hack for 3d-cube example: teapot.obj is not in the bundle but needed by project.mjs
-      const entryDir = path.dirname(path.resolve(pluginOptions.entry))
+      const entryDir = path.dirname(path.resolve(init.entry))
       try {
         const { readFile } = await import('node:fs/promises')
         const teapotPath = path.join(entryDir, 'teapot.obj')
@@ -126,8 +126,8 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
       })
 
       const packager = new Packager()
-      if (pluginOptions.packager) {
-        Object.assign(packager.options, pluginOptions.packager)
+      if (init.packager) {
+        Object.assign(packager.options, init.packager)
       }
       packager.project = await loadProject(zipData)
       const result = await packager.package()
@@ -158,7 +158,7 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
       if (!runner) {
         throw new Error('Module runner is not initialized.')
       }
-      const project: Project = (await runner.import(pluginOptions.entry))
+      const project: Project = (await runner.import(init.entry))
         .default
       options.server.environments.client.hot.send(
         'hikkaku:project',
@@ -170,14 +170,14 @@ export function hikkaku(pluginOptions: HikkakuOptions): Plugin {
       if (!hikkakuEnv) {
         throw new Error('Hikkaku environment is not configured.')
       }
-      await hikkakuEnv.transformRequest(pluginOptions.entry)
+      await hikkakuEnv.transformRequest(init.entry)
       //server.watcher.add(pluginOptions.entry)
       runner = createServerModuleRunner(hikkakuEnv)
       server.environments.client.hot.on('vite:client:connect', async () => {
         if (!runner) {
           throw new Error('Module runner is not initialized.')
         }
-        const project: Project = (await runner.import(pluginOptions.entry))
+        const project: Project = (await runner.import(init.entry))
           .default
         server.environments.client.hot.send(
           'hikkaku:project',

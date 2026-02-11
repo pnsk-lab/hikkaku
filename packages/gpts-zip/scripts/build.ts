@@ -10,14 +10,13 @@ await $`cp -r ../skill/hikkaku .tmp/skill`
 
 // node_modules を作成する
 
-await $`cd ../hikkaku && bun run build`
 await $`mkdir -p .tmp/node_modules`
 await $`cp -r ../hikkaku/dist .tmp/node_modules/hikkaku`
 
 const NECESSARY_PACKAGES = ['sb3-types', '@typescript', '@types/node']
 await $`mkdir -p .tmp/node_modules/@types`
 for (const pkg of NECESSARY_PACKAGES) {
-  await $`cp -r ../../node_modules/${pkg} .tmp/node_modules/${pkg}`
+  await $`cp -r ./node_modules/${pkg} .tmp/node_modules/${pkg}`
 }
 
 // ファイルを置く
