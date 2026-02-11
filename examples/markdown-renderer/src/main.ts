@@ -105,7 +105,7 @@ const FONT_RAW: Record<string, string> = {
   ']': '01110' + '00010' + '00010' + '00010' + '00010' + '00010' + '01110',
   ';': '00000' + '01100' + '01100' + '00000' + '01100' + '00100' + '01000',
   ',': '00000' + '00000' + '00000' + '00000' + '01100' + '00100' + '01000',
-  '_': '00000' + '00000' + '00000' + '00000' + '00000' + '00000' + '11111',
+  _: '00000' + '00000' + '00000' + '00000' + '00000' + '00000' + '11111',
   '#': '01010' + '11111' + '01010' + '01010' + '11111' + '01010' + '00000',
   "'": '00100' + '00100' + '00000' + '00000' + '00000' + '00000' + '00000',
   '"': '01010' + '01010' + '00000' + '00000' + '00000' + '00000' + '00000',
@@ -113,19 +113,21 @@ const FONT_RAW: Record<string, string> = {
 }
 
 // Character set – order matters (index in list == lookup key)
-const CHARS = `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .-:!?()=+/<>{}[];,_#'"*`.split(
-  '',
-)
+const CHARS =
+  `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .-:!?()=+/<>{}[];,_#'"*`.split('')
 // Box fallback for unknown characters (last entry in font list)
 const BOX_FONT =
   '11111' + '10001' + '10001' + '10001' + '10001' + '10001' + '11111'
-const FONT_STRINGS = [...CHARS.map((ch) => FONT_RAW[ch]!), BOX_FONT]
+const FONT_STRINGS = [...CHARS.map((ch) => FONT_RAW[ch] ?? ''), BOX_FONT]
 
 // Bold font: expand each lit pixel one position to the right
 function makeBold(fontStr: string): string {
   let result = ''
   for (let row = 0; row < 7; row++) {
-    const bits = fontStr.slice(row * 5, row * 5 + 5).split('').map(Number)
+    const bits = fontStr
+      .slice(row * 5, row * 5 + 5)
+      .split('')
+      .map(Number)
     const bold = [...bits]
     for (let i = 3; i >= 0; i--) {
       if (bits[i] === 1) bold[i + 1] = 1
@@ -229,166 +231,143 @@ renderer.run(() => {
       setVariableTo(isItalic, 0)
       setVariableTo(isCode, 0)
 
-      repeatUntil(
-        gt(charIdx.get(), length(currentLine.get())),
-        () => {
-          ifElse(
-            and(
-              equals(letterOf(charIdx.get(), currentLine.get()), '*'),
-              and(equals(isCode.get(), 0), equals(noFormat.get(), 0)),
-            ),
-            () => {
-              // Check ** (bold) vs * (italic)
-              ifElse(
-                equals(
-                  letterOf(add(charIdx.get(), 1), currentLine.get()),
-                  '*',
-                ),
-                () => {
-                  setVariableTo(isBold, subtract(1, isBold.get()))
-                  changeVariableBy(charIdx, 2)
-                },
-                () => {
-                  setVariableTo(isItalic, subtract(1, isItalic.get()))
-                  changeVariableBy(charIdx, 1)
-                },
-              )
-            },
-            () => {
-              ifElse(
-                and(
-                  equals(letterOf(charIdx.get(), currentLine.get()), '`'),
-                  equals(noFormat.get(), 0),
-                ),
-                () => {
-                  // Toggle code mode
-                  setVariableTo(isCode, subtract(1, isCode.get()))
-                  changeVariableBy(charIdx, 1)
-                },
-                () => {
-                  // Normal character – render it
-                  setVariableTo(
-                    charNum,
-                    getItemNumOfList(
-                      chars,
-                      letterOf(charIdx.get(), currentLine.get()),
+      repeatUntil(gt(charIdx.get(), length(currentLine.get())), () => {
+        ifElse(
+          and(
+            equals(letterOf(charIdx.get(), currentLine.get()), '*'),
+            and(equals(isCode.get(), 0), equals(noFormat.get(), 0)),
+          ),
+          () => {
+            // Check ** (bold) vs * (italic)
+            ifElse(
+              equals(letterOf(add(charIdx.get(), 1), currentLine.get()), '*'),
+              () => {
+                setVariableTo(isBold, subtract(1, isBold.get()))
+                changeVariableBy(charIdx, 2)
+              },
+              () => {
+                setVariableTo(isItalic, subtract(1, isItalic.get()))
+                changeVariableBy(charIdx, 1)
+              },
+            )
+          },
+          () => {
+            ifElse(
+              and(
+                equals(letterOf(charIdx.get(), currentLine.get()), '`'),
+                equals(noFormat.get(), 0),
+              ),
+              () => {
+                // Toggle code mode
+                setVariableTo(isCode, subtract(1, isCode.get()))
+                changeVariableBy(charIdx, 1)
+              },
+              () => {
+                // Normal character – render it
+                setVariableTo(
+                  charNum,
+                  getItemNumOfList(
+                    chars,
+                    letterOf(charIdx.get(), currentLine.get()),
+                  ),
+                )
+                // Unknown char → use box font (last entry)
+                ifThen(equals(charNum.get(), 0), () => {
+                  setVariableTo(charNum, lengthOfList(font))
+                })
+                // Code background + color selection
+                ifElse(
+                  equals(isCode.get(), 1),
+                  () => {
+                    setPenColorTo('#2d2d2d')
+                    setPenSizeTo(add(multiply(ps.getter(), 8), 2))
+                    gotoXY(
+                      add(curX.get(), multiply(ps.getter(), 2.5)),
+                      subtract(curY.get(), multiply(ps.getter(), 3)),
+                    )
+                    penDown()
+                    gotoXY(
+                      add(curX.get(), multiply(ps.getter(), 4.5)),
+                      subtract(curY.get(), multiply(ps.getter(), 3)),
+                    )
+                    penUp()
+                    setPenColorTo('#00ff88')
+                  },
+                  () => {
+                    setPenColorTo(textColor.get())
+                  },
+                )
+
+                // Select font (bold or normal)
+                ifElse(
+                  equals(isBold.get(), 1),
+                  () =>
+                    setVariableTo(
+                      fontStr,
+                      getItemOfList(boldFont, charNum.get()),
                     ),
-                  )
-                  // Unknown char → use box font (last entry)
-                  ifThen(equals(charNum.get(), 0), () => {
-                    setVariableTo(charNum, lengthOfList(font))
-                  })
-                  {
-                    // Code background + color selection
-                    ifElse(
-                      equals(isCode.get(), 1),
+                  () =>
+                    setVariableTo(fontStr, getItemOfList(font, charNum.get())),
+                )
+
+                setPenSizeTo(ps.getter())
+
+                // Draw 5×7 pixel grid
+                setVariableTo(pxRow, 0)
+                repeat(7, () => {
+                  setVariableTo(pxCol, 0)
+                  repeat(5, () => {
+                    setVariableTo(
+                      pxIdx,
+                      add(multiply(pxRow.get(), 5), add(pxCol.get(), 1)),
+                    )
+                    ifThen(
+                      equals(letterOf(pxIdx.get(), fontStr.get()), '1'),
                       () => {
-                        setPenColorTo('#2d2d2d')
-                        setPenSizeTo(add(multiply(ps.getter(), 8), 2))
                         gotoXY(
-                          add(curX.get(), multiply(ps.getter(), 2.5)),
+                          add(
+                            add(curX.get(), multiply(pxCol.get(), ps.getter())),
+                            multiply(
+                              isItalic.get(),
+                              multiply(
+                                subtract(3, pxRow.get()),
+                                multiply(ps.getter(), 0.35),
+                              ),
+                            ),
+                          ),
                           subtract(
                             curY.get(),
-                            multiply(ps.getter(), 3),
+                            multiply(pxRow.get(), ps.getter()),
                           ),
                         )
                         penDown()
-                        gotoXY(
-                          add(curX.get(), multiply(ps.getter(), 4.5)),
-                          subtract(
-                            curY.get(),
-                            multiply(ps.getter(), 3),
-                          ),
-                        )
+                        changeXBy(0.5)
                         penUp()
-                        setPenColorTo('#00ff88')
-                      },
-                      () => {
-                        setPenColorTo(textColor.get())
                       },
                     )
+                    changeVariableBy(pxCol, 1)
+                  })
+                  changeVariableBy(pxRow, 1)
+                })
 
-                    // Select font (bold or normal)
-                    ifElse(
-                      equals(isBold.get(), 1),
-                      () =>
-                        setVariableTo(
-                          fontStr,
-                          getItemOfList(boldFont, charNum.get()),
-                        ),
-                      () =>
-                        setVariableTo(
-                          fontStr,
-                          getItemOfList(font, charNum.get()),
-                        ),
-                    )
+                // Advance cursor
+                changeVariableBy(curX, multiply(7, ps.getter()))
 
-                    setPenSizeTo(ps.getter())
+                // Line wrap (skip in code blocks – just clip)
+                ifThen(
+                  and(gt(curX.get(), RIGHT), equals(inCodeBlock.get(), 0)),
+                  () => {
+                    setVariableTo(curX, wrapX.get())
+                    changeVariableBy(curY, multiply(-1, lh.getter()))
+                  },
+                )
 
-                    // Draw 5×7 pixel grid
-                    setVariableTo(pxRow, 0)
-                    repeat(7, () => {
-                      setVariableTo(pxCol, 0)
-                      repeat(5, () => {
-                        setVariableTo(
-                          pxIdx,
-                          add(
-                            multiply(pxRow.get(), 5),
-                            add(pxCol.get(), 1),
-                          ),
-                        )
-                        ifThen(
-                          equals(letterOf(pxIdx.get(), fontStr.get()), '1'),
-                          () => {
-                            gotoXY(
-                              add(
-                                add(
-                                  curX.get(),
-                                  multiply(pxCol.get(), ps.getter()),
-                                ),
-                                multiply(
-                                  isItalic.get(),
-                                  multiply(
-                                    subtract(3, pxRow.get()),
-                                    multiply(ps.getter(), 0.35),
-                                  ),
-                                ),
-                              ),
-                              subtract(
-                                curY.get(),
-                                multiply(pxRow.get(), ps.getter()),
-                              ),
-                            )
-                            penDown()
-                            changeXBy(0.5)
-                            penUp()
-                          },
-                        )
-                        changeVariableBy(pxCol, 1)
-                      })
-                      changeVariableBy(pxRow, 1)
-                    })
-
-                    // Advance cursor
-                    changeVariableBy(curX, multiply(7, ps.getter()))
-
-                    // Line wrap (skip in code blocks – just clip)
-                    ifThen(
-                      and(gt(curX.get(), RIGHT), equals(inCodeBlock.get(), 0)),
-                      () => {
-                        setVariableTo(curX, wrapX.get())
-                        changeVariableBy(curY, multiply(-1, lh.getter()))
-                      },
-                    )
-                  }
-
-                  changeVariableBy(charIdx, 1)
-                },
-              )
-            },
-          )
-        },
-      )
+                changeVariableBy(charIdx, 1)
+              },
+            )
+          },
+        )
+      })
 
       // Move below rendered text
       changeVariableBy(curY, multiply(-1, lh.getter()))
@@ -691,7 +670,6 @@ renderer.run(() => {
       callProcedure(animatedRender, [])
     })
   })
-
 })
 
 export default project
