@@ -10,7 +10,7 @@
     "docs:dev": "bun --cwd docs dev",
     "docs:build": "bun --cwd docs build",
     "docs:preview": "bun --cwd docs preview",
-    "lint": "turbo run lint",
+    "lint": "biome check",
     "fmt": "biome check --fix --unsafe",
     "typecheck": "turbo run typecheck",
     "ref:build": "bun run --cwd packages/skill build-blocks",
