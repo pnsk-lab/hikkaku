@@ -23,7 +23,6 @@ import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import pc from 'picocolors'
-import { x as extractTarball } from 'tar'
 
 const REPO_OWNER = 'pnsk-lab'
 const REPO_NAME = 'hikkaku'

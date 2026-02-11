@@ -15,8 +15,15 @@ const props = defineProps<{
   blocks?: PackedBlockMap | null
 }>()
 
+interface BlocklyWorkspace {
+  clear: () => void
+  newBlock: (opcode: string) => any
+  setVisible: (visible: boolean) => void
+  resize: () => void
+}
+
 const blocklyContainer = useTemplateRef('blocklyContainer')
-const workspaceRef = shallowRef<any>(null)
+const workspaceRef = shallowRef<BlocklyWorkspace | null>(null)
 
 const sampleBlocks: PackedBlockMap = {
   '1': {
