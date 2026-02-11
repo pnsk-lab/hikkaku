@@ -3,12 +3,11 @@ import { zip } from 'fflate'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import type { NormalizedOutputOptions, OutputBundle } from 'rolldown'
 import type {
   HotUpdateOptions,
   Plugin,
-  ViteDevServer,
-  NormalizedOutputOptions,
-  OutputBundle,
+  ViteDevServer
 } from 'vite'
 import { createServerModuleRunner } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
