@@ -23,3 +23,6 @@ jobs:
 
       - name: Typecheck
         run: bun typecheck
+
+      - name: Check generated references
+        run: bun run ref:check

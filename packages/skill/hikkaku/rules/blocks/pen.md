@@ -3,6 +3,9 @@ title: Blocks - Pen
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Pen
 
 ## eraseAll()
@@ -22,11 +25,11 @@ eraseAll()
 
 ## clear()
 
-Alias for `eraseAll()`.
+Alias for {@link eraseAll}.
 
 Input: none.
 
-Output: Same Scratch statement block definition as `eraseAll()`.
+Output: Same Scratch statement block definition as {@link eraseAll}.
 
 Example:
 ```ts

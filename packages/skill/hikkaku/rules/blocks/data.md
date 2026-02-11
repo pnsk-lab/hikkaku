@@ -3,6 +3,9 @@ title: Blocks - Data
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Variables & Lists
 
 ## getVariable(variable)

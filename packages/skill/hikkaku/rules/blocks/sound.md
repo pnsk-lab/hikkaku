@@ -3,6 +3,9 @@ title: Blocks - Sound
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Sound
 
 ## playSound(sound)
@@ -69,7 +72,7 @@ Example:
 ```ts
 import { setSoundEffectTo } from 'hikkaku/blocks'
 
-setSoundEffectTo('color', 10)
+setSoundEffectTo('pitch', 10)
 ```
 
 ## changeSoundEffectBy(effect, value)
@@ -87,7 +90,7 @@ Example:
 ```ts
 import { changeSoundEffectBy } from 'hikkaku/blocks'
 
-changeSoundEffectBy('color', 10)
+changeSoundEffectBy('pitch', 10)
 ```
 
 ## clearEffects()

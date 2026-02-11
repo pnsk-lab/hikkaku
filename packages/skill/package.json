@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build-blocks": "bun run scripts/build-blocks.ts"
+    "build-blocks": "bun run scripts/build-blocks.ts --target=all",
+    "build-blocks:check": "bun run scripts/build-blocks.ts --target=all --check"
   },
   "devDependencies": {
     "@types/bun": "latest"

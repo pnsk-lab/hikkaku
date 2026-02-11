@@ -3,6 +3,9 @@ title: Blocks - Looks
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Appearance
 
 ## say(message)

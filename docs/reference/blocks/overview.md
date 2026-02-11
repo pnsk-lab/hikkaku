@@ -3,6 +3,9 @@ title: Blocks Overview
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # List of Available Blocks
 
 This document explains the function names, arguments, and behavior of exported helpers.
@@ -28,7 +31,7 @@ import { add, gotoXY } from 'hikkaku/blocks'
 - [Events](/reference/blocks/events)
 - [Looks](/reference/blocks/looks)
 - [Motion](/reference/blocks/motion)
-- [Operators](/reference/blocks/operator)
+- [Operator](/reference/blocks/operator)
 - [Procedures](/reference/blocks/procedures)
 - [Sensing](/reference/blocks/sensing)
 - [Sound](/reference/blocks/sound)

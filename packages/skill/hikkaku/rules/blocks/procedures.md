@@ -3,6 +3,9 @@ title: Blocks - Procedures
 impact: HIGH
 ---
 
+<!-- AUTO-GENERATED FILE. Do not edit manually.
+Edit packages/hikkaku/src/blocks and packages/skill/scripts/build-blocks.ts instead. -->
+
 # Custom Blocks
 
 ## procedureLabel(text)
@@ -60,23 +63,22 @@ procedureStringOrNumber(undefined as any)
 
 Defines a custom procedure.
 
-Input: `proclist`, `stack`, `the`, `but`.
+Input: `proclist`, `stack?`, `warp?`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `proclist: T` - ProcedureProc[]
-* `stack: (references) => void Optional`
-* `the: Input value used by this block`
-* `but: Input value used by this block`
+* `proclist: List of procedure parts (labels and arguments) that define the procedure's signature`
+* `stack: Optional callback that receives references to the procedure arguments and composes the body of the procedure`
+* `warp: Optional flag (default `false`)` - If true, the procedure will run without screen refresh until it completes.
 
 Example:
 ```ts
 import { defineProcedure } from 'hikkaku/blocks'
 
-defineProcedure(list as any, () => {}, undefined as any, undefined as any)
+defineProcedure(list as any, () => {}, true)
 ```
 
-## callProcedure(...)
+## callProcedure(proccodeOrReference, argumentIdsOrInputs, inputsOrWarp)
 
 Calls a custom procedure.
 
@@ -93,7 +95,7 @@ Example:
 ```ts
 import { callProcedure } from 'hikkaku/blocks'
 
-callProcedure(reference as any, [] as any, undefined as any)
+callProcedure([] as any, undefined as any, undefined as any, undefined as any)
 ```
 
 ## argumentReporterStringNumber(reference)
