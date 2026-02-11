@@ -1,6 +1,7 @@
 import { Project } from 'hikkaku'
 import {
   add,
+  addToList,
   and,
   callProcedure,
   changeVariableBy,
@@ -35,7 +36,6 @@ import {
   setVariableTo,
   subtract,
   whenFlagClicked,
-  addToList,
 } from 'hikkaku/blocks'
 
 const BOARD_SIZE = 8
@@ -59,7 +59,10 @@ const DIRECTIONS: Array<[number, number]> = [
   [1, 1],
 ]
 
-const boardIndex = (col: number | ReturnType<typeof add>, row: number | ReturnType<typeof add>) => {
+const boardIndex = (
+  col: number | ReturnType<typeof add>,
+  row: number | ReturnType<typeof add>,
+) => {
   return add(multiply(subtract(row, 1), BOARD_SIZE), col)
 }
 
@@ -170,7 +173,10 @@ pen.run(() => {
                 ifThen(
                   and(
                     gt(dirCaptured.get(), 0),
-                    equals(getItemOfList(board, idx.get()), currentPlayer.get()),
+                    equals(
+                      getItemOfList(board, idx.get()),
+                      currentPlayer.get(),
+                    ),
                   ),
                   () => {
                     setVariableTo(dirValid, 1)
@@ -200,19 +206,28 @@ pen.run(() => {
     ({ col, row }) => {
       setVariableTo(totalFlips, 0)
 
-      ifThen(equals(getItemOfList(board, boardIndex(col.getter(), row.getter())), 0), () => {
-        for (const [dx, dy] of DIRECTIONS) {
-          callProcedure(scanDirection, [
-            { reference: scanDirection.reference.arguments.col, value: col.getter() },
-            { reference: scanDirection.reference.arguments.row, value: row.getter() },
-            { reference: scanDirection.reference.arguments.dx, value: dx },
-            { reference: scanDirection.reference.arguments.dy, value: dy },
-          ])
-          ifThen(equals(dirValid.get(), 1), () => {
-            changeVariableBy(totalFlips, dirCaptured.get())
-          })
-        }
-      })
+      ifThen(
+        equals(getItemOfList(board, boardIndex(col.getter(), row.getter())), 0),
+        () => {
+          for (const [dx, dy] of DIRECTIONS) {
+            callProcedure(scanDirection, [
+              {
+                reference: scanDirection.reference.arguments.col,
+                value: col.getter(),
+              },
+              {
+                reference: scanDirection.reference.arguments.row,
+                value: row.getter(),
+              },
+              { reference: scanDirection.reference.arguments.dx, value: dx },
+              { reference: scanDirection.reference.arguments.dy, value: dy },
+            ])
+            ifThen(equals(dirValid.get(), 1), () => {
+              changeVariableBy(totalFlips, dirCaptured.get())
+            })
+          }
+        },
+      )
     },
     true,
   )
@@ -227,8 +242,14 @@ pen.run(() => {
     ],
     ({ col, row, dx, dy }) => {
       callProcedure(scanDirection, [
-        { reference: scanDirection.reference.arguments.col, value: col.getter() },
-        { reference: scanDirection.reference.arguments.row, value: row.getter() },
+        {
+          reference: scanDirection.reference.arguments.col,
+          value: col.getter(),
+        },
+        {
+          reference: scanDirection.reference.arguments.row,
+          value: row.getter(),
+        },
         { reference: scanDirection.reference.arguments.dx, value: dx.getter() },
         { reference: scanDirection.reference.arguments.dy, value: dy.getter() },
       ])
@@ -261,8 +282,14 @@ pen.run(() => {
         repeat(BOARD_SIZE, () => {
           ifThen(equals(hasMove.get(), 0), () => {
             callProcedure(countFlipsAt, [
-              { reference: countFlipsAt.reference.arguments.col, value: loopCol.get() },
-              { reference: countFlipsAt.reference.arguments.row, value: loopRow.get() },
+              {
+                reference: countFlipsAt.reference.arguments.col,
+                value: loopCol.get(),
+              },
+              {
+                reference: countFlipsAt.reference.arguments.row,
+                value: loopRow.get(),
+              },
             ])
             ifThen(gt(totalFlips.get(), 0), () => {
               setVariableTo(hasMove, 1)
@@ -302,23 +329,39 @@ pen.run(() => {
     ],
     ({ col, row }) => {
       ifThen(equals(gameOver.get(), 0), () => {
-        ifThen(equals(getItemOfList(board, boardIndex(col.getter(), row.getter())), 0), () => {
-          setVariableTo(totalFlips, 0)
+        ifThen(
+          equals(
+            getItemOfList(board, boardIndex(col.getter(), row.getter())),
+            0,
+          ),
+          () => {
+            setVariableTo(totalFlips, 0)
 
-          for (const [dx, dy] of DIRECTIONS) {
-            callProcedure(flipDirection, [
-              { reference: flipDirection.reference.arguments.col, value: col.getter() },
-              { reference: flipDirection.reference.arguments.row, value: row.getter() },
-              { reference: flipDirection.reference.arguments.dx, value: dx },
-              { reference: flipDirection.reference.arguments.dy, value: dy },
-            ])
-          }
+            for (const [dx, dy] of DIRECTIONS) {
+              callProcedure(flipDirection, [
+                {
+                  reference: flipDirection.reference.arguments.col,
+                  value: col.getter(),
+                },
+                {
+                  reference: flipDirection.reference.arguments.row,
+                  value: row.getter(),
+                },
+                { reference: flipDirection.reference.arguments.dx, value: dx },
+                { reference: flipDirection.reference.arguments.dy, value: dy },
+              ])
+            }
 
-          ifThen(gt(totalFlips.get(), 0), () => {
-            replaceItemOfList(board, boardIndex(col.getter(), row.getter()), currentPlayer.get())
-            callProcedure(nextTurn, {})
-          })
-        })
+            ifThen(gt(totalFlips.get(), 0), () => {
+              replaceItemOfList(
+                board,
+                boardIndex(col.getter(), row.getter()),
+                currentPlayer.get(),
+              )
+              callProcedure(nextTurn, {})
+            })
+          },
+        )
       })
     },
     true,
@@ -337,11 +380,23 @@ pen.run(() => {
           setVariableTo(cursorOnBoard, 1)
           setVariableTo(
             cursorCol,
-            add(mathop('floor', divide(subtract(getMouseX(), BOARD_LEFT), CELL_SIZE)), 1),
+            add(
+              mathop(
+                'floor',
+                divide(subtract(getMouseX(), BOARD_LEFT), CELL_SIZE),
+              ),
+              1,
+            ),
           )
           setVariableTo(
             cursorRow,
-            add(mathop('floor', divide(subtract(BOARD_TOP, getMouseY()), CELL_SIZE)), 1),
+            add(
+              mathop(
+                'floor',
+                divide(subtract(BOARD_TOP, getMouseY()), CELL_SIZE),
+              ),
+              1,
+            ),
           )
         },
       )
@@ -377,7 +432,10 @@ pen.run(() => {
       ifThen(
         and(
           equals(gameOver.get(), 0),
-          equals(add(blackCount.get(), whiteCount.get()), BOARD_SIZE * BOARD_SIZE),
+          equals(
+            add(blackCount.get(), whiteCount.get()),
+            BOARD_SIZE * BOARD_SIZE,
+          ),
         ),
         () => {
           setVariableTo(gameOver, 1)
@@ -457,20 +515,41 @@ pen.run(() => {
           setVariableTo(loopCol, 1)
           repeat(BOARD_SIZE, () => {
             callProcedure(countFlipsAt, [
-              { reference: countFlipsAt.reference.arguments.col, value: loopCol.get() },
-              { reference: countFlipsAt.reference.arguments.row, value: loopRow.get() },
+              {
+                reference: countFlipsAt.reference.arguments.col,
+                value: loopCol.get(),
+              },
+              {
+                reference: countFlipsAt.reference.arguments.row,
+                value: loopRow.get(),
+              },
             ])
 
             ifThen(gt(totalFlips.get(), 0), () => {
               setVariableTo(workX, cellCenterX(loopCol.get()))
               setVariableTo(workY, cellCenterY(loopRow.get()))
 
-              gotoXY(subtract(workX.get(), HIGHLIGHT_HALF), subtract(workY.get(), HIGHLIGHT_HALF))
+              gotoXY(
+                subtract(workX.get(), HIGHLIGHT_HALF),
+                subtract(workY.get(), HIGHLIGHT_HALF),
+              )
               penDown()
-              gotoXY(add(workX.get(), HIGHLIGHT_HALF), subtract(workY.get(), HIGHLIGHT_HALF))
-              gotoXY(add(workX.get(), HIGHLIGHT_HALF), add(workY.get(), HIGHLIGHT_HALF))
-              gotoXY(subtract(workX.get(), HIGHLIGHT_HALF), add(workY.get(), HIGHLIGHT_HALF))
-              gotoXY(subtract(workX.get(), HIGHLIGHT_HALF), subtract(workY.get(), HIGHLIGHT_HALF))
+              gotoXY(
+                add(workX.get(), HIGHLIGHT_HALF),
+                subtract(workY.get(), HIGHLIGHT_HALF),
+              )
+              gotoXY(
+                add(workX.get(), HIGHLIGHT_HALF),
+                add(workY.get(), HIGHLIGHT_HALF),
+              )
+              gotoXY(
+                subtract(workX.get(), HIGHLIGHT_HALF),
+                add(workY.get(), HIGHLIGHT_HALF),
+              )
+              gotoXY(
+                subtract(workX.get(), HIGHLIGHT_HALF),
+                subtract(workY.get(), HIGHLIGHT_HALF),
+              )
               penUp()
             })
 
@@ -481,8 +560,14 @@ pen.run(() => {
 
         ifThen(equals(cursorOnBoard.get(), 1), () => {
           callProcedure(countFlipsAt, [
-            { reference: countFlipsAt.reference.arguments.col, value: cursorCol.get() },
-            { reference: countFlipsAt.reference.arguments.row, value: cursorRow.get() },
+            {
+              reference: countFlipsAt.reference.arguments.col,
+              value: cursorCol.get(),
+            },
+            {
+              reference: countFlipsAt.reference.arguments.row,
+              value: cursorRow.get(),
+            },
           ])
 
           ifThen(gt(totalFlips.get(), 0), () => {
@@ -491,12 +576,27 @@ pen.run(() => {
             setVariableTo(workX, cellCenterX(cursorCol.get()))
             setVariableTo(workY, cellCenterY(cursorRow.get()))
 
-            gotoXY(subtract(workX.get(), HIGHLIGHT_HALF), subtract(workY.get(), HIGHLIGHT_HALF))
+            gotoXY(
+              subtract(workX.get(), HIGHLIGHT_HALF),
+              subtract(workY.get(), HIGHLIGHT_HALF),
+            )
             penDown()
-            gotoXY(add(workX.get(), HIGHLIGHT_HALF), subtract(workY.get(), HIGHLIGHT_HALF))
-            gotoXY(add(workX.get(), HIGHLIGHT_HALF), add(workY.get(), HIGHLIGHT_HALF))
-            gotoXY(subtract(workX.get(), HIGHLIGHT_HALF), add(workY.get(), HIGHLIGHT_HALF))
-            gotoXY(subtract(workX.get(), HIGHLIGHT_HALF), subtract(workY.get(), HIGHLIGHT_HALF))
+            gotoXY(
+              add(workX.get(), HIGHLIGHT_HALF),
+              subtract(workY.get(), HIGHLIGHT_HALF),
+            )
+            gotoXY(
+              add(workX.get(), HIGHLIGHT_HALF),
+              add(workY.get(), HIGHLIGHT_HALF),
+            )
+            gotoXY(
+              subtract(workX.get(), HIGHLIGHT_HALF),
+              add(workY.get(), HIGHLIGHT_HALF),
+            )
+            gotoXY(
+              subtract(workX.get(), HIGHLIGHT_HALF),
+              subtract(workY.get(), HIGHLIGHT_HALF),
+            )
             penUp()
           })
         })
@@ -583,8 +683,14 @@ pen.run(() => {
         setVariableTo(clickLatch, 1)
         ifThen(equals(cursorOnBoard.get(), 1), () => {
           callProcedure(placeAt, [
-            { reference: placeAt.reference.arguments.col, value: cursorCol.get() },
-            { reference: placeAt.reference.arguments.row, value: cursorRow.get() },
+            {
+              reference: placeAt.reference.arguments.col,
+              value: cursorCol.get(),
+            },
+            {
+              reference: placeAt.reference.arguments.row,
+              value: cursorRow.get(),
+            },
           ])
         })
       })

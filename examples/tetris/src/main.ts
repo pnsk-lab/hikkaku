@@ -339,8 +339,14 @@ renderer.run(() => {
           ),
         )
 
-        setVariableTo(cellX, add(read(testX), getItemOfList(shapeXList, read(shapeIndex))))
-        setVariableTo(cellY, add(read(testY), getItemOfList(shapeYList, read(shapeIndex))))
+        setVariableTo(
+          cellX,
+          add(read(testX), getItemOfList(shapeXList, read(shapeIndex))),
+        )
+        setVariableTo(
+          cellY,
+          add(read(testY), getItemOfList(shapeYList, read(shapeIndex))),
+        )
 
         ifThen(
           or(
@@ -359,9 +365,12 @@ renderer.run(() => {
               cellIndex,
               add(multiply(read(cellY), BOARD_WIDTH), add(read(cellX), 1)),
             )
-            ifThen(not(equals(getItemOfList(board, read(cellIndex)), 0)), () => {
-              setVariableTo(canMove, 0)
-            })
+            ifThen(
+              not(equals(getItemOfList(board, read(cellIndex)), 0)),
+              () => {
+                setVariableTo(canMove, 0)
+              },
+            )
           },
         )
       })
@@ -400,7 +409,10 @@ renderer.run(() => {
         forEach(colCheck, BOARD_WIDTH, () => {
           setVariableTo(
             cellIndex,
-            add(multiply(subtract(read(rowCheck), 1), BOARD_WIDTH), read(colCheck)),
+            add(
+              multiply(subtract(read(rowCheck), 1), BOARD_WIDTH),
+              read(colCheck),
+            ),
           )
           ifThen(equals(getItemOfList(board, read(cellIndex)), 0), () => {
             setVariableTo(rowFull, 0)
@@ -471,8 +483,14 @@ renderer.run(() => {
           ),
         )
 
-        setVariableTo(cellX, add(read(pieceX), getItemOfList(shapeXList, read(shapeIndex))))
-        setVariableTo(cellY, add(read(pieceY), getItemOfList(shapeYList, read(shapeIndex))))
+        setVariableTo(
+          cellX,
+          add(read(pieceX), getItemOfList(shapeXList, read(shapeIndex))),
+        )
+        setVariableTo(
+          cellY,
+          add(read(pieceY), getItemOfList(shapeYList, read(shapeIndex))),
+        )
 
         ifThen(not(lt(read(cellY), BOARD_HEIGHT)), () => {
           setVariableTo(gameOver, 1)
@@ -525,7 +543,10 @@ renderer.run(() => {
         forEach(drawCol, BOARD_WIDTH, () => {
           setVariableTo(
             cellIndex,
-            add(multiply(subtract(read(drawRow), 1), BOARD_WIDTH), read(drawCol)),
+            add(
+              multiply(subtract(read(drawRow), 1), BOARD_WIDTH),
+              read(drawCol),
+            ),
           )
           setVariableTo(drawColor, getItemOfList(board, read(cellIndex)))
 
@@ -536,7 +557,10 @@ renderer.run(() => {
             )
             setVariableTo(
               drawY,
-              add(BOARD_BOTTOM, multiply(subtract(read(drawRow), 1), CELL_SIZE)),
+              add(
+                BOARD_BOTTOM,
+                multiply(subtract(read(drawRow), 1), CELL_SIZE),
+              ),
             )
             setPenColorTo(getItemOfList(colorList, read(drawColor)))
             gotoXY(read(drawX), read(drawY))
@@ -560,8 +584,14 @@ renderer.run(() => {
             ),
           )
 
-          setVariableTo(cellX, add(read(pieceX), getItemOfList(shapeXList, read(shapeIndex))))
-          setVariableTo(cellY, add(read(pieceY), getItemOfList(shapeYList, read(shapeIndex))))
+          setVariableTo(
+            cellX,
+            add(read(pieceX), getItemOfList(shapeXList, read(shapeIndex))),
+          )
+          setVariableTo(
+            cellY,
+            add(read(pieceY), getItemOfList(shapeYList, read(shapeIndex))),
+          )
 
           ifThen(
             and(
