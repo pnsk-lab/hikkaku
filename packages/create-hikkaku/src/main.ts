@@ -26,6 +26,7 @@ import pc from 'picocolors'
 
 const REPO_OWNER = 'pnsk-lab'
 const REPO_NAME = 'hikkaku'
+const CREATE_HIKKAKU_TAG_PREFIX = 'create-hikkaku@'
 const TEMPLATE_DIR_IN_REPO = ['examples', 'base']
 const DEFAULT_PROJECT_DIR = 'my-hikkaku-app'
 const SEMVER_PATTERN =
@@ -295,20 +296,20 @@ Options:
   --link-claude / --no-link-claude
                                Create CLAUDE.md -> AGENTS.md symlink
   --skills / --no-skills       Add hikkaku skills after scaffolding
-  --ref <git-tag>              GitHub tag to download (default: package version)
+  --ref <git-tag>              GitHub tag to download (default: create-hikkaku@<version>)
 `,
   )
 }
 
-const getDefaultTagFromPackageVersion = async () => {
+const getDefaultRefFromPackageVersion = async () => {
   const pkg = JSON.parse(await readFile(SELF_PACKAGE_JSON_PATH, 'utf8'))
   const version = typeof pkg.version === 'string' ? pkg.version.trim() : ''
   if (!version || !SEMVER_PATTERN.test(version)) {
     throw new Error(
-      `Invalid create-hikkaku version "${version}". Expected semver for default tag resolution.`,
+      `Invalid create-hikkaku version "${version}". Expected semver for default ref resolution.`,
     )
   }
-  return version
+  return `${CREATE_HIKKAKU_TAG_PREFIX}${version}`
 }
 
 const createPrompter = () => {
@@ -629,10 +630,10 @@ const main = async () => {
       warning('--link-claude was ignored because AGENTS.md is disabled')
     }
 
-    const ref = cli.ref ?? (await getDefaultTagFromPackageVersion())
+    const ref = cli.ref ?? (await getDefaultRefFromPackageVersion())
     log(
       `Template tag: ${pc.bold(ref)} ${pc.dim(
-        cli.ref ? '(from --ref)' : '(from create-hikkaku version)',
+        cli.ref ? '(from --ref)' : '(from create-hikkaku@<version>)',
       )}`,
     )
 

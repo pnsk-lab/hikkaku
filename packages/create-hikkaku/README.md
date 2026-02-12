@@ -23,4 +23,5 @@ create-hikkaku [project-name] [options]
 --ref <git-tag>
 ```
 
-`--ref` 未指定時は `create-hikkaku` の `version` と同じ Git タグからテンプレートを取得します。
+`--ref` 未指定時は `create-hikkaku@<version>` 形式の Git タグ
+（例: `create-hikkaku@0.1.9`）からテンプレートを取得します。
