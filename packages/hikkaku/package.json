@@ -8,7 +8,8 @@
     "./assets": "./src/assets/index.ts",
     "./blocks": "./src/blocks/index.ts",
     "./client": "./src/client/index.ts",
-    "./vite": "./src/vite/index.ts"
+    "./vite": "./src/vite/index.ts",
+    "./types": "./src/types.d.ts"
   },
   "scripts": {
     "build": "bun --bun tsdown",

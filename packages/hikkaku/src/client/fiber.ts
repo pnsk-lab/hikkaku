@@ -96,10 +96,22 @@ export const getScratchInternalStates = (root: ScratchRoot) => {
     return false
   })
 
+  const storage = vm.runtime.storage
   // アセットのロードをパッチする
   // 0を削除
-  vm.runtime.storage.webHelper.assetTool.tools.splice(0, 1)
-
+  storage.webHelper.assetTool.tools.splice(0, 1)
+  // @ts-expect-error stores existence checked
+  storage.webHelper.stores.splice(0, storage.webHelper.stores.length)
+  storage.addWebStore(
+    [
+      storage.AssetType.ImageVector,
+      storage.AssetType.ImageBitmap,
+      storage.AssetType.Sound,
+    ],
+    (asset) => `/hikkaku-assets/${asset.assetId}.${asset.dataFormat}`,
+    null,
+    null,
+  )
   // @ts-expect-error scratchBlocksFiber existence checked
   const scratchBlocks = scratchBlocksFiber.stateNode.ScratchBlocks as {
     getMainWorkspace: () => {

@@ -10,6 +10,13 @@ export interface ScratchVM {
     storage: ScratchStorage
   }
 }
+
+type AssetType = unknown
+type Asset = {
+  assetId: string
+  dataFormat: string
+  md5ext: string
+}
 export interface ScratchStorage {
   webHelper: {
     assetTool: {
@@ -18,4 +25,15 @@ export interface ScratchStorage {
       }[]
     }
   }
+  AssetType: {
+    ImageVector: AssetType
+    ImageBitmap: AssetType
+    Sound: AssetType
+  }
+  addWebStore: (
+    assetTypes: AssetType[],
+    f: (asset: Asset) => string,
+    u1: null,
+    u2: null,
+  ) => void
 }

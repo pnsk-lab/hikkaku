@@ -1,3 +1,5 @@
+import type { Costume, Sound } from 'sb3-types'
+
 export type PrimitiveAvailableOnScratch = number | boolean | string
 
 export type PrimitiveSource<T extends PrimitiveAvailableOnScratch> =
@@ -70,3 +72,6 @@ export interface HikkakuBlock {
   isBlock: true
   id: string
 }
+
+export type CostumeData = Costume & { _data?: Uint8Array }
+export type SoundData = Sound & { _data?: Uint8Array }

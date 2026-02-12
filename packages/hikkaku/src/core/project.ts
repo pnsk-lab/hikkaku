@@ -8,10 +8,12 @@ import {
   createVariableMonitor,
 } from './monitors'
 import type {
+  CostumeData,
   CostumeReference,
   CreateListOptions,
   CreateVariableOptions,
   ListReference,
+  SoundData,
   SoundReference,
   VariableDefinition,
 } from './types'
@@ -57,6 +59,12 @@ const collectExtensions = (targets: Array<sb3.Stage | sb3.Sprite>) => {
   return Array.from(extensions).sort()
 }
 
+export interface SpriteOptions {
+  size?: number
+  x?: number
+  y?: number
+}
+
 export class Target<IsStage extends boolean = boolean> {
   readonly isStage: IsStage
   readonly name: IsStage extends true ? 'Stage' : string
@@ -66,11 +74,21 @@ export class Target<IsStage extends boolean = boolean> {
   #variables: Record<string, sb3.ScalarVariable> = {}
   #lists: Record<string, sb3.List> = {}
   #monitors: Monitor[] = []
-  #costumes: sb3.Costume[] = []
-  #sounds: sb3.Sound[] = []
-  constructor(isStage: IsStage, name: IsStage extends true ? 'Stage' : string) {
+  #costumes: CostumeData[] = []
+  #sounds: SoundData[] = []
+  #size?: number
+  #x?: number
+  #y?: number
+  constructor(
+    isStage: IsStage,
+    name: IsStage extends true ? 'Stage' : string,
+    options?: IsStage extends false ? SpriteOptions : undefined,
+  ) {
     this.isStage = isStage
     this.name = name
+    this.#size = options?.size
+    this.#x = options?.x
+    this.#y = options?.y
   }
 
   run(handler: (target: Target<IsStage>) => void): void {
@@ -158,7 +176,7 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
-  addCostume(costume: sb3.Costume): CostumeReference {
+  addCostume(costume: CostumeData): CostumeReference {
     this.#costumes.push(costume)
     return {
       name: costume.name,
@@ -166,7 +184,7 @@ export class Target<IsStage extends boolean = boolean> {
     }
   }
 
-  addSound(sound: sb3.Sound): SoundReference {
+  addSound(sound: SoundData): SoundReference {
     this.#sounds.push(sound)
     return {
       name: sound.name,
@@ -211,7 +229,24 @@ export class Target<IsStage extends boolean = boolean> {
       isStage: false,
       name: this.name,
       visible: true,
+      size: this.#size,
+      x: this.#x,
+      y: this.#y,
     } satisfies sb3.Sprite as IsStage extends true ? sb3.Stage : sb3.Sprite
+  }
+  getAdditionalAssets(): Map<string, Uint8Array> {
+    const assets = new Map<string, Uint8Array>()
+    for (const costume of this.#costumes) {
+      if (costume._data) {
+        assets.set(`${costume.assetId}.${costume.dataFormat}`, costume._data)
+      }
+    }
+    for (const sound of this.#sounds) {
+      if (sound._data) {
+        assets.set(`${sound.assetId}.${sound.dataFormat}`, sound._data)
+      }
+    }
+    return assets
   }
 }
 
@@ -223,17 +258,17 @@ export class Project {
     this.stage = target
     this.#targets.push(target)
   }
-  createSprite(name: string): Target<false> {
-    const sprite = new Target(false, name)
+  createSprite(name: string, options?: SpriteOptions): Target<false> {
+    const sprite = new Target(false, name, options)
     this.#targets.push(sprite)
     return sprite
   }
 
-  addCostume(costume: sb3.Costume): CostumeReference {
+  addCostume(costume: CostumeData): CostumeReference {
     return this.stage.addCostume(costume)
   }
 
-  addSound(sound: sb3.Sound): SoundReference {
+  addSound(sound: SoundData): SoundReference {
     return this.stage.addSound(sound)
   }
 
@@ -257,5 +292,14 @@ export class Project {
     }
 
     return project
+  }
+  getAdditionalAssets(): Map<string, Uint8Array> {
+    const assets = new Map<string, Uint8Array>()
+    for (const target of this.#targets) {
+      for (const [key, value] of target.getAdditionalAssets()) {
+        assets.set(key, value)
+      }
+    }
+    return assets
   }
 }
