@@ -1,4 +1,4 @@
-import type { ScratchProject, Meta } from 'sb3-types'
+import type { Meta, ScratchProject } from 'sb3-types'
 
 import type { HeadlessVM, JsonValue } from './index.ts'
 
@@ -161,7 +161,9 @@ export const TEXT_TO_SPEECH_TRANSLATE_PROJECT: ScratchProject = {
   ],
 }
 
-export const getStageVariables = (vm: HeadlessVM): Record<string, JsonValue> => {
+export const getStageVariables = (
+  vm: HeadlessVM,
+): Record<string, JsonValue> => {
   const stage = vm.snapshot().targets.find((target) => target.isStage)
   if (!stage) {
     throw new Error('stage target was not found in snapshot')

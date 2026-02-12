@@ -1,18 +1,22 @@
-import {
-  type MusicPlayDrumEffect,
-  type MusicPlayNoteEffect,
-  type TextToSpeechEffect,
-  type TranslateRequestEffect,
-  type VMEffect,
+import type {
+  MusicPlayDrumEffect,
+  MusicPlayNoteEffect,
+  TextToSpeechEffect,
+  TranslateRequestEffect,
+  VMEffect,
 } from './types.ts'
 import { hasNumberField, hasStringField } from './value-guards.ts'
 
-export const isTranslateRequestEffect = (effect: VMEffect): effect is TranslateRequestEffect =>
+export const isTranslateRequestEffect = (
+  effect: VMEffect,
+): effect is TranslateRequestEffect =>
   effect.type === 'translate_request' &&
   hasStringField(effect, 'words') &&
   hasStringField(effect, 'language')
 
-export const isTextToSpeechEffect = (effect: VMEffect): effect is TextToSpeechEffect =>
+export const isTextToSpeechEffect = (
+  effect: VMEffect,
+): effect is TextToSpeechEffect =>
   effect.type === 'text_to_speech' &&
   hasStringField(effect, 'target') &&
   hasStringField(effect, 'words') &&
@@ -20,7 +24,9 @@ export const isTextToSpeechEffect = (effect: VMEffect): effect is TextToSpeechEf
   hasStringField(effect, 'language') &&
   hasStringField(effect, 'waitKey')
 
-export const isMusicPlayNoteEffect = (effect: VMEffect): effect is MusicPlayNoteEffect =>
+export const isMusicPlayNoteEffect = (
+  effect: VMEffect,
+): effect is MusicPlayNoteEffect =>
   effect.type === 'music_play_note' &&
   hasStringField(effect, 'target') &&
   hasNumberField(effect, 'note') &&
@@ -28,7 +34,9 @@ export const isMusicPlayNoteEffect = (effect: VMEffect): effect is MusicPlayNote
   hasNumberField(effect, 'instrument') &&
   hasNumberField(effect, 'tempo')
 
-export const isMusicPlayDrumEffect = (effect: VMEffect): effect is MusicPlayDrumEffect =>
+export const isMusicPlayDrumEffect = (
+  effect: VMEffect,
+): effect is MusicPlayDrumEffect =>
   effect.type === 'music_play_drum' &&
   hasStringField(effect, 'target') &&
   hasNumberField(effect, 'drum') &&

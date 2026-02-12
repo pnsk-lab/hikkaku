@@ -5,7 +5,9 @@ export interface RgbaAsset {
 }
 
 export type RgbaTuple = readonly [number, number, number, number]
-export type RgbaMatrix = ReadonlyArray<ReadonlyArray<RgbaTuple | ReadonlyArray<number>>>
+export type RgbaMatrix = ReadonlyArray<
+  ReadonlyArray<RgbaTuple | ReadonlyArray<number>>
+>
 
 export interface ImageDataLike {
   width: number

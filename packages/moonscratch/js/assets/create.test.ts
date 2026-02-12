@@ -51,7 +51,11 @@ describe('moonscratch/js/assets/create.ts', () => {
   })
 
   test('builds an asset from flat rgba bytes', () => {
-    const asset = fromRgbaBytes(2, 1, new Uint8Array([0, 255, 0, 255, 255, 0, 0, 255]))
+    const asset = fromRgbaBytes(
+      2,
+      1,
+      new Uint8Array([0, 255, 0, 255, 255, 0, 0, 255]),
+    )
 
     expect(asset).toEqual({
       width: 2,
@@ -125,7 +129,10 @@ describe('moonscratch/js/assets/create.ts', () => {
   test('loads an image asset from file via sharp', async () => {
     const asset = await fromImageFile('fixtures/example.png')
 
-    expect(sharpCalls).toEqual([new Uint8Array([1, 2, 3]), 'fixtures/example.png'])
+    expect(sharpCalls).toEqual([
+      new Uint8Array([1, 2, 3]),
+      'fixtures/example.png',
+    ])
     expect(asset).toEqual({
       width: 1,
       height: 1,

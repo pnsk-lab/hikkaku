@@ -117,7 +117,11 @@ export class HeadlessVM {
     this.postIO('viewer_language', normalizeLanguage(language))
   }
 
-  setTranslateResult(words: string, language: string, translated: string): string {
+  setTranslateResult(
+    words: string,
+    language: string,
+    translated: string,
+  ): string {
     const normalizedLanguage = normalizeLanguage(language)
     if (!this.translateCache[normalizedLanguage]) {
       this.translateCache[normalizedLanguage] = {}

@@ -1,7 +1,9 @@
 import type { RawVMOptions } from './internal-types.ts'
 import type { VMOptionsInput } from './types.ts'
 
-export const toOptionsJson = (options: string | VMOptionsInput | undefined): string | undefined => {
+export const toOptionsJson = (
+  options: string | VMOptionsInput | undefined,
+): string | undefined => {
   if (options === undefined) {
     return undefined
   }
@@ -14,7 +16,8 @@ export const toOptionsJson = (options: string | VMOptionsInput | undefined): str
     raw.turbo = options.turbo
   }
 
-  const compatibility30tps = options.compatibility30tps ?? options.compatibility_30tps
+  const compatibility30tps =
+    options.compatibility30tps ?? options.compatibility_30tps
   if (compatibility30tps !== undefined) {
     raw.compatibility_30tps = compatibility30tps
   }

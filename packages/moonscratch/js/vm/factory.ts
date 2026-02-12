@@ -1,8 +1,8 @@
 import { moonscratch } from './bindings.ts'
+import { HeadlessVM } from './headless-vm.ts'
 import type { MoonResult } from './internal-types.ts'
 import { toJsonString, toOptionalJsonString, unwrapResult } from './json.ts'
 import { toOptionsJson } from './options.ts'
-import { HeadlessVM } from './headless-vm.ts'
 import type { CreateHeadlessVMOptions } from './types.ts'
 
 export const createHeadlessVM = ({

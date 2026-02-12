@@ -1,9 +1,17 @@
 import { buildAsset } from './build-asset.ts'
-import type { CanvasLike, ImageDataLike, RgbaAsset, RgbaMatrix } from './types.ts'
+import type {
+  CanvasLike,
+  ImageDataLike,
+  RgbaAsset,
+  RgbaMatrix,
+} from './types.ts'
 import { toByte, toPositiveInt } from './validation.ts'
 
-export const fromRgbaBytes = (width: number, height: number, rgba: ArrayLike<number>): RgbaAsset =>
-  buildAsset(width, height, rgba)
+export const fromRgbaBytes = (
+  width: number,
+  height: number,
+  rgba: ArrayLike<number>,
+): RgbaAsset => buildAsset(width, height, rgba)
 
 export const fromImageData = (imageData: ImageDataLike): RgbaAsset =>
   buildAsset(imageData.width, imageData.height, imageData.data)
@@ -78,9 +86,8 @@ const loadSharp = async (): Promise<(input?: unknown) => SharpPipeline> => {
     const sharp = (await import('sharp')) as SharpNamespace
     return (
       sharp.default ??
-      ((sharp as unknown as { sharp?: (input?: unknown) => SharpPipeline }).sharp as
-        | ((input?: unknown) => SharpPipeline)
-        | undefined) ??
+      ((sharp as unknown as { sharp?: (input?: unknown) => SharpPipeline })
+        .sharp as ((input?: unknown) => SharpPipeline) | undefined) ??
       (() => {
         throw new Error('invalid sharp module shape')
       })
@@ -91,12 +98,19 @@ const loadSharp = async (): Promise<(input?: unknown) => SharpPipeline> => {
   }
 }
 
-const fromSharpPipeline = async (pipeline: SharpPipeline): Promise<RgbaAsset> => {
-  const { data, info } = await pipeline.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+const fromSharpPipeline = async (
+  pipeline: SharpPipeline,
+): Promise<RgbaAsset> => {
+  const { data, info } = await pipeline
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
   return fromRgbaBytes(info.width, info.height, data)
 }
 
-export const fromImageBytes = async (bytes: ArrayBuffer | Uint8Array): Promise<RgbaAsset> => {
+export const fromImageBytes = async (
+  bytes: ArrayBuffer | Uint8Array,
+): Promise<RgbaAsset> => {
   const sharp = await loadSharp()
   const normalized = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
   return fromSharpPipeline(sharp(normalized))

@@ -10,9 +10,15 @@ import {
 describe('moonscratch/js/vm/effect-guards.ts', () => {
   test('identifies translate_request effect', () => {
     expect(
-      isTranslateRequestEffect({ type: 'translate_request', words: 'hello', language: 'ja' }),
+      isTranslateRequestEffect({
+        type: 'translate_request',
+        words: 'hello',
+        language: 'ja',
+      }),
     ).toBe(true)
-    expect(isTranslateRequestEffect({ type: 'translate_request', words: 'hello' })).toBe(false)
+    expect(
+      isTranslateRequestEffect({ type: 'translate_request', words: 'hello' }),
+    ).toBe(false)
   })
 
   test('identifies text_to_speech effect', () => {
@@ -26,7 +32,9 @@ describe('moonscratch/js/vm/effect-guards.ts', () => {
         waitKey: 'text2speech_done_1',
       }),
     ).toBe(true)
-    expect(isTextToSpeechEffect({ type: 'text_to_speech', words: 'hello' })).toBe(false)
+    expect(
+      isTextToSpeechEffect({ type: 'text_to_speech', words: 'hello' }),
+    ).toBe(false)
   })
 
   test('identifies music effects', () => {
@@ -49,8 +57,12 @@ describe('moonscratch/js/vm/effect-guards.ts', () => {
         tempo: 120,
       }),
     ).toBe(true)
-    expect(isMusicPlayDrumEffect({ type: 'music_play_drum', target: 'Sprite1', drum: 1 })).toBe(
-      false,
-    )
+    expect(
+      isMusicPlayDrumEffect({
+        type: 'music_play_drum',
+        target: 'Sprite1',
+        drum: 1,
+      }),
+    ).toBe(false)
   })
 })

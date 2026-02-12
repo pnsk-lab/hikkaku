@@ -21,7 +21,9 @@ describe('moonscratch/js/vm/normalize.ts', () => {
   test('normalizes step milliseconds', () => {
     expect(normalizeStepMs(16.9)).toBe(16)
     expect(normalizeStepMs(-1)).toBe(0)
-    expect(() => normalizeStepMs(Number.POSITIVE_INFINITY)).toThrow('dtMs must be a finite number')
+    expect(() => normalizeStepMs(Number.POSITIVE_INFINITY)).toThrow(
+      'dtMs must be a finite number',
+    )
   })
 
   test('maps raw step report fields', () => {

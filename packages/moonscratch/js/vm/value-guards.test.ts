@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vite-plus/test'
 
-import { hasNumberField, hasStringField, isObjectRecord } from './value-guards.ts'
+import {
+  hasNumberField,
+  hasStringField,
+  isObjectRecord,
+} from './value-guards.ts'
 
 describe('moonscratch/js/vm/value-guards.ts', () => {
   test('isObjectRecord identifies plain objects', () => {

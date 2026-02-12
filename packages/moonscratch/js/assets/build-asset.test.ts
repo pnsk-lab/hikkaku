@@ -13,10 +13,14 @@ describe('moonscratch/js/assets/build-asset.ts', () => {
   })
 
   test('throws when rgba length is shorter than expected', () => {
-    expect(() => buildAsset(2, 1, [255, 0, 0, 255])).toThrow('rgba length must be at least 8')
+    expect(() => buildAsset(2, 1, [255, 0, 0, 255])).toThrow(
+      'rgba length must be at least 8',
+    )
   })
 
   test('throws when rgba contains invalid byte values', () => {
-    expect(() => buildAsset(1, 1, [300, 0, 0, 255])).toThrow('rgba[0] must be between 0 and 255')
+    expect(() => buildAsset(1, 1, [300, 0, 0, 255])).toThrow(
+      'rgba[0] must be between 0 and 255',
+    )
   })
 })

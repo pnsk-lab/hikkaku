@@ -45,7 +45,10 @@ const formatVmError = (error: unknown): string => {
   }
 }
 
-export const unwrapResult = <T>(result: MoonResult<T, unknown>, context: string): T => {
+export const unwrapResult = <T>(
+  result: MoonResult<T, unknown>,
+  context: string,
+): T => {
   if (result.$tag === 1) {
     return result._0
   }

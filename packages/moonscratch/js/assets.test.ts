@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
-
-import * as assets from './assets.ts'
 import * as assetsIndex from './assets/index.ts'
+import * as assets from './assets.ts'
 
 describe('moonscratch/js/assets.ts', () => {
   test('re-exports public asset APIs', () => {

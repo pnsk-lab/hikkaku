@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'vite-plus/test'
 
 import { createHeadlessVM, createVM } from './factory.ts'
-import { getStageVariables, stepMany, TEXT_TO_SPEECH_TRANSLATE_PROJECT } from './test-projects.ts'
+import {
+  getStageVariables,
+  stepMany,
+  TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+} from './test-projects.ts'
 
 describe('moonscratch/js/vm/factory.ts', () => {
   test('exports createVM as alias of createHeadlessVM', () => {
@@ -34,7 +38,9 @@ describe('moonscratch/js/vm/factory.ts', () => {
         }),
       ]),
     )
-    expect(effects.some((effect) => effect.type === 'translate_request')).toBe(false)
+    expect(effects.some((effect) => effect.type === 'translate_request')).toBe(
+      false,
+    )
 
     vm.ackTextToSpeech('text2speech_done_1')
     stepMany(vm, 10)

@@ -2,7 +2,11 @@ import { encodeBase64 } from './base64.ts'
 import type { RgbaAsset } from './types.ts'
 import { toByte, toPositiveInt } from './validation.ts'
 
-export const buildAsset = (width: number, height: number, rgba: ArrayLike<number>): RgbaAsset => {
+export const buildAsset = (
+  width: number,
+  height: number,
+  rgba: ArrayLike<number>,
+): RgbaAsset => {
   const safeWidth = toPositiveInt(width, 'width')
   const safeHeight = toPositiveInt(height, 'height')
   const expectedLength = safeWidth * safeHeight * 4

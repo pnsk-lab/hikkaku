@@ -7,7 +7,9 @@ export const normalizeLanguage = (language: unknown): string =>
     .trim()
     .toLowerCase() || DEFAULT_LANGUAGE
 
-export const cloneTranslateCache = (cache: TranslateCache | undefined): TranslateCache => {
+export const cloneTranslateCache = (
+  cache: TranslateCache | undefined,
+): TranslateCache => {
   const out: TranslateCache = {}
   for (const [language, bucket] of Object.entries(cache ?? {})) {
     if (!bucket || typeof bucket !== 'object' || Array.isArray(bucket)) {

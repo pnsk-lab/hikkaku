@@ -23,7 +23,9 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
       emittedEffects: 0,
     })
     expect(clamped.nowMs).toBe(16)
-    expect(() => vm.step(Number.POSITIVE_INFINITY)).toThrow('dtMs must be a finite number')
+    expect(() => vm.step(Number.POSITIVE_INFINITY)).toThrow(
+      'dtMs must be a finite number',
+    )
     expect(getStageVariables(vm).var_score).toBe(42)
   })
 
@@ -50,7 +52,10 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
     stepMany(vm, 6)
 
     const handled = await vm.handleEffects({ translate, textToSpeech, effect })
-    expect(handled.map((item) => item.type)).toEqual(['translate_request', 'text_to_speech'])
+    expect(handled.map((item) => item.type)).toEqual([
+      'translate_request',
+      'text_to_speech',
+    ])
     expect(translate).toHaveBeenCalledTimes(1)
     expect(textToSpeech).toHaveBeenCalledTimes(1)
     expect(effect).toHaveBeenCalledTimes(2)
@@ -63,7 +68,9 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
     stepMany(vm, 6)
 
     const secondRunEffects = vm.takeEffects()
-    expect(secondRunEffects.some((item) => item.type === 'translate_request')).toBe(false)
+    expect(
+      secondRunEffects.some((item) => item.type === 'translate_request'),
+    ).toBe(false)
     const secondRunTts = secondRunEffects.find(
       (item): item is { type: 'text_to_speech'; waitKey: string } =>
         item.type === 'text_to_speech' &&

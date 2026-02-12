@@ -3,7 +3,10 @@ import type { ScratchProject } from 'sb3-types'
 type MaybePromise<T> = T | Promise<T>
 
 export type JsonPrimitive = string | number | boolean | null
-export type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[]
+export type JsonValue =
+  | JsonPrimitive
+  | { [key: string]: JsonValue }
+  | JsonValue[]
 export type ProjectJson = JsonValue | ScratchProject
 
 export interface VMOptions {
@@ -151,7 +154,9 @@ export type VMEffect = KnownEffect | UnknownEffect
 export type TranslateCache = Record<string, Record<string, string>>
 
 export interface EffectHandlers {
-  translate?: (effect: TranslateRequestEffect) => MaybePromise<string | null | undefined>
+  translate?: (
+    effect: TranslateRequestEffect,
+  ) => MaybePromise<string | null | undefined>
   textToSpeech?: (effect: TextToSpeechEffect) => MaybePromise<void>
   musicNote?: (effect: MusicPlayNoteEffect) => MaybePromise<void>
   musicDrum?: (effect: MusicPlayDrumEffect) => MaybePromise<void>
