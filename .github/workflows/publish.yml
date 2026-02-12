@@ -1,24 +1,44 @@
 name: Publish
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to release'
+        required: true
+        type: choice
+        options:
+          - hikkaku
+          - create-hikkaku
+          - vite-plugin-turbowarp-packager
+      version:
+        description: 'Version (e.g. 1.2.3 or v1.2.3)'
+        required: true
+        type: string
 
 permissions:
-  id-token: write  # Required for OIDC
+  id-token: write
   contents: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    concurrency:
+      group: publish-${{ inputs.package }}
+      cancel-in-progress: false
     permissions:
       contents: write
       id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PACKAGE_NAME: ${{ inputs.package }}
+      INPUT_VERSION: ${{ inputs.version }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -31,43 +51,84 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Resolve version from release tag
-        id: release_version
+      - name: Resolve release metadata
+        id: metadata
         shell: bash
         run: |
-          tag='${{ github.event.release.tag_name }}'
-          version="${tag#hikkaku@}"
-          version="${version#v}"
+          package="$PACKAGE_NAME"
+          version="${INPUT_VERSION#v}"
 
-          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid release tag: $tag"
-            echo "Supported examples: v1.2.3, 1.2.3, hikkaku@1.2.3"
+          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager)$ ]]; then
+            echo "Unsupported package: $package"
             exit 1
           fi
 
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $INPUT_VERSION"
+            echo "Supported examples: 1.2.3, v1.2.3, 1.2.3-beta.1"
+            exit 1
+          fi
+
+          tag="$package@$version"
+
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag already exists: $tag"
+            exit 1
+          fi
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release already exists: $tag"
+            exit 1
+          fi
+
+          echo "package=$package" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Update package version
         run: |
-          node -e "const fs=require('fs');const version='${{ steps.release_version.outputs.version }}';for (const path of ['packages/hikkaku/package.json','packages/create-hikkaku/package.json']) {const pkg=JSON.parse(fs.readFileSync(path,'utf8'));pkg.version=version;fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');}"
+          node -e "const fs=require('fs');const path='packages/${{ steps.metadata.outputs.package }}/package.json';const version='${{ steps.metadata.outputs.version }}';const pkg=JSON.parse(fs.readFileSync(path,'utf8'));pkg.version=version;if(pkg.name==='create-hikkaku'||pkg.name==='vite-plugin-turbowarp-packager'){pkg.private=false;}fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');"
 
-      - name: Build packages
+      - name: Build hikkaku
+        if: steps.metadata.outputs.package == 'hikkaku'
         run: bun run --filter hikkaku build
+
       - name: Build create-hikkaku
+        if: steps.metadata.outputs.package == 'create-hikkaku'
         run: bun run --filter create-hikkaku build
 
+      - name: Build vite-plugin-turbowarp-packager
+        if: steps.metadata.outputs.package == 'vite-plugin-turbowarp-packager'
+        run: bun run --filter vite-plugin-turbowarp-packager build
+
       - name: Build gpts zip
+        if: steps.metadata.outputs.package == 'hikkaku'
         run: bun run --filter gpts-zip build
 
-      - name: Upload gpts.zip release asset
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload '${{ github.event.release.tag_name }}' 'packages/gpts-zip/dist.zip#gpts.zip' --clobber
-
       - name: Publish hikkaku to npm
+        if: steps.metadata.outputs.package == 'hikkaku'
         run: npm publish --provenance --access public
         working-directory: packages/hikkaku/dist
 
       - name: Publish create-hikkaku to npm
+        if: steps.metadata.outputs.package == 'create-hikkaku'
         run: npm publish --provenance --access public
         working-directory: packages/create-hikkaku
+
+      - name: Publish vite-plugin-turbowarp-packager to npm
+        if: steps.metadata.outputs.package == 'vite-plugin-turbowarp-packager'
+        run: npm publish --provenance --access public
+        working-directory: packages/vite-plugin-turbowarp-packager
+
+      - name: Create release with generated notes
+        run: |
+          if [[ '${{ steps.metadata.outputs.package }}' == 'hikkaku' ]]; then
+            gh release create '${{ steps.metadata.outputs.tag }}' \
+              'packages/gpts-zip/dist.zip#gpts.zip' \
+              --generate-notes \
+              --target '${{ github.sha }}'
+          else
+            gh release create '${{ steps.metadata.outputs.tag }}' \
+              --generate-notes \
+              --target '${{ github.sha }}'
+          fi

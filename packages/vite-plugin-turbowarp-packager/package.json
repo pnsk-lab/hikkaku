@@ -1,11 +1,21 @@
 {
   "name": "vite-plugin-turbowarp-packager",
-  "module": "index.ts",
   "type": "module",
-  "private": true,
+  "version": "0.1.0",
   "devDependencies": {
     "@types/bun": "latest",
     "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "repository": {
+    "url": "https://github.com/pnsk-lab/hikkaku.git",
+    "type": "git",
+    "directory": "packages/vite-plugin-turbowarp-packager"
   },
   "scripts": {
     "build": "vp pack"
