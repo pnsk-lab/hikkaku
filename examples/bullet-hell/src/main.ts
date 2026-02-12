@@ -1,5 +1,5 @@
 import { Project, type VariableReference } from 'hikkaku'
-import { BALL_A, ROCKETSHIP_A, WIZARD_A } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import {
   add,
   and,
@@ -40,6 +40,8 @@ import {
   whenBroadcastReceived,
   whenFlagClicked,
 } from 'hikkaku/blocks'
+
+const { BALL_A, ROCKETSHIP_A, WIZARD_A } = IMAGES
 
 const project = new Project()
 const gameOverEvent = 'game-over'
