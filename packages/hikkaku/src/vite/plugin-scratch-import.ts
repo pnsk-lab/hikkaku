@@ -46,7 +46,7 @@ export const pluginScratchImport = (): Plugin => ({
 
       return `
         const data = ${JSON.stringify(data)}
-        // to unit8array
+        // to Uint8Array
         data._data = Uint8Array.from(atob(data._data), c => c.charCodeAt(0));
 
         export default data
