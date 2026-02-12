@@ -81,6 +81,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
         await builder.build(env)
       },
       async generateBundle(_options, bundle) {
+        if (this.environment.name !== 'hikkaku') return
         const tmpDir = path.join(process.cwd(), 'dist', '.tmp')
         for (const [filePath, file] of Object.entries(bundle)) {
           if (file.type === 'chunk') {
