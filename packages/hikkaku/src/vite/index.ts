@@ -21,6 +21,22 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
   let additionalAssets = new Map<string, Uint8Array>()
   const assetCache = new Map<string, Uint8Array | false>()
 
+  // Helper function to set Content-Type based on file extension
+  const setContentType = (res: any, assetId: string) => {
+    const assetExt = path.extname(assetId).toLowerCase()
+    if (assetExt === '.png') {
+      res.setHeader('Content-Type', 'image/png')
+    } else if (assetExt === '.jpg' || assetExt === '.jpeg') {
+      res.setHeader('Content-Type', 'image/jpeg')
+    } else if (assetExt === '.wav') {
+      res.setHeader('Content-Type', 'audio/wav')
+    } else if (assetExt === '.mp3') {
+      res.setHeader('Content-Type', 'audio/mpeg')
+    } else {
+      res.setHeader('Content-Type', 'application/octet-stream')
+    }
+  }
+
   return [
     {
       name: 'vite-plugin-hikkaku',
@@ -217,6 +233,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
                   res.end('Asset not found')
                   return
                 }
+                setContentType(res, assetId)
                 res.end(cached)
                 return
               }
@@ -236,6 +253,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
               if (assetData) {
                 const uint8array = new Uint8Array(assetData)
                 assetCache.set(assetId, uint8array)
+                setContentType(res, assetId)
                 res.end(uint8array)
                 return
               }
@@ -245,18 +263,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
               res.end('Asset not found')
               return
             }
-            const assetExt = path.extname(assetId).toLowerCase()
-            if (assetExt === '.png') {
-              res.setHeader('Content-Type', 'image/png')
-            } else if (assetExt === '.jpg' || assetExt === '.jpeg') {
-              res.setHeader('Content-Type', 'image/jpeg')
-            } else if (assetExt === '.wav') {
-              res.setHeader('Content-Type', 'audio/wav')
-            } else if (assetExt === '.mp3') {
-              res.setHeader('Content-Type', 'audio/mpeg')
-            } else {
-              res.setHeader('Content-Type', 'application/octet-stream')
-            }
+            setContentType(res, assetId)
             res.end(assetData)
             return
           }
