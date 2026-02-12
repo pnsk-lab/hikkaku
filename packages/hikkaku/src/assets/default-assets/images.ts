@@ -1,4 +1,4 @@
-import { png, svg } from './helpers'
+import { png, svg } from '../helpers'
 
 export const BLANK_SVG = svg('cd21514d0531fdffb22204e0ec5ed84a')
 

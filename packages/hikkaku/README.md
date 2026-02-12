@@ -22,7 +22,7 @@ npm install hikkaku # npm
 
 ```ts
 import { Project } from 'hikkaku'
-import { CATCHER_A } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import {
   getMouseX,
   gotoXY,
@@ -37,7 +37,7 @@ const project = new Project()
 
 const sprite1 = project.createSprite('Sprite1') // create sprite
 const cat1 = sprite1.addCostume({
-  ...CATCHER_A,
+  ...IMAGES.CATCHER_A,
   name: 'cat1',
 }) // create costume
 
@@ -81,7 +81,7 @@ Then, put your Scratch project code in `src/main.ts`:
 
 ```ts
 import { Project } from 'hikkaku'
-import { CAT_A } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import { moveSteps, whenFlagClicked } from 'hikkaku/blocks'
 
 const project = new Project()
@@ -89,7 +89,7 @@ const project = new Project()
 const cat = project.createSprite('cat')
 
 cat.addCostume({
-  ...CAT_A,
+  ...IMAGES.CAT_A,
   name: 'cat-a',
 })
 cat.run(() => {

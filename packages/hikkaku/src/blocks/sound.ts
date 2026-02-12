@@ -14,9 +14,18 @@ export type SoundEffect = 'pitch' | 'pan'
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
+ * import { Project } from 'hikkaku'
+ * import { SOUNDS } from 'hikkaku/assets'
  * import { playSound } from 'hikkaku/blocks'
  *
- * playSound('pop')
+ * const project = new Project()
+ * const sprite = project.createSprite('Sprite')
+ * const sound = sprite.addSound({
+ *   ...SOUNDS.COMPUTER_BEEP,
+ *   name: 'beep',
+ * })
+ *
+ * playSound(sound)
  * ```
  */
 export const playSound = (sound: SoundSource) => {
@@ -37,9 +46,17 @@ export const playSound = (sound: SoundSource) => {
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
+ * import { Project } from 'hikkaku'
+ * import { SOUNDS } from 'hikkaku/assets'
  * import { playSoundUntilDone } from 'hikkaku/blocks'
  *
- * playSoundUntilDone('pop')
+ * const project = new Project()
+ * const sound = project.addSound({
+ *   ...SOUNDS.COMPUTER_BEEP,
+ *   name: 'beep',
+ * })
+ *
+ * playSoundUntilDone(sound)
  * ```
  */
 export const playSoundUntilDone = (sound: SoundSource) => {

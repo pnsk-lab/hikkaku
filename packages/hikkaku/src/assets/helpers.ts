@@ -12,3 +12,17 @@ export const png = (id: string) =>
     dataFormat: 'png',
     assetId: id,
   }) as const
+export const sound = (
+  name: string,
+  assetId: string,
+  sampleCount: number,
+  rate: number,
+): sb3.Sound =>
+  ({
+    name,
+    assetId,
+    dataFormat: 'wav',
+    md5ext: `${assetId}.wav`,
+    sampleCount,
+    rate,
+  }) as const

@@ -1,5 +1,5 @@
 import { Project } from 'hikkaku'
-import { CAT_A } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import { forever, moveSteps, whenFlagClicked } from 'hikkaku/blocks'
 
 const project = new Project()
@@ -7,7 +7,7 @@ const project = new Project()
 const cat = project.createSprite('cat')
 
 cat.addCostume({
-  ...CAT_A,
+  ...IMAGES.CAT_A,
   name: 'cat-a',
 })
 cat.run(() => {

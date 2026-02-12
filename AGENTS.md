@@ -6,6 +6,12 @@
 - `examples/example1/` is the dev playground app for running the library with Vite.
 - Root configs: `biome.json`, `tsconfig.json`, and workspace `package.json`.
 
+## AGENTS.md Maintenance Policy
+- Treat every `AGENTS.md` as a living contract for agents.
+- When project structure, scripts, conventions, or package responsibilities change, update the affected `AGENTS.md` files in the same PR/commit.
+- Keep this root `AGENTS.md` for cross-repo rules and keep `packages/*/AGENTS.md` for package-local rules.
+- Prefer the closest `AGENTS.md` to the file being edited when instructions differ.
+
 ## Build, Test, and Development Commands
 - `bun install`: install workspace dependencies.
 - `bun run dev`: start the example app in `examples/example1` via Vite.

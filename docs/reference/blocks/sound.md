@@ -20,9 +20,18 @@ Output: Scratch statement block definition that is appended to the current scrip
 
 Example:
 ```ts
+import { Project } from 'hikkaku'
+import { SOUNDS } from 'hikkaku/assets'
 import { playSound } from 'hikkaku/blocks'
 
-playSound('pop')
+const project = new Project()
+const sprite = project.createSprite('Sprite')
+const sound = sprite.addSound({
+...SOUNDS.COMPUTER_BEEP,
+name: 'beep',
+})
+
+playSound(sound)
 ```
 
 ## playSoundUntilDone(sound)
@@ -37,9 +46,17 @@ Output: Scratch statement block definition that is appended to the current scrip
 
 Example:
 ```ts
+import { Project } from 'hikkaku'
+import { SOUNDS } from 'hikkaku/assets'
 import { playSoundUntilDone } from 'hikkaku/blocks'
 
-playSoundUntilDone('pop')
+const project = new Project()
+const sound = project.addSound({
+...SOUNDS.COMPUTER_BEEP,
+name: 'beep',
+})
+
+playSoundUntilDone(sound)
 ```
 
 ## stopAllSounds()

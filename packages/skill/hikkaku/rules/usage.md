@@ -7,7 +7,7 @@ impact: HIGH
 
 ```ts
 import { Project } from 'hikkaku'
-import { CATCHER_A } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import {
   getMouseX,
   gotoXY,
@@ -15,13 +15,14 @@ import {
   procedureLabel,
   whenFlagClicked,
   forever,
+  switchCostumeTo,
 } from 'hikkaku/blocks'
 
 const project = new Project()
 
 const sprite1 = project.createSprite('Sprite1') // create sprite
 const cat1 = sprite1.addCostume({
-  ...CATCHER_A,
+  ...IMAGES.CATCHER_A,
   name: 'cat1',
 }) // create costume
 
@@ -48,7 +49,7 @@ Stage is a background area where sprites perform actions. The stage is created a
 ```ts
 const stage = project.stage // get stage
 const bg1 = stage.addCostume({
-  ...CATCHER_A,
+  ...IMAGES.CATCHER_A,
   name: 'bg1',
 })
 
@@ -58,6 +59,8 @@ stage.run(() => {
   })
 })
 ```
+
+You can also use `project.addCostume()` and `project.addSound()` as shortcuts for stage assets.
 
 
 ## Attention

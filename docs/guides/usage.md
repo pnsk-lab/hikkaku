@@ -12,13 +12,13 @@ Hikkaku is a compile-time DSL for Scratch.
 
 ```ts
 import { Project } from 'hikkaku'
-import { CATCHER_A } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import { forever, getMouseX, gotoXY, switchCostumeTo, whenFlagClicked } from 'hikkaku/blocks'
 
 const project = new Project()
 const player = project.createSprite('Player')
 const costume = player.addCostume({
-  ...CATCHER_A,
+  ...IMAGES.CATCHER_A,
   name: 'player-a'
 })
 
@@ -45,6 +45,7 @@ const stage = project.stage
 ```
 
 You can add costumes and scripts to the stage just like sprites.
+You can also use `project.addCostume()` and `project.addSound()` as shortcuts for stage assets.
 
 ## Safe and Unsafe Patterns
 

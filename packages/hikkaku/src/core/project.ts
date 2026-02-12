@@ -228,6 +228,15 @@ export class Project {
     this.#targets.push(sprite)
     return sprite
   }
+
+  addCostume(costume: sb3.Costume): CostumeReference {
+    return this.stage.addCostume(costume)
+  }
+
+  addSound(sound: sb3.Sound): SoundReference {
+    return this.stage.addSound(sound)
+  }
+
   toScratch(): sb3.ScratchProject {
     const targets = this.#targets.map((target) => target.toScratch())
     const monitors = this.#targets.flatMap((target) =>
