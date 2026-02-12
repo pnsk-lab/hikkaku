@@ -1,0 +1,86 @@
+[
+  {
+    "id": "3d-ball-roll",
+    "title": "3d Ball Roll",
+    "path": "/showcase/3d-ball-roll/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "3d-cube",
+    "title": "3d Cube",
+    "path": "/showcase/3d-cube/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "base",
+    "title": "Base",
+    "path": "/showcase/base/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "bullet-hell",
+    "title": "Bullet Hell",
+    "path": "/showcase/bullet-hell/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "daw",
+    "title": "Daw",
+    "path": "/showcase/daw/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "json-parser",
+    "title": "Json Parser",
+    "path": "/showcase/json-parser/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "markdown-renderer",
+    "title": "Markdown Renderer",
+    "path": "/showcase/markdown-renderer/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "rectangle",
+    "title": "Rectangle",
+    "path": "/showcase/rectangle/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "reversi",
+    "title": "Reversi",
+    "path": "/showcase/reversi/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "rubiks-cube",
+    "title": "Rubiks Cube",
+    "path": "/showcase/rubiks-cube/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "tesseract",
+    "title": "Tesseract",
+    "path": "/showcase/tesseract/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  },
+  {
+    "id": "tetris",
+    "title": "Tetris",
+    "path": "/showcase/tetris/index.html",
+    "status": "error",
+    "error": "Scratch asset host is unreachable in this environment."
+  }
+]
