@@ -1,5 +1,5 @@
 import { Project } from 'hikkaku'
-import { BLANK_SVG } from 'hikkaku/assets'
+import { IMAGES } from 'hikkaku/assets'
 import {
   add,
   addToList,
@@ -149,7 +149,7 @@ const TOP = 155
 const project = new Project()
 const renderer = project.createSprite('renderer')
 
-const blankCostume = renderer.addCostume({ ...BLANK_SVG, name: 'blank' })
+const blankCostume = renderer.addCostume({ ...IMAGES.BLANK_SVG, name: 'blank' })
 
 // ---------------------------------------------------------------------------
 // Variables
