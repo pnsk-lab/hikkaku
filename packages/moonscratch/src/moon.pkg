@@ -1,0 +1,27 @@
+import {
+  "moonbitlang/core/encoding/base64" @base64,
+  "moonbitlang/core/json" @json,
+  "moonbitlang/core/math" @math,
+  "moonbitlang/core/strconv" @strconv,
+}
+
+options(
+  link: {
+    "js": {
+      "exports": [
+        "vm_new_from_json",
+        "vm_new",
+        "vm_start",
+        "vm_green_flag",
+        "vm_step",
+        "vm_post_io_json",
+        "vm_broadcast",
+        "vm_stop_all",
+        "vm_take_effects_json",
+        "vm_snapshot_json",
+        "vm_render_svg",
+      ],
+      "format": "esm",
+    },
+  },
+)

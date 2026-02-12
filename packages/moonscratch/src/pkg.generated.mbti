@@ -1,0 +1,214 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "nakasyou/moonscratch"
+
+// Values
+pub fn default_vm_options() -> VmOptions
+
+pub fn vm_broadcast(Vm, String) -> Unit
+
+pub fn vm_green_flag(Vm) -> Unit
+
+pub fn vm_new(ProjectBundle, VmOptions) -> Vm raise VmError
+
+pub fn vm_new_from_json(String, assets_json? : String, options_json? : String) -> Vm raise VmError
+
+pub fn vm_post_io_json(Vm, String, String) -> Unit
+
+pub fn vm_render_svg(Vm) -> String
+
+pub fn vm_snapshot_json(Vm) -> String
+
+pub fn vm_start(Vm) -> Unit
+
+pub fn vm_step(Vm, Int) -> StepReport
+
+pub fn vm_stop_all(Vm) -> Unit
+
+pub fn vm_take_effects_json(Vm) -> String
+
+// Errors
+pub suberror VmError {
+  InvalidProject(String)
+}
+
+// Types and methods
+pub(all) struct ControlFrame {
+  kind : ControlFrameKind
+  mut remaining : Int
+  substack : String?
+  after : String?
+}
+pub impl Eq for ControlFrame
+pub impl Show for ControlFrame
+pub impl ToJson for ControlFrame
+
+pub enum ControlFrameKind {
+  Repeat
+  Forever
+}
+pub impl Eq for ControlFrameKind
+pub impl Show for ControlFrameKind
+pub impl ToJson for ControlFrameKind
+
+pub(all) struct CostumeImage {
+  name : String
+  asset_id : String
+  bitmap_resolution : Int
+  rotation_center_x : Double
+  rotation_center_y : Double
+  width : Int
+  height : Int
+  pixels : Array[Byte]
+}
+
+pub enum HostEffect {
+  PlaySound(String, String)
+  PlayNote(String, Int, Double, Int, Double)
+  PlayDrum(String, Int, Double, Double)
+  TextToSpeech(String, String, String, String, String)
+  TranslateRequest(String, String)
+  StopAllSounds
+  Say(String, String)
+  Think(String, String)
+  Ask(String)
+  Broadcast(String)
+  Log(String, String)
+}
+pub impl Eq for HostEffect
+pub impl Show for HostEffect
+pub impl ToJson for HostEffect
+
+pub(all) struct ProcedureFrame {
+  return_pc : String?
+  params : Map[String, Json]
+}
+
+pub(all) struct ProjectBundle {
+  project_json : String
+  assets : Map[String, Json]
+}
+pub impl Eq for ProjectBundle
+pub impl Show for ProjectBundle
+pub impl ToJson for ProjectBundle
+
+pub(all) struct ScratchBlock {
+  id : String
+  opcode : String
+  next : String?
+  parent : String?
+  inputs : Map[String, Json]
+  fields : Map[String, Json]
+  mutation : Map[String, Json]
+  top_level : Bool
+}
+pub impl Eq for ScratchBlock
+pub impl Show for ScratchBlock
+pub impl ToJson for ScratchBlock
+
+pub(all) struct StepReport {
+  now_ms : Int
+  active_threads : Int
+  stepped_threads : Int
+  emitted_effects : Int
+}
+pub impl Eq for StepReport
+pub impl Show for StepReport
+pub impl ToJson for StepReport
+
+pub(all) struct TargetState {
+  id : String
+  name : String
+  is_stage : Bool
+  is_original : Bool
+  mut deleted : Bool
+  mut x : Double
+  mut y : Double
+  mut direction : Double
+  mut size : Double
+  mut volume : Double
+  mut music_instrument : Int
+  mut tts_voice : String
+  mut visible : Bool
+  mut current_costume : Int
+  costume_names : Array[String]
+  costumes : Array[CostumeImage]
+  mut pen_down : Bool
+  mut pen_color : Double
+  mut pen_saturation : Double
+  mut pen_brightness : Double
+  mut pen_transparency : Double
+  mut pen_size : Double
+  mut pen_legacy_shade : Double
+  mut looks_effect_color : Double
+  mut looks_effect_fisheye : Double
+  mut looks_effect_whirl : Double
+  mut looks_effect_pixelate : Double
+  mut looks_effect_mosaic : Double
+  mut looks_effect_brightness : Double
+  mut looks_effect_ghost : Double
+  variables : Map[String, Json]
+  variable_names : Map[String, String]
+  lists : Map[String, Array[Json]]
+  list_names : Map[String, String]
+  blocks : Map[String, ScratchBlock]
+  top_level_hats : Array[String]
+}
+
+pub(all) struct Thread {
+  id : Int
+  target_index : Int
+  mut pc : String?
+  mut wait_until_ms : Int?
+  mut wait_for_input : String?
+  mut done : Bool
+  mut stack : Array[ControlFrame]
+  mut loop_counters : Map[String, Int]
+  parent_waiter : Int?
+}
+
+pub(all) struct Vm {
+  targets : Array[TargetState]
+  stage_index : Int
+  assets : Map[String, Json]
+  options : VmOptions
+  pen_width : Int
+  pen_height : Int
+  mut pen_pixels : Array[Byte]
+  mut threads : Array[Thread]
+  mut next_thread_id : Int
+  mut run_id : Int
+  mut now_ms : Int
+  mut running : Bool
+  mut answer : String
+  mut effects : Array[HostEffect]
+  mut io_state : Map[String, Json]
+  mut waiting_children : Map[Int, Int]
+  mut rng_state : Int
+  mut control_counter : Int
+  mut next_clone_id : Int
+  mut hat_predicates : Map[String, Bool]
+  mut timer_start_ms : Int
+  mut music_tempo : Double
+  mut tts_language : String
+  mut procedure_frames : Map[Int, Array[ProcedureFrame]]
+  mut pending_translate_requests : Map[String, Bool]
+  mut current_thread_id : Int?
+}
+
+pub(all) struct VmOptions {
+  mut turbo : Bool
+  mut compatibility_30tps : Bool
+  mut max_clones : Int
+  mut deterministic : Bool
+  mut seed : Int
+  mut pen_width : Int
+  mut pen_height : Int
+}
+pub impl Eq for VmOptions
+pub impl Show for VmOptions
+pub impl ToJson for VmOptions
+
+// Type aliases
+
+// Traits
+

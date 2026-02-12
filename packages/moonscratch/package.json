@@ -1,0 +1,24 @@
+{
+  "name": "moonscratch",
+  "type": "module",
+  "module": "js/index.ts",
+  "scripts": {
+    "test": "vp test run",
+    "build": "vp pack",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "typecheck": "tsgo"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260211.1",
+    "sb3-types": "^0.1.16",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.4"
+  }
+}
