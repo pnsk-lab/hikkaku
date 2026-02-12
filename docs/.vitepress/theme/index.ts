@@ -2,6 +2,8 @@ import type { Theme } from 'vitepress'
 import { inBrowser } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import { defineAsyncComponent, defineComponent, h } from 'vue'
+import '@shikijs/vitepress-twoslash/style.css'
+import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 
 const PlaygroundAsync = defineAsyncComponent({
   loader: () => import('../components/Playground.vue'),
@@ -24,6 +26,7 @@ const theme: Theme = {
   enhanceApp(context) {
     DefaultTheme.enhanceApp?.(context)
     context.app.component('Playground', PlaygroundClientOnly)
+    context.app.use(TwoslashFloatingVue)
   },
 }
 

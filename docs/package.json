@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@evex/scratch-blocks": "npm:@jsr/evex__scratch-blocks",
+    "@shikijs/vitepress-twoslash": "^3.22.0",
     "esbuild-wasm": "^0.27.0",
     "hikkaku": "workspace:*",
     "vue": "^3.5.28"

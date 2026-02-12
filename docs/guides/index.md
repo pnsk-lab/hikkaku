@@ -10,3 +10,4 @@ They assume you already understand Scratch concepts and focus on Hikkaku-specifi
 - [Calculations](/guides/calculate)
 - [Variables and Lists](/guides/variable)
 - [Custom Blocks](/guides/custom-blocks)
+

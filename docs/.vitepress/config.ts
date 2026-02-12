@@ -1,5 +1,7 @@
 /// <reference types="vitepress" />
 /// <reference types="vite/client" />
+
+import { createTwoslashWithInlineCache } from '@shikijs/vitepress-twoslash/cache-inline'
 import { defineConfig } from 'vitepress'
 
 const guideSidebar = [
@@ -35,34 +37,41 @@ const blocksSidebar = [
   },
 ]
 
-export default defineConfig({
-  title: 'Hikkaku',
-  description: 'Write Scratch projects in TypeScript',
-  lang: 'en-US',
-  base: '/hikkaku/',
-  themeConfig: {
-    nav: [
-      { text: 'Guide', link: '/guides/' },
-      { text: 'Reference', link: '/reference/' },
-      { text: 'Playground', link: '/playground' },
-      { text: 'GitHub', link: 'https://github.com/pnsk-lab/hikkaku' },
-    ],
-    sidebar: {
-      '/guides/': guideSidebar,
-      '/reference/': [
-        {
-          text: 'Reference',
-          items: [{ text: 'Overview', link: '/reference/' }],
-        },
-        ...blocksSidebar,
+const withTwoslashInlineCache = createTwoslashWithInlineCache({})
+
+export default withTwoslashInlineCache(
+  defineConfig({
+    title: 'Hikkaku',
+    description: 'Write Scratch projects in TypeScript',
+    lang: 'en-US',
+    base: '/hikkaku/',
+    markdown: {
+      codeTransformers: [],
+    },
+    themeConfig: {
+      nav: [
+        { text: 'Guide', link: '/guides/' },
+        { text: 'Reference', link: '/reference/' },
+        { text: 'Playground', link: '/playground' },
+        { text: 'GitHub', link: 'https://github.com/pnsk-lab/hikkaku' },
       ],
+      sidebar: {
+        '/guides/': guideSidebar,
+        '/reference/': [
+          {
+            text: 'Reference',
+            items: [{ text: 'Overview', link: '/reference/' }],
+          },
+          ...blocksSidebar,
+        ],
+      },
+      search: {
+        provider: 'local',
+      },
+      logo: {
+        src: '/assets/logo.svg',
+        alt: 'Hikkaku Logo',
+      },
     },
-    search: {
-      provider: 'local',
-    },
-    logo: {
-      src: '/assets/logo.svg',
-      alt: 'Hikkaku Logo',
-    },
-  },
-})
+  }),
+)
