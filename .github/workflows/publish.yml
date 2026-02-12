@@ -87,7 +87,7 @@ jobs:
 
       - name: Update package version
         run: |
-          node -e "const fs=require('fs');const path='packages/${{ steps.metadata.outputs.package }}/package.json';const version='${{ steps.metadata.outputs.version }}';const pkg=JSON.parse(fs.readFileSync(path,'utf8'));pkg.version=version;if(pkg.name==='create-hikkaku'||pkg.name==='vite-plugin-turbowarp-packager'){pkg.private=false;}fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');"
+          node -e "const fs=require('fs');const path='packages/${{ steps.metadata.outputs.package }}/package.json';const version='${{ steps.metadata.outputs.version }}';const pkg=JSON.parse(fs.readFileSync(path,'utf8'));pkg.version=version;const hasPrivate=Object.prototype.hasOwnProperty.call(pkg,'private');if(hasPrivate&&(pkg.name==='create-hikkaku'||pkg.name==='vite-plugin-turbowarp-packager')){pkg.private=false;}fs.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');"
 
       - name: Build hikkaku
         if: steps.metadata.outputs.package == 'hikkaku'
