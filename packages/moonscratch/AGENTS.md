@@ -76,5 +76,4 @@ You can browse and install extra skills here:
 - Uses Bun as runtime environment.
 - `bun run test` to run tests. `vite-plus/test` API is same as `vitest`.
 - `bun run build` to build the project.
-- `bun lint` / `bun fmt` to lint / format the code using `vite-plus` tooling.
 - `bun typecheck` to typecheck the code using `tsgo`.
