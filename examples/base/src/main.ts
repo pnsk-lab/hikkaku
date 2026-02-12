@@ -19,7 +19,7 @@ project.stage.createVariable('description', 'Vite + TS + Hikkaku', {
   },
 })
 
-const vite = project.createSprite('cat', {
+const vite = project.createSprite('vite', {
   size: 800,
   x: -100,
   y: 50,
