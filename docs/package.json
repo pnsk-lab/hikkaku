@@ -3,9 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "bun --cwd ../packages/hikkaku build",
     "dev": "vitepress dev",
-    "prebuild": "bun --cwd ../packages/hikkaku build",
     "build": "vitepress build",
     "preview": "vitepress preview",
     "typecheck": "vue-tsc"

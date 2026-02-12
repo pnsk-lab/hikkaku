@@ -27,7 +27,7 @@ declare module '@turbowarp/packager' {
       progressBar: boolean
       text: string
       imageMode: 'normal' | 'stretch'
-      image: any | null
+      image: unknown | null
     }
     controls: {
       greenFlag: {
@@ -70,7 +70,7 @@ declare module '@turbowarp/packager' {
       | 'electron-linux-arm64'
       | 'webview-mac'
     app: {
-      icon: any | null
+      icon: unknown | null
       packageName: string
       windowTitle: string
       windowMode: 'window' | 'maximize' | 'fullscreen'
@@ -96,7 +96,7 @@ declare module '@turbowarp/packager' {
     }
     cursor: {
       type: 'auto' | 'none' | 'custom'
-      custom: any | null
+      custom: unknown | null
       center: {
         x: number
         y: number
@@ -114,14 +114,14 @@ declare module '@turbowarp/packager' {
   export class Packager {
     constructor()
     options: PackagerOptions
-    project: any
+    project: unknown
     loadProject(data: ArrayBuffer | Uint8Array | ArrayBufferLike): Promise<void>
     package(): Promise<{ data: Uint8Array | string; type: string }>
   }
 
   export function loadProject(
     data: ArrayBuffer | Uint8Array | ArrayBufferLike,
-  ): Promise<any>
+  ): Promise<unknown>
 
   export const packager: {
     Packager: typeof Packager

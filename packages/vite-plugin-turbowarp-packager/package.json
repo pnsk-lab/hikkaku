@@ -1,0 +1,22 @@
+{
+  "name": "vite-plugin-turbowarp-packager",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  },
+  "scripts": {
+    "build": "vp pack"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@turbowarp/packager": "^3.11.0",
+    "fflate": "^0.8.2",
+    "hikkaku": "workspace:*",
+    "vite": "8.0.0-beta.13"
+  }
+}
