@@ -11,10 +11,14 @@ on:
           - hikkaku
           - create-hikkaku
           - vite-plugin-turbowarp-packager
-      version:
-        description: 'Version (e.g. 1.2.3 or v1.2.3)'
+      release_type:
+        description: 'Version bump type'
         required: true
-        type: string
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   id-token: write
@@ -32,7 +36,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       PACKAGE_NAME: ${{ inputs.package }}
-      INPUT_VERSION: ${{ inputs.version }}
+      INPUT_RELEASE_TYPE: ${{ inputs.release_type }}
 
     steps:
       - name: Checkout
@@ -56,18 +60,47 @@ jobs:
         shell: bash
         run: |
           package="$PACKAGE_NAME"
-          version="${INPUT_VERSION#v}"
+          release_type="$INPUT_RELEASE_TYPE"
 
           if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager)$ ]]; then
             echo "Unsupported package: $package"
             exit 1
           fi
 
-          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid version: $INPUT_VERSION"
-            echo "Supported examples: 1.2.3, v1.2.3, 1.2.3-beta.1"
+          if ! [[ "$release_type" =~ ^(major|minor|patch)$ ]]; then
+            echo "Invalid release_type: $release_type"
+            echo "Supported values: major, minor, patch"
             exit 1
           fi
+
+          package_json_path="packages/$package/package.json"
+          current_version="$(node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof pkg.version==='string'?pkg.version.trim():'')" "$package_json_path")"
+
+          if ! [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid current package version: $current_version"
+            exit 1
+          fi
+
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+
+          case "$release_type" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          version="$major.$minor.$patch"
 
           tag="$package@$version"
 
