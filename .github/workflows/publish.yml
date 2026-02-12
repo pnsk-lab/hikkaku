@@ -73,8 +73,20 @@ jobs:
             exit 1
           fi
 
-          package_json_path="packages/$package/package.json"
-          current_version="$(node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof pkg.version==='string'?pkg.version.trim():'')" "$package_json_path")"
+          # Derive current version from latest tag for this package
+          # If no tags exist, fall back to package.json version
+          latest_tag=$(git tag -l "$package@*" | sort -V | tail -n1)
+          
+          if [ -n "$latest_tag" ]; then
+            # Extract version from tag (format: package@version)
+            current_version="${latest_tag#$package@}"
+            echo "Found latest tag: $latest_tag (version: $current_version)"
+          else
+            # No tags exist, use package.json version as starting point
+            package_json_path="packages/$package/package.json"
+            current_version="$(node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof pkg.version==='string'?pkg.version.trim():'')" "$package_json_path")"
+            echo "No existing tags found, using package.json version: $current_version"
+          fi
 
           if ! [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "Invalid current package version: $current_version"
