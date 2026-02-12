@@ -12,6 +12,9 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "repository": {
     "url": "https://github.com/pnsk-lab/hikkaku",
     "type": "git",
