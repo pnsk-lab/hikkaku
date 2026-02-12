@@ -1,3 +1,4 @@
+import type { ServerResponse } from 'node:http'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -22,7 +23,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
   const assetCache = new Map<string, Uint8Array | false>()
 
   // Helper function to set Content-Type based on file extension
-  const setContentType = (res: any, assetId: string) => {
+  const setContentType = (res: ServerResponse, assetId: string) => {
     const assetExt = path.extname(assetId).toLowerCase()
     if (assetExt === '.png') {
       res.setHeader('Content-Type', 'image/png')
