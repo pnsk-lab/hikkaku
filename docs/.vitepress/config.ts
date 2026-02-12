@@ -53,6 +53,7 @@ export default withTwoslashInlineCache(
         { text: 'Guide', link: '/guides/' },
         { text: 'Reference', link: '/reference/' },
         { text: 'Playground', link: '/playground' },
+        { text: 'Showcase', link: '/showcase' },
         { text: 'GitHub', link: 'https://github.com/pnsk-lab/hikkaku' },
       ],
       sidebar: {

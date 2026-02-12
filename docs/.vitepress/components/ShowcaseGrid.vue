@@ -47,84 +47,84 @@
 </template>
 
 <script setup lang="ts">
-import { withBase } from "vitepress";
-import { onMounted, ref } from "vue";
+import { withBase } from 'vitepress'
+import { onMounted, ref } from 'vue'
 
 type ShowcaseEntry = {
-    id: string;
-    title: string;
-    path: string;
-    sourceUrl?: string;
-    status?: "ok" | "error";
-    error?: string;
-};
+  id: string
+  title: string
+  path: string
+  sourceUrl?: string
+  status?: 'ok' | 'error'
+  error?: string
+}
 
-const entries = ref<ShowcaseEntry[]>([]);
-const error = ref("");
-const isLoading = ref(true);
+const entries = ref<ShowcaseEntry[]>([])
+const error = ref('')
+const isLoading = ref(true)
 
 const _resolveShowcasePath = (value: string) => {
-    if (value.endsWith(".html")) {
-        return value;
-    }
-    if (value.endsWith("/")) {
-        return `${value}index.html`;
-    }
-    return `${value}/index.html`;
-};
+  if (value.endsWith('.html')) {
+    return value
+  }
+  if (value.endsWith('/')) {
+    return `${value}index.html`
+  }
+  return `${value}/index.html`
+}
 
 onMounted(async () => {
-    try {
-        const response = await fetch(withBase("/showcase/manifest.json"));
-        if (!response.ok) {
-            throw new Error("Failed to fetch showcase manifest.");
-        }
-
-        const data = (await response.json()) as unknown;
-        if (!Array.isArray(data)) {
-            throw new Error("Invalid showcase manifest format.");
-        }
-
-        entries.value = data.flatMap((item) => {
-            if (!item || typeof item !== "object") {
-                return [];
-            }
-            const candidate = item as Partial<ShowcaseEntry>;
-            if (
-                typeof candidate.id !== "string" ||
-                typeof candidate.title !== "string" ||
-                typeof candidate.path !== "string"
-            ) {
-                return [];
-            }
-            return [
-                {
-                    id: candidate.id,
-                    title: candidate.title,
-                    path: candidate.path,
-                    sourceUrl:
-                        typeof candidate.sourceUrl === "string"
-                            ? candidate.sourceUrl
-                            : undefined,
-                    status: candidate.status,
-                    error: candidate.error,
-                },
-            ];
-        });
-
-        if (entries.value.length === 0) {
-            error.value = "No showcase entries were generated.";
-        }
-    } catch (err) {
-        console.error("Showcase loading error:", err);
-        error.value =
-            err instanceof Error
-                ? err.message
-                : "Showcase is not built. Run `bun scripts/build-showcase.ts` in docs directory.";
-    } finally {
-        isLoading.value = false;
+  try {
+    const response = await fetch(withBase('/showcase/manifest.json'))
+    if (!response.ok) {
+      throw new Error('Failed to fetch showcase manifest.')
     }
-});
+
+    const data = (await response.json()) as unknown
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid showcase manifest format.')
+    }
+
+    entries.value = data.flatMap((item) => {
+      if (!item || typeof item !== 'object') {
+        return []
+      }
+      const candidate = item as Partial<ShowcaseEntry>
+      if (
+        typeof candidate.id !== 'string' ||
+        typeof candidate.title !== 'string' ||
+        typeof candidate.path !== 'string'
+      ) {
+        return []
+      }
+      return [
+        {
+          id: candidate.id,
+          title: candidate.title,
+          path: candidate.path,
+          sourceUrl:
+            typeof candidate.sourceUrl === 'string'
+              ? candidate.sourceUrl
+              : undefined,
+          status: candidate.status,
+          error: candidate.error,
+        },
+      ]
+    })
+
+    if (entries.value.length === 0) {
+      error.value = 'No showcase entries were generated.'
+    }
+  } catch (err) {
+    console.error('Showcase loading error:', err)
+    error.value =
+      err instanceof Error
+        ? err.message
+        : 'Showcase is not built. Run `bun scripts/build-showcase.ts` in docs directory.'
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <style scoped>
