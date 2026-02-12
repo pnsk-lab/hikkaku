@@ -74,6 +74,10 @@ jobs:
           fi
 
           package_json_path="packages/$package/package.json"
+          if [ ! -r "$package_json_path" ]; then
+            echo "package.json not found or not readable: $package_json_path"
+            exit 1
+          fi
           current_version="$(node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof pkg.version==='string'?pkg.version.trim():'')" "$package_json_path")"
 
           if ! [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
