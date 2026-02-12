@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development vite",
+    "dev": "vite",
+    "build": "vite build",
     "typecheck": "tsgo"
   },
   "dependencies": {

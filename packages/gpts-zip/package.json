@@ -5,7 +5,13 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
-    "fflate": "^0.8.2"
+    "@types/node": "^25.2.3",
+    "@typescript/native-preview": "^7.0.0-dev.20260211.1",
+    "fflate": "^0.8.2",
+    "sb3-types": "^0.1.16"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
   },
   "peerDependencies": {
     "typescript": "^5"

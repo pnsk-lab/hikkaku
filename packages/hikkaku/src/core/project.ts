@@ -197,6 +197,7 @@ export class Target<IsStage extends boolean = boolean> {
       sounds: this.#sounds,
       currentCostume: this.currentCostume,
       costumes,
+      comments: {},
     }
     if (this.isStage) {
       return {
@@ -234,22 +235,16 @@ export class Project {
     )
     const extensions = collectExtensions(targets)
     const project: sb3.ScratchProject & {
-      extensions?: string[]
-      monitors?: Monitor[]
+      monitors: Monitor[]
+      extensions: string[]
     } = {
       targets,
+      monitors,
+      extensions,
       meta: {
         semver: '3.0.0',
-        agent: `Hikkaku | ${globalThis.navigator ? navigator.userAgent : 'unknown'}`,
+        agent: `Hikkaku | ${typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'}`,
       },
-    }
-
-    if (extensions.length > 0) {
-      project.extensions = extensions
-    }
-
-    if (monitors.length > 0) {
-      project.monitors = monitors
     }
 
     return project

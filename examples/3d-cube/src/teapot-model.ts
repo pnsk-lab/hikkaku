@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-
 type Vertex3 = readonly [number, number, number]
 type Face3 = readonly [number, number, number]
 type Edge2 = readonly [number, number]
@@ -227,10 +225,9 @@ const normalizeVertices = (
   })
 }
 
-const teapotObjSource = readFileSync(
-  new URL('./teapot.obj', import.meta.url),
-  'utf8',
-)
+import teapot from './teapot.obj?raw'
+
+const teapotObjSource = teapot
 const parsedObj = parseObj(teapotObjSource)
 const simplifiedMesh = simplifyMesh(
   parsedObj.vertices,

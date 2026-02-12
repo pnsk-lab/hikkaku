@@ -15,9 +15,11 @@
     "typecheck": "tsgo"
   },
   "devDependencies": {
+    "@turbowarp/packager": "^3.11.0",
     "@types/bun": "latest",
-    "tsdown": "^0.20.0-beta.4",
-    "@typescript/native-preview": "^7.0.0-dev.20260127.1"
+    "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+    "rolldown": "1.0.0-beta.60",
+    "tsdown": "^0.20.0-beta.4"
   },
   "peerDependencies": {
     "typescript": "^5"

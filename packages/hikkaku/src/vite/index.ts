@@ -2,11 +2,15 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { zip } from 'fflate'
-import { createServerModuleRunner, type PluginOption } from 'vite'
+import { createServerModuleRunner, type Plugin, type PluginOption } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { Project } from '../core'
 
 const BASE_URL = 'https://scratchfoundation.github.io/scratch-gui/'
+
+const VIRTUAL_MODULE_IDS = {
+  project: '/@virtual/hikkaku-project',
+} as const
 
 export interface HikkakuViteInit {
   entry: string
@@ -16,7 +20,21 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
 
   return {
     name: 'vite-plugin-hikkaku',
-    config() {
+    config(config, env) {
+      if (env.command === 'build') {
+        // Set the sb3Entry of vite-plugin-turbowarp-packager
+        const pluginPackager = config.plugins?.find(
+          (p) =>
+            p &&
+            typeof p === 'object' &&
+            'name' in p &&
+            p.name === 'vite-plugin-turbowarp-packager',
+        ) as Plugin | undefined
+        pluginPackager?.api.setEntry(
+          path.join(process.cwd(), 'dist', 'project.sb3'),
+        )
+      }
+
       return {
         environments: {
           hikkaku: {
@@ -30,18 +48,16 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
               },
             },
           },
-          client: {},
         },
-        builder: {
-          async buildApp(builder) {
-            const env = builder.environments.hikkaku
-            if (!env) {
-              throw new Error('Hikkaku environment is not configured.')
-            }
-            await builder.build(env)
-          },
-        },
+        builder: {},
       }
+    },
+    async buildApp(builder) {
+      const env = builder.environments.hikkaku
+      if (!env) {
+        throw new Error('Hikkaku environment is not configured.')
+      }
+      await builder.build(env)
     },
     async generateBundle(_options, bundle) {
       const tmpDir = path.join(process.cwd(), 'dist', '.tmp')
@@ -92,12 +108,44 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
       if (source === '/@virtual/hikkaku-client') {
         return source
       }
+      if (source === VIRTUAL_MODULE_IDS.project) {
+        return source
+      }
     },
-    load(id) {
+    async load(id) {
       if (id === '/@virtual/hikkaku-client') {
         return `
           import 'hikkaku/client'
         `
+      }
+      if (id === VIRTUAL_MODULE_IDS.project) {
+        if (this.environment.mode === 'dev') {
+          // in dev mode, use entry file
+          if (!runner) {
+            throw new Error('Module runner is not initialized.')
+          }
+          const project: Project = (await runner.import(init.entry)).default
+
+          return `
+            export default ${JSON.stringify(project.toScratch())}
+          `
+        } else if (this.environment.mode === 'build') {
+          // in build mode, use bundled project.json
+          const projectJSONPath = path.join(
+            process.cwd(),
+            'dist',
+            'project.json',
+          )
+          const projectJSON = await import(
+            pathToFileURL(projectJSONPath).href,
+            {
+              with: { type: 'json' },
+            }
+          )
+          return `
+            export default ${JSON.stringify(projectJSON)}
+          `
+        }
       }
     },
     async hotUpdate(options) {
