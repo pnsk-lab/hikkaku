@@ -16,6 +16,33 @@ yarn add hikkaku # Yarn
 npm install hikkaku # npm
 ```
 
+## Scaffold with create-hikkaku
+
+Generate a new project from the official template (`examples/base`):
+
+```bash
+npx create-hikkaku@latest my-hikkaku-app
+# or
+bunx create-hikkaku@latest my-hikkaku-app
+```
+
+Common options:
+
+- `-y`, `--yes`: skip prompts and use defaults
+- `--pm <pm>`: force package manager (`bun`, `deno`, `npm`, `pnpm`, `yarn`)
+- `--agents`, `--no-agents`: include or exclude `AGENTS.md`
+- `--link-claude`, `--no-link-claude`: create or skip `CLAUDE.md -> AGENTS.md`
+- `--skills`, `--no-skills`: run or skip skills setup after scaffolding
+- `--ref <git-tag>`: use a specific template tag (default: `create-hikkaku@<version>`)
+
+After scaffolding:
+
+```bash
+cd my-hikkaku-app
+bun install
+bun dev
+```
+
 ## Usage
 
 ### Basic Usage

@@ -13,6 +13,7 @@ This document provides best practices for using Hikkaku to create Scratch projec
 ## SKILL Structure
 
 * `rules/`: Contains individual rules or guidelines for using Hikkaku effectively.
+  * `initialization.md`: Guidelines for initializing Hikkaku projects.
   * `blocks/*.md`: Guidelines for using specific blocks in Hikkaku.
     * e.g., `control.md`, `data.md`, `motion.md`, etc.
   * `clone.md`: Guidelines for using clones in Hikkaku.
