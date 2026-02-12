@@ -15,6 +15,7 @@ type ShowcaseEntry = {
   id: string
   title: string
   path: string
+  sourceUrl: string
   status: 'ok' | 'error'
   error?: string
 }
@@ -236,6 +237,7 @@ const main = async () => {
       id: exampleId,
       title: toTitle(exampleId),
       path: `/showcase/${exampleId}/index.html`,
+      sourceUrl: `https://github.com/pnsk-lab/hikkaku/tree/main/examples/${exampleId}`,
       status,
       error,
     })

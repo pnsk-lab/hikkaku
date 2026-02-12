@@ -3,84 +3,84 @@
     "id": "3d-ball-roll",
     "title": "3d Ball Roll",
     "path": "/showcase/3d-ball-roll/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/3d-ball-roll",
+    "status": "ok"
   },
   {
     "id": "3d-cube",
     "title": "3d Cube",
     "path": "/showcase/3d-cube/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/3d-cube",
+    "status": "ok"
   },
   {
     "id": "base",
     "title": "Base",
     "path": "/showcase/base/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/base",
+    "status": "ok"
   },
   {
     "id": "bullet-hell",
     "title": "Bullet Hell",
     "path": "/showcase/bullet-hell/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/bullet-hell",
+    "status": "ok"
   },
   {
     "id": "daw",
     "title": "Daw",
     "path": "/showcase/daw/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/daw",
+    "status": "ok"
   },
   {
     "id": "json-parser",
     "title": "Json Parser",
     "path": "/showcase/json-parser/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/json-parser",
+    "status": "ok"
   },
   {
     "id": "markdown-renderer",
     "title": "Markdown Renderer",
     "path": "/showcase/markdown-renderer/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/markdown-renderer",
+    "status": "ok"
   },
   {
     "id": "rectangle",
     "title": "Rectangle",
     "path": "/showcase/rectangle/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/rectangle",
+    "status": "ok"
   },
   {
     "id": "reversi",
     "title": "Reversi",
     "path": "/showcase/reversi/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/reversi",
+    "status": "ok"
   },
   {
     "id": "rubiks-cube",
     "title": "Rubiks Cube",
     "path": "/showcase/rubiks-cube/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/rubiks-cube",
+    "status": "ok"
   },
   {
     "id": "tesseract",
     "title": "Tesseract",
     "path": "/showcase/tesseract/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/tesseract",
+    "status": "ok"
   },
   {
     "id": "tetris",
     "title": "Tetris",
     "path": "/showcase/tetris/index.html",
-    "status": "error",
-    "error": "Scratch asset host is unreachable in this environment."
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/tetris",
+    "status": "ok"
   }
 ]

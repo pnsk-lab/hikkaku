@@ -11,6 +11,12 @@ const PlaygroundAsync = defineAsyncComponent({
   suspensible: false,
 })
 
+const ShowcaseGridAsync = defineAsyncComponent({
+  loader: () => import('../components/ShowcaseGrid.vue'),
+  delay: 0,
+  suspensible: false,
+})
+
 const PlaygroundClientOnly = defineComponent({
   name: 'PlaygroundClientOnly',
   setup(_, { attrs, slots }) {
@@ -21,11 +27,22 @@ const PlaygroundClientOnly = defineComponent({
   },
 })
 
+const ShowcaseGridClientOnly = defineComponent({
+  name: 'ShowcaseGridClientOnly',
+  setup(_, { attrs, slots }) {
+    return () => {
+      if (!inBrowser) return null
+      return h(ShowcaseGridAsync, attrs, slots)
+    }
+  },
+})
+
 const theme: Theme = {
   ...DefaultTheme,
   enhanceApp(context) {
     DefaultTheme.enhanceApp?.(context)
     context.app.component('Playground', PlaygroundClientOnly)
+    context.app.component('ShowcaseGrid', ShowcaseGridClientOnly)
     context.app.use(TwoslashFloatingVue)
   },
 }
