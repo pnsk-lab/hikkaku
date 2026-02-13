@@ -44,7 +44,7 @@ const isLoading = ref(true)
 const activeEntry = ref<ShowcaseEntry | null>(null)
 const isBrowser = typeof window !== 'undefined'
 
-const handleOpen = (entry: ShowcaseEntry, path: string) => {
+const _handleOpen = (entry: ShowcaseEntry, path: string) => {
   activeEntry.value = {
     ...entry,
     path,
