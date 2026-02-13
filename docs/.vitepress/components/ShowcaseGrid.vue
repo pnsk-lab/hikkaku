@@ -120,7 +120,7 @@ onMounted(async () => {
     error.value =
       err instanceof Error
         ? err.message
-        : 'Showcase is not built. Run `bun scripts/build-showcase.ts` in docs directory.'
+        : 'Showcase is not built. Generate it by running `bun run docs/scripts/build-showcase.ts` from the repository root.'
   } finally {
     isLoading.value = false
   }
