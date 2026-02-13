@@ -339,7 +339,11 @@ const getDefaultRefFromPackageVersion = async () => {
   return `${CREATE_HIKKAKU_TAG_PREFIX}${version}`
 }
 
-const createPrompter = () => {
+const createPrompter = (): {
+  askText: (question: string, defaultValue?: string) => Promise<string>
+  askYesNo: (question: string, defaultValue: boolean) => Promise<boolean>
+  close: () => void
+} => {
   const rl = createInterface({ input, output })
 
   const askText = async (
