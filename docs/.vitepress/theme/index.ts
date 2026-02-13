@@ -3,6 +3,7 @@ import { inBrowser } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import { defineAsyncComponent, defineComponent, h } from 'vue'
 import '@shikijs/vitepress-twoslash/style.css'
+import './tailwind.css'
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 
 const PlaygroundAsync = defineAsyncComponent({
@@ -12,7 +13,7 @@ const PlaygroundAsync = defineAsyncComponent({
 })
 
 const ShowcaseGridAsync = defineAsyncComponent({
-  loader: () => import('../components/ShowcaseGrid.vue'),
+  loader: () => import('../components/ShowcaseGrid/ShowcaseGrid.vue'),
   delay: 0,
   suspensible: false,
 })

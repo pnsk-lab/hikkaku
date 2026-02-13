@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vitepress dev",
-    "build": "vitepress build",
+    "build": "bun scripts/build-showcase.ts && vitepress build",
     "preview": "vitepress preview",
     "typecheck": "vue-tsc"
   },
@@ -16,9 +16,13 @@
     "vue": "^3.5.28"
   },
   "devDependencies": {
+    "@egoist/tailwindcss-icons": "^1.9.0",
+    "@tailwindcss/vite": "^4.1.7",
     "@types/bun": "latest",
+    "@iconify-json/tabler": "^1.2.26",
     "@typescript/native-preview": "^7.0.0-dev.20260210.1",
     "monaco-editor": "^0.50.0",
+    "tailwindcss": "^4.1.7",
     "typescript": "^5",
     "vite": "8.0.0-beta.13",
     "vitepress": "^1.6.3",

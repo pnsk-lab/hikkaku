@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "NODE_ENV=development vite",
     "typecheck": "tsgo",
-    "build": "vite build"
+    "build": "bun run example:build",
+    "example:build": "vite build"
   },
   "dependencies": {
     "hikkaku": "workspace:*"

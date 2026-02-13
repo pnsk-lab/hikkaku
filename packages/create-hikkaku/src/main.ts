@@ -28,7 +28,7 @@ import pc from 'picocolors'
 const REPO_OWNER = 'pnsk-lab'
 const REPO_NAME = 'hikkaku'
 const CREATE_HIKKAKU_TAG_PREFIX = 'create-hikkaku@'
-const TEMPLATE_DIR_IN_REPO = ['examples', 'base']
+const TEMPLATE_DIR_IN_REPO = ['templates', 'base']
 const DEFAULT_PROJECT_DIR = 'my-hikkaku-app'
 const SEMVER_PATTERN =
   /^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/
@@ -83,7 +83,7 @@ type SkillsCommand = {
 
 const banner = () => {
   console.log(pc.bold(pc.cyan('create-hikkaku')))
-  console.log(pc.dim('Scaffold a new Hikkaku project from examples/base'))
+  console.log(pc.dim('Scaffold a new Hikkaku project from templates/base'))
   console.log('')
 }
 
@@ -342,6 +342,24 @@ const getDefaultRefFromPackageVersion = async () => {
   return `${CREATE_HIKKAKU_TAG_PREFIX}${version}`
 }
 
+const fetchLatestHikkakuVersion = async () => {
+  const response = await fetch('https://registry.npmjs.org/hikkaku')
+  if (!response.ok) {
+    throw new Error(`Npm registry request failed: ${response.status}`)
+  }
+
+  const body = (await response.json()) as {
+    'dist-tags'?: {
+      latest?: string
+    }
+  }
+  const latest = body['dist-tags']?.latest
+  if (typeof latest !== 'string' || !latest) {
+    throw new Error('Could not resolve latest hikkaku version')
+  }
+  return latest
+}
+
 const createPrompter = (): {
   askText: (question: string, defaultValue?: string) => Promise<string>
   askYesNo: (question: string, defaultValue: boolean) => Promise<boolean>
@@ -489,7 +507,14 @@ const patchPackageJson = async ({
   const pkg = JSON.parse(await readFile(packageJsonPath, 'utf8'))
   pkg.name = packageName
   if (pkg.dependencies?.hikkaku === 'workspace:*') {
-    pkg.dependencies.hikkaku = 'latest'
+    try {
+      pkg.dependencies.hikkaku = await fetchLatestHikkakuVersion()
+    } catch {
+      warning(
+        'Failed to resolve latest hikkaku version. Using "latest" instead.',
+      )
+      pkg.dependencies.hikkaku = 'latest'
+    }
   }
   await writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }

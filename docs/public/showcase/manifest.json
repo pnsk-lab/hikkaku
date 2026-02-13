@@ -2,84 +2,88 @@
   {
     "id": "3d-ball-roll",
     "title": "3d Ball Roll",
-    "path": "/showcase/3d-ball-roll/index.html",
+    "path": "/showcase/3d-ball-roll.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/3d-ball-roll",
     "status": "ok"
   },
   {
     "id": "3d-cube",
     "title": "3d Cube",
-    "path": "/showcase/3d-cube/index.html",
+    "path": "/showcase/3d-cube.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/3d-cube",
-    "status": "ok"
-  },
-  {
-    "id": "base",
-    "title": "Base",
-    "path": "/showcase/base/index.html",
-    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/base",
     "status": "ok"
   },
   {
     "id": "bullet-hell",
     "title": "Bullet Hell",
-    "path": "/showcase/bullet-hell/index.html",
+    "path": "/showcase/bullet-hell.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/bullet-hell",
     "status": "ok"
   },
   {
     "id": "daw",
     "title": "Daw",
-    "path": "/showcase/daw/index.html",
+    "path": "/showcase/daw.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/daw",
+    "author": {
+      "name": "Kingping",
+      "url": "https://scratch.mit.edu/users/Kangping/"
+    },
     "status": "ok"
   },
   {
     "id": "json-parser",
     "title": "Json Parser",
-    "path": "/showcase/json-parser/index.html",
+    "path": "/showcase/json-parser.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/json-parser",
     "status": "ok"
   },
   {
     "id": "markdown-renderer",
     "title": "Markdown Renderer",
-    "path": "/showcase/markdown-renderer/index.html",
+    "path": "/showcase/markdown-renderer.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/markdown-renderer",
     "status": "ok"
   },
   {
     "id": "rectangle",
     "title": "Rectangle",
-    "path": "/showcase/rectangle/index.html",
+    "path": "/showcase/rectangle.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/rectangle",
     "status": "ok"
   },
   {
     "id": "reversi",
     "title": "Reversi",
-    "path": "/showcase/reversi/index.html",
+    "path": "/showcase/reversi.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/reversi",
     "status": "ok"
   },
   {
     "id": "rubiks-cube",
     "title": "Rubiks Cube",
-    "path": "/showcase/rubiks-cube/index.html",
+    "path": "/showcase/rubiks-cube.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/rubiks-cube",
+    "status": "ok"
+  },
+  {
+    "id": "simple",
+    "title": "Simple",
+    "path": "/showcase/simple.html",
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/simple",
     "status": "ok"
   },
   {
     "id": "tesseract",
     "title": "Tesseract",
-    "path": "/showcase/tesseract/index.html",
+    "path": "/showcase/tesseract.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/tesseract",
     "status": "ok"
   },
   {
     "id": "tetris",
     "title": "Tetris",
-    "path": "/showcase/tetris/index.html",
+    "path": "/showcase/tetris.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/tetris",
     "status": "ok"
   }

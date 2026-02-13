@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@plugin "@egoist/tailwindcss-icons";
+
+.showcase-page-content {
+  --showcase-page-padding: clamp(16px, 4vw, 3rem);
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  box-sizing: border-box;
+  padding-inline: var(--showcase-page-padding);
+  overflow-x: clip;
+}
+
+.Layout.showcase-page .VPDoc {
+  padding: 0;
+}
+
+.Layout.showcase-page .VPDoc .content-container {
+  width: 100%;
+  max-width: none;
+}
+
+.Layout.showcase-page .VPDoc .VPDocFooter {
+  display: none;
+}
+
+.Layout.showcase-page .VPDoc:not(.has-sidebar) .container {
+  max-width: none;
+}
+
+.Layout.showcase-page .VPDoc:not(.has-sidebar) .content {
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 960px) {
+  .Layout.showcase-page .VPDoc .content {
+    padding: 0;
+  }
+}

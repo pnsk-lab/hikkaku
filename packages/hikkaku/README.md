@@ -18,7 +18,7 @@ npm install hikkaku # npm
 
 ## Scaffold with create-hikkaku
 
-Generate a new project from the official template (`examples/base`):
+Generate a new project from the official template (`templates/base`):
 
 ```bash
 npx create-hikkaku@latest my-hikkaku-app

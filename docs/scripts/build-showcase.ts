@@ -1,4 +1,3 @@
-import { spawn } from 'node:child_process'
 import {
   access,
   mkdir,
@@ -30,9 +29,9 @@ const SCRATCH_ASSET_TEST_URL =
   'https://assets.scratch.mit.edu/internalapi/asset/cd21514d0531fdffb22204e0ec5ed84a.svg/get/'
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url))
 const docsDir = path.resolve(scriptsDir, '..')
-const repoRoot = path.resolve(docsDir, '..')
+const repoRoot = path.resolve(scriptsDir, '..', '..')
 const examplesDir = path.join(repoRoot, 'examples')
-const showcaseDir = path.join(docsDir, 'public', 'showcase')
+const distDir = path.join(docsDir, 'public', 'showcase')
 
 const pathExists = async (targetPath: string) => {
   try {
@@ -42,27 +41,6 @@ const pathExists = async (targetPath: string) => {
     return false
   }
 }
-
-const runCommand = async (command: string, args: string[], cwd: string) =>
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd,
-      env: process.env,
-      stdio: 'inherit',
-    })
-    child.on('error', reject)
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve()
-        return
-      }
-      reject(
-        new Error(
-          `Command failed (${code}): ${[command, ...args].join(' ')} in ${cwd}`,
-        ),
-      )
-    })
-  })
 
 const toTitle = (id: string) =>
   id
@@ -86,13 +64,9 @@ const parseAuthorFromPackageJson = (author: unknown) => {
     }
 
     const emailMatch = trimmedAuthor.match(/<([^>]+)>/)
-    const nameWithoutEmail = trimmedAuthor
-      .replace(/\s*<[^>]+>\s*/, ' ')
-      .trim()
+    const nameWithoutEmail = trimmedAuthor.replace(/\s*<[^>]+>\s*/, ' ').trim()
     const authorUrlMatch = nameWithoutEmail.match(/\(([^)]+)\)\s*$/)
-    const name = nameWithoutEmail
-      .replace(/\([^)]*\)\s*$/, '')
-      .trim()
+    const name = nameWithoutEmail.replace(/\([^)]*\)\s*$/, '').trim()
 
     if (!name) {
       return undefined
@@ -101,7 +75,7 @@ const parseAuthorFromPackageJson = (author: unknown) => {
     return {
       name,
       ...(emailMatch ? { email: emailMatch[1]?.trim() } : {}),
-      ...(authorUrlMatch && authorUrlMatch[1]?.trim()
+      ...(authorUrlMatch?.[1]?.trim()
         ? { url: authorUrlMatch[1]?.trim() }
         : {}),
     }
@@ -247,8 +221,8 @@ const main = async () => {
     throw new Error('No examples were found in examples/.')
   }
 
-  await rm(showcaseDir, { recursive: true, force: true })
-  await mkdir(showcaseDir, { recursive: true })
+  await rm(distDir, { recursive: true, force: true })
+  await mkdir(distDir, { recursive: true })
 
   const { loadProject, Packager } = await loadPackager()
   const manifest: ShowcaseEntry[] = []
@@ -262,10 +236,10 @@ const main = async () => {
     )
   }
 
-  for (const exampleId of exampleIds) {
+  const buildJobs = exampleIds.map(async (exampleId) => {
     const projectDir = path.join(examplesDir, exampleId)
     const sb3Path = path.join(projectDir, 'dist', 'project.sb3')
-    const outputDir = path.join(showcaseDir, exampleId)
+    const outputPath = path.join(distDir, `${exampleId}.html`)
     const author = await readAuthorFromExamplePackage(projectDir)
     let html = ''
     let status: ShowcaseEntry['status'] = 'ok'
@@ -273,8 +247,6 @@ const main = async () => {
 
     try {
       console.log(`[showcase] building ${exampleId}`)
-      await runCommand('bun', ['run', 'build'], projectDir)
-
       if (canPackage) {
         const sb3Buffer = await readFile(sb3Path)
         const project = await loadProject(sb3Buffer)
@@ -306,22 +278,28 @@ const main = async () => {
       console.warn(`[showcase] fallback ${exampleId}: ${error}`)
     }
 
-    await mkdir(outputDir, { recursive: true })
-    await writeFile(path.join(outputDir, 'index.html'), html)
+    await writeFile(outputPath, html)
 
-    manifest.push({
+    return {
       id: exampleId,
       title: toTitle(exampleId),
-      path: `/showcase/${exampleId}/index.html`,
+      path: `/showcase/${exampleId}.html`,
       sourceUrl: `https://github.com/pnsk-lab/hikkaku/tree/main/examples/${exampleId}`,
       ...(author ? { author } : {}),
       status,
       error,
-    })
-  }
+    } as ShowcaseEntry
+  })
+
+  const buildResults = await Promise.all(buildJobs)
+  manifest.push(...buildResults)
+  successCount = buildResults.filter((entry) => entry.status === 'ok').length
+  fallbackCount = buildResults.filter(
+    (entry) => entry.status === 'error',
+  ).length
 
   await writeFile(
-    path.join(showcaseDir, 'manifest.json'),
+    path.join(distDir, 'manifest.json'),
     `${JSON.stringify(manifest, null, 2)}\n`,
   )
 

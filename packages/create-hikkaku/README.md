@@ -1,6 +1,6 @@
 # create-hikkaku
 
-Scaffold a new Hikkaku project from `examples/base`.
+Scaffold a new Hikkaku project from `templates/base`.
 
 ## Usage
 

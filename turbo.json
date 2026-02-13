@@ -12,10 +12,15 @@
     "build-blocks": {
       "outputs": ["src/blocks/**"]
     },
+    "example:build": {
+      "dependsOn": ["^example:build"],
+      "outputs": ["dist/**", "build/**"],
+      "cache": true
+    },
     "docs:build": {
       "cache": true,
       "outputs": [".vitepress/dist/**"],
-      "dependsOn": ["hikkaku-docs#build", "hikkaku#build"]
+      "dependsOn": ["hikkaku-docs#build", "example:build", "hikkaku#build"]
     }
   }
 }

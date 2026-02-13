@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "NODE_ENV=development vite",
     "typecheck": "tsgo",
-    "build": "vite build"
+    "build": "bun run example:build",
+    "example:build": "vite build"
   },
   "dependencies": {
     "hikkaku": "workspace:*"
@@ -13,5 +14,9 @@
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20260127.1",
     "vite": "8.0.0-beta.8"
+  },
+  "author": {
+    "name": "EdamAmex",
+    "url": "https://x.com/evex_dev"
   }
 }

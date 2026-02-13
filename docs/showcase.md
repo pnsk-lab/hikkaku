@@ -1,5 +1,14 @@
-# Showcase
+---
+title: Showcase
+pageClass: showcase-page
+aside: false
+outline: false
+---
+<div class="showcase-page-content">
 
-Examples built from `examples/*` with TurboWarp Packager.
+  # Showcase
 
-<ShowcaseGrid />
+  Examples built from `examples/*` with TurboWarp Packager.
+
+  <ShowcaseGrid />
+</div>

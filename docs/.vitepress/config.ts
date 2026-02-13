@@ -2,6 +2,7 @@
 /// <reference types="vite/client" />
 
 import { createTwoslashWithInlineCache } from '@shikijs/vitepress-twoslash/cache-inline'
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitepress'
 
 const guideSidebar = [
@@ -44,6 +45,9 @@ const DOMAIN = 'https://pnsk-lab.github.io'
 
 export default withTwoslashInlineCache(
   defineConfig({
+    vite: {
+      plugins: [tailwindcss()],
+    },
     title: 'Hikkaku',
     description: 'Write Scratch projects in TypeScript',
     lang: 'en-US',

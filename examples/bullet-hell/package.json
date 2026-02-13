@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "typecheck": "tsgo"
+    "build": "bun run example:build",
+    "typecheck": "tsgo",
+    "example:build": "vite build"
   },
   "dependencies": {
     "hikkaku": "workspace:*"

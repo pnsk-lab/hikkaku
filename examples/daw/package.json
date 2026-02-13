@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "typecheck": "tsgo"
+    "build": "bun run example:build",
+    "typecheck": "tsgo",
+    "example:build": "vite build"
   },
   "dependencies": {
     "hikkaku": "workspace:*"
@@ -13,5 +14,9 @@
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20260127.1",
     "vite": "8.0.0-beta.8"
+  },
+  "author": {
+    "name": "Kingping",
+    "url": "https://scratch.mit.edu/users/Kangping/"
   }
 }

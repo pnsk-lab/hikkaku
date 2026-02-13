@@ -8,7 +8,7 @@ Important: code inside `run()` handlers defines Scratch runtime behavior. It is 
 
 ## Scaffold a New Project
 
-Use `create-hikkaku` to generate a project from the official template (`examples/base`).
+Use `create-hikkaku` to generate a project from the official template (`templates/base`).
 
 ```sh
 npx create-hikkaku@latest my-hikkaku-app
