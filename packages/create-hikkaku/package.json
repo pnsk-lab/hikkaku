@@ -3,7 +3,8 @@
   "version": "0.2.2",
   "type": "module",
   "scripts": {
-    "build": "bun build src/main.ts --outdir dist --target=node"
+    "build": "bun build src/main.ts --outdir dist --target=node",
+    "typecheck": "tsgo"
   },
   "bin": {
     "create-hikkaku": "./dist/main.js"
@@ -23,7 +24,8 @@
   },
   "module": "index.ts",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1"
   },
   "peerDependencies": {
     "typescript": "^5"
