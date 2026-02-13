@@ -170,3 +170,33 @@ export interface CreateHeadlessVMOptions {
   viewerLanguage?: string
   translateCache?: TranslateCache
 }
+
+export interface ScratchAssetResponse {
+  ok: boolean
+  status: number
+  statusText: string
+  arrayBuffer(): Promise<ArrayBuffer>
+}
+
+export type FetchAsset = (url: string) => Promise<ScratchAssetResponse>
+
+export type DecodeImageBytes = (bytes: ArrayBuffer | Uint8Array) => Promise<{
+  width: number
+  height: number
+  rgbaBase64: string
+}>
+
+export interface ResolveMissingScratchAssetsOptions {
+  projectJson: string | ProjectJson
+  assets?: string | Record<string, JsonValue>
+  scratchCdnBaseUrl?: string
+  fetchAsset?: FetchAsset
+  decodeImageBytes?: DecodeImageBytes
+}
+
+export interface CreateHeadlessVMWithScratchAssetsOptions
+  extends CreateHeadlessVMOptions {
+  scratchCdnBaseUrl?: string
+  fetchAsset?: FetchAsset
+  decodeImageBytes?: DecodeImageBytes
+}

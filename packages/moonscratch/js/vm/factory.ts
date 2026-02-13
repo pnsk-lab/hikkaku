@@ -3,7 +3,11 @@ import { HeadlessVM } from './headless-vm.ts'
 import type { MoonResult } from './internal-types.ts'
 import { toJsonString, toOptionalJsonString, unwrapResult } from './json.ts'
 import { toOptionsJson } from './options.ts'
-import type { CreateHeadlessVMOptions } from './types.ts'
+import { resolveMissingScratchAssets } from './scratch-assets.ts'
+import type {
+  CreateHeadlessVMOptions,
+  CreateHeadlessVMWithScratchAssetsOptions,
+} from './types.ts'
 
 export const createHeadlessVM = ({
   projectJson,
@@ -32,5 +36,34 @@ export const createHeadlessVM = ({
 }
 
 export const createVM = createHeadlessVM
+
+export const createHeadlessVMWithScratchAssets = async ({
+  projectJson,
+  assets = {},
+  options,
+  viewerLanguage,
+  translateCache,
+  scratchCdnBaseUrl,
+  fetchAsset,
+  decodeImageBytes,
+}: CreateHeadlessVMWithScratchAssetsOptions): Promise<HeadlessVM> => {
+  const resolvedAssets = await resolveMissingScratchAssets({
+    projectJson,
+    assets,
+    scratchCdnBaseUrl,
+    fetchAsset,
+    decodeImageBytes,
+  })
+
+  return createHeadlessVM({
+    projectJson,
+    assets: resolvedAssets,
+    options,
+    viewerLanguage,
+    translateCache,
+  })
+}
+
+export const createVMWithScratchAssets = createHeadlessVMWithScratchAssets
 
 export { moonscratch }

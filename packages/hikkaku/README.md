@@ -141,11 +141,11 @@ https://github.com/user-attachments/assets/1ff5d190-f8ee-46c4-bc78-8dbdf2879e15
 Hikkaku has a skills for AI Agents, so you can vibe code with AI such as Codex, Claude Code, OpenCode and etc.
 
 ```bash
-bunx skills add pnsk-lab/hikkaku # Bun
-deno run -NRWE --allow-run="git" --allow-sys="homedir" npm:skills add pnsk-lab/hikkaku # Deno
-pnpx skills add pnsk-lab/hikkaku # pnpm
-yarn dlx skills add pnsk-lab/hikkaku # Yarn
-npx skills add pnsk-lab/hikkaku # npm
+bunx skills add pnsk-lab/hikkaku/packages/skill # Bun
+deno run -NRWE --allow-run="git" --allow-sys="homedir" npm:skills add pnsk-lab/hikkaku/packages/skill # Deno
+pnpx skills add pnsk-lab/hikkaku/packages/skill # pnpm
+yarn dlx skills add pnsk-lab/hikkaku/packages/skill # Yarn
+npx skills add pnsk-lab/hikkaku/packages/skill # npm
 ```
 
 ### Build project

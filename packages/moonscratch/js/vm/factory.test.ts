@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'vite-plus/test'
+import { describe, expect, test, vi } from 'vite-plus/test'
 
-import { createHeadlessVM, createVM } from './factory.ts'
+import {
+  createHeadlessVM,
+  createHeadlessVMWithScratchAssets,
+  createVM,
+  createVMWithScratchAssets,
+} from './factory.ts'
 import {
   getStageVariables,
   stepMany,
@@ -8,8 +13,9 @@ import {
 } from './test-projects.ts'
 
 describe('moonscratch/js/vm/factory.ts', () => {
-  test('exports createVM as alias of createHeadlessVM', () => {
+  test('exports createVM aliases', () => {
     expect(createVM).toBe(createHeadlessVM)
+    expect(createVMWithScratchAssets).toBe(createHeadlessVMWithScratchAssets)
   })
 
   test('rejects empty project JSON strings', () => {
@@ -49,5 +55,51 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(stageVars.var_viewer).toBe('ja')
     expect(stageVars.var_trans).toBe('こんにちは')
     expect(stageVars.var_done).toBe(1)
+  })
+
+  test('loads missing costume assets from Scratch CDN', async () => {
+    const fetchAsset = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+    }))
+    const decodeImageBytes = vi.fn(async () => ({
+      width: 1,
+      height: 1,
+      rgbaBase64: 'AP8A/w==',
+    }))
+
+    const vm = await createHeadlessVMWithScratchAssets({
+      projectJson: {
+        targets: [
+          {
+            isStage: true,
+            name: 'Stage',
+            variables: {},
+            lists: {},
+            blocks: {},
+            costumes: [
+              {
+                name: 'backdrop1',
+                assetId: 'bg_green',
+                md5ext: 'bg_green.png',
+                bitmapResolution: 1,
+                rotationCenterX: 0,
+                rotationCenterY: 0,
+              },
+            ],
+          },
+        ],
+      },
+      fetchAsset,
+      decodeImageBytes,
+    })
+
+    expect(vm).toBeDefined()
+    expect(fetchAsset).toHaveBeenCalledWith(
+      'https://cdn.scratch.mit.edu/internalapi/asset/bg_green.png/get/',
+    )
+    expect(decodeImageBytes).toHaveBeenCalledTimes(1)
   })
 })

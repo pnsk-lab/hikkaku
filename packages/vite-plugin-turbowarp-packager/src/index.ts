@@ -8,8 +8,11 @@ const VIRTUAL_MODULE_IDS = {
   js: 'virtual:turbowarp-packager.js',
 } as const
 
+const DEFAULT_OUTPUT_FILE_NAME = 'turbowarp-packager.html'
+
 export interface TurbowarpPackagerOptions {
   sb3Entry?: string
+  outputFileName?: string
   packagerOptions?: Partial<PackagerOptions>
 }
 
@@ -18,6 +21,13 @@ export const pluginTurbowarpPackager = (
 ): PluginOption => {
   let packedData: string | null = null
   const decoder = new TextDecoder()
+  const getOutputFileName = () => {
+    const outputFileName = options?.outputFileName ?? DEFAULT_OUTPUT_FILE_NAME
+    if (!outputFileName.trim()) {
+      throw new Error('outputFileName must not be empty.')
+    }
+    return outputFileName
+  }
   const pack = async () => {
     if (packedData) {
       return packedData
@@ -74,10 +84,11 @@ export const pluginTurbowarpPackager = (
         environments: {
           turbowarpPackager: {
             build: {
+              emptyOutDir: false,
               rolldownOptions: {
                 input: VIRTUAL_MODULE_IDS.html,
                 output: {
-                  entryFileNames: 'turbowarp-packager.html',
+                  entryFileNames: getOutputFileName(),
                 },
               },
             },
@@ -93,6 +104,25 @@ export const pluginTurbowarpPackager = (
         throw new Error('Turbowarp Packager environment is not configured.')
       }
       await builder.build(env)
+    },
+    generateBundle(_options, bundle) {
+      const outputFileName = getOutputFileName()
+      const sourceFileName = VIRTUAL_MODULE_IDS.html
+      const htmlOutput = bundle[sourceFileName]
+      if (!htmlOutput) {
+        return
+      }
+      if (sourceFileName === outputFileName) {
+        return
+      }
+      if (bundle[outputFileName]) {
+        throw new Error(
+          `Cannot rename HTML output to ${outputFileName} because it already exists in build output.`,
+        )
+      }
+      delete bundle[sourceFileName]
+      htmlOutput.fileName = outputFileName
+      bundle[outputFileName] = htmlOutput
     },
     resolveId(source) {
       if (source === VIRTUAL_MODULE_IDS.html) {

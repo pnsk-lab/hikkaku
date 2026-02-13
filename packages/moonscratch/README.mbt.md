@@ -5,6 +5,7 @@ Headless Scratch runtime in MoonBit.
 ## What is implemented
 
 - Loads Scratch 3 `project.json` (+ optional assets metadata map)
+- Can fill missing costume assets from `cdn.scratch.mit.edu` (async API)
 - Runs scripts from hats (`event_whenflagclicked`, `event_whenbroadcastreceived`)
 - Supports core opcodes for:
   - `event`, `control`, `data`, `operator`
@@ -48,13 +49,22 @@ node js/example.mjs
 Wrapper file: `js/headless-vm.mjs`
 
 ```js
-import { createHeadlessVM } from './js/headless-vm.mjs'
+import {
+  createHeadlessVM,
+  createHeadlessVMWithScratchAssets,
+} from './js/headless-vm.mjs'
 
 const vm = createHeadlessVM({ projectJson, assets, options })
 vm.greenFlag()
 vm.step(16)
 const effects = vm.takeEffects()
 const snapshot = vm.snapshot()
+
+const vmWithScratchAssets = await createHeadlessVMWithScratchAssets({
+  projectJson,
+  assets,
+  options,
+})
 ```
 
 ## Verification

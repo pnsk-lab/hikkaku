@@ -57,15 +57,17 @@ export default defineConfig({
 ```ts
 interface TurbowarpPackagerOptions {
   sb3Entry?: string
+  outputFileName?: string
   packagerOptions?: Partial<PackagerOptions>
 }
 ```
 
 - `sb3Entry`: Path to the `.sb3` file to package. Build fails if omitted.
+- `outputFileName`: Output HTML filename. Defaults to `turbowarp-packager.html`.
 - `packagerOptions`: Options passed to `@turbowarp/packager`.
 
 ## Limitations
 
 - `packagerOptions.target` currently supports only `html`.
-- Output filename is fixed to `turbowarp-packager.html`.
 - This plugin is intended for build-time packaging (not dev-server conversion).
+- This plugin does not empty `build.outDir` when generating HTML, so outputs created by other plugins are preserved.

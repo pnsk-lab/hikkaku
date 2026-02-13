@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import type { SpawnOptions } from 'node:child_process'
 import { spawn } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
 import {
@@ -61,7 +62,24 @@ const STANDALONE_TSCONFIG = {
   include: ['src'],
 }
 
-const PM_VALUES = ['bun', 'deno', 'npm', 'pnpm', 'yarn']
+const PM_VALUES = ['bun', 'deno', 'npm', 'pnpm', 'yarn'] as const
+type PackageManager = (typeof PM_VALUES)[number]
+
+type CliArgs = {
+  help: boolean
+  yes: boolean
+  projectDir?: string
+  packageManager?: PackageManager
+  includeAgents?: boolean
+  linkClaude?: boolean
+  addSkills?: boolean
+  ref?: string
+}
+
+type SkillsCommand = {
+  command: string
+  args: string[]
+}
 
 const banner = () => {
   console.log(pc.bold(pc.cyan('create-hikkaku')))
@@ -69,23 +87,23 @@ const banner = () => {
   console.log('')
 }
 
-const log = (message) => {
+const log = (message: string): void => {
   console.log(`${pc.blue('>')} ${message}`)
 }
 
-const success = (message) => {
+const success = (message: string): void => {
   console.log(`${pc.green('[ok]')} ${message}`)
 }
 
-const warning = (message) => {
+const warning = (message: string): void => {
   console.log(`${pc.yellow('[warn]')} ${message}`)
 }
 
-const fatal = (message) => {
+const fatal = (message: string): void => {
   console.error(`${pc.red('[error]')} ${message}`)
 }
 
-const pathExists = async (filePath) => {
+const pathExists = async (filePath: string): Promise<boolean> => {
   try {
     await access(filePath)
     return true
@@ -94,7 +112,9 @@ const pathExists = async (filePath) => {
   }
 }
 
-const normalizePackageManager = (value) => {
+const normalizePackageManager = (
+  value?: string | null,
+): PackageManager | undefined => {
   if (!value) return undefined
 
   const normalized = value.toLowerCase()
@@ -106,7 +126,9 @@ const normalizePackageManager = (value) => {
   return undefined
 }
 
-const detectPackageManagerFromRuntimeFallback = () => {
+const detectPackageManagerFromRuntimeFallback = ():
+  | PackageManager
+  | undefined => {
   if (process.versions?.bun) return 'bun'
   if (process.versions?.deno) return 'deno'
 
@@ -118,7 +140,7 @@ const detectPackageManagerFromRuntimeFallback = () => {
   return undefined
 }
 
-const detectPackageManager = async () => {
+const detectPackageManager = async (): Promise<PackageManager> => {
   const userAgent = normalizePackageManager(getUserAgent())
   if (userAgent) return userAgent
 
@@ -142,7 +164,7 @@ const detectPackageManager = async () => {
   return 'npm'
 }
 
-const toPackageName = (value) => {
+const toPackageName = (value: string): string => {
   const cleaned = value
     .trim()
     .toLowerCase()
@@ -157,20 +179,24 @@ const toPackageName = (value) => {
   return `hikkaku-${cleaned}`
 }
 
-const shellQuote = (value) => {
+const shellQuote = (value: string): string => {
   if (!value) return "''"
   if (/^[A-Za-z0-9_./:@-]+$/.test(value)) return value
   return `'${value.replace(/'/g, "'\\''")}'`
 }
 
-const parseBooleanOption = (arg, enabled, disabled) => {
+const parseBooleanOption = (
+  arg: string,
+  enabled: string,
+  disabled: string,
+): boolean | undefined => {
   if (arg === enabled) return true
   if (arg === disabled) return false
   return undefined
 }
 
-const parseCliArgs = (argv) => {
-  const parsed = {
+const parseCliArgs = (argv: string[]): CliArgs => {
+  const parsed: CliArgs = {
     help: false,
     yes: false,
     projectDir: undefined,
@@ -181,9 +207,21 @@ const parseCliArgs = (argv) => {
     ref: undefined,
   }
 
-  const positionals = []
+  const positionals: string[] = []
+
+  const parseAndValidatePackageManager = (value: string): PackageManager => {
+    const normalized = normalizePackageManager(value)
+    if (!normalized) {
+      throw new Error(
+        `Unsupported package manager "${value}". Use one of: ${PM_VALUES.join(', ')}`,
+      )
+    }
+    return normalized
+  }
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
+    if (arg === undefined) continue
     const includeAgents = parseBooleanOption(arg, '--agents', '--no-agents')
     const linkClaude = parseBooleanOption(
       arg,
@@ -222,18 +260,22 @@ const parseCliArgs = (argv) => {
       if (!next) {
         throw new Error(`${arg} requires a value`)
       }
-      parsed.packageManager = next
+      parsed.packageManager = parseAndValidatePackageManager(next)
       i++
       continue
     }
 
     if (arg.startsWith('--pm=')) {
-      parsed.packageManager = arg.slice('--pm='.length)
+      parsed.packageManager = parseAndValidatePackageManager(
+        arg.slice('--pm='.length),
+      )
       continue
     }
 
     if (arg.startsWith('--package-manager=')) {
-      parsed.packageManager = arg.slice('--package-manager='.length)
+      parsed.packageManager = parseAndValidatePackageManager(
+        arg.slice('--package-manager='.length),
+      )
       continue
     }
 
@@ -269,18 +311,6 @@ const parseCliArgs = (argv) => {
     parsed.projectDir = positionals[0]
   }
 
-  if (parsed.packageManager) {
-    const normalized = normalizePackageManager(parsed.packageManager)
-    if (!normalized) {
-      throw new Error(
-        `Unsupported package manager "${parsed.packageManager}". Use one of: ${PM_VALUES.join(
-          ', ',
-        )}`,
-      )
-    }
-    parsed.packageManager = normalized
-  }
-
   return parsed
 }
 
@@ -312,10 +342,17 @@ const getDefaultRefFromPackageVersion = async () => {
   return `${CREATE_HIKKAKU_TAG_PREFIX}${version}`
 }
 
-const createPrompter = () => {
+const createPrompter = (): {
+  askText: (question: string, defaultValue?: string) => Promise<string>
+  askYesNo: (question: string, defaultValue: boolean) => Promise<boolean>
+  close: () => void
+} => {
   const rl = createInterface({ input, output })
 
-  const askText = async (question, defaultValue) => {
+  const askText = async (
+    question: string,
+    defaultValue?: string,
+  ): Promise<string> => {
     const label = defaultValue
       ? `${question} ${pc.dim(`(${defaultValue})`)}`
       : question
@@ -324,7 +361,10 @@ const createPrompter = () => {
     return answer || defaultValue || ''
   }
 
-  const askYesNo = async (question, defaultValue) => {
+  const askYesNo = async (
+    question: string,
+    defaultValue: boolean,
+  ): Promise<boolean> => {
     while (true) {
       const suffix = defaultValue ? 'Y/n' : 'y/N'
       const answer = (
@@ -349,8 +389,12 @@ const createPrompter = () => {
   }
 }
 
-const runCommand = async (command, args, options = {}) => {
-  await new Promise((resolve, reject) => {
+const runCommand = async (
+  command: string,
+  args: string[],
+  options: SpawnOptions = {},
+): Promise<void> => {
+  await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: 'inherit',
       ...options,
@@ -370,7 +414,10 @@ const runCommand = async (command, args, options = {}) => {
   })
 }
 
-const downloadTarball = async (url, destinationPath) => {
+const downloadTarball = async (
+  url: string,
+  destinationPath: string,
+): Promise<void> => {
   const response = await fetch(url)
   if (!response.ok || !response.body) {
     throw new Error(
@@ -384,7 +431,7 @@ const downloadTarball = async (url, destinationPath) => {
   )
 }
 
-const resolveRepositoryRoot = async (tempDir) => {
+const resolveRepositoryRoot = async (tempDir: string): Promise<string> => {
   const entries = await readdir(tempDir, { withFileTypes: true })
   const repoDir = entries.find(
     (entry) => entry.isDirectory() && entry.name.startsWith(`${REPO_NAME}-`),
@@ -397,7 +444,13 @@ const resolveRepositoryRoot = async (tempDir) => {
   return path.join(tempDir, repoDir.name)
 }
 
-const fetchAndCopyTemplate = async ({ targetDir, ref }) => {
+const fetchAndCopyTemplate = async ({
+  targetDir,
+  ref,
+}: {
+  targetDir: string
+  ref: string
+}): Promise<void> => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'create-hikkaku-'))
   const tarballPath = path.join(tempDir, 'template.tar.gz')
   const url = `https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/tags/${ref}`
@@ -423,7 +476,13 @@ const fetchAndCopyTemplate = async ({ targetDir, ref }) => {
   }
 }
 
-const patchPackageJson = async ({ targetDir, packageName }) => {
+const patchPackageJson = async ({
+  targetDir,
+  packageName,
+}: {
+  targetDir: string
+  packageName: string
+}): Promise<void> => {
   const packageJsonPath = path.join(targetDir, 'package.json')
   if (!(await pathExists(packageJsonPath))) return
 
@@ -435,7 +494,11 @@ const patchPackageJson = async ({ targetDir, packageName }) => {
   await writeFile(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`)
 }
 
-const patchTsConfig = async ({ targetDir }) => {
+const patchTsConfig = async ({
+  targetDir,
+}: {
+  targetDir: string
+}): Promise<void> => {
   const tsconfigPath = path.join(targetDir, 'tsconfig.json')
   if (!(await pathExists(tsconfigPath))) return
   await writeFile(
@@ -444,7 +507,15 @@ const patchTsConfig = async ({ targetDir }) => {
   )
 }
 
-const patchAgentsFiles = async ({ targetDir, includeAgents, linkClaude }) => {
+const patchAgentsFiles = async ({
+  targetDir,
+  includeAgents,
+  linkClaude,
+}: {
+  targetDir: string
+  includeAgents: boolean
+  linkClaude: boolean
+}): Promise<void> => {
   const agentsPath = path.join(targetDir, 'AGENTS.md')
 
   if (!includeAgents) {
@@ -472,11 +543,11 @@ const patchAgentsFiles = async ({ targetDir, includeAgents, linkClaude }) => {
   }
 }
 
-const getSkillsCommand = (pm) => {
+const getSkillsCommand = (pm: PackageManager): SkillsCommand => {
   if (pm === 'bun') {
     return {
       command: 'bunx',
-      args: ['skills', 'add', 'pnsk-lab/hikkaku'],
+      args: ['skills', 'add', 'pnsk-lab/hikkaku/packages/skill'],
     }
   }
 
@@ -490,7 +561,7 @@ const getSkillsCommand = (pm) => {
         '--allow-sys=homedir',
         'npm:skills',
         'add',
-        'pnsk-lab/hikkaku',
+        'pnsk-lab/hikkaku/packages/skill',
       ],
     }
   }
@@ -498,24 +569,24 @@ const getSkillsCommand = (pm) => {
   if (pm === 'pnpm') {
     return {
       command: 'pnpx',
-      args: ['skills', 'add', 'pnsk-lab/hikkaku'],
+      args: ['skills', 'add', 'pnsk-lab/hikkaku/packages/skill'],
     }
   }
 
   if (pm === 'yarn') {
     return {
       command: 'yarn',
-      args: ['dlx', 'skills', 'add', 'pnsk-lab/hikkaku'],
+      args: ['dlx', 'skills', 'add', 'pnsk-lab/hikkaku/packages/skill'],
     }
   }
 
   return {
     command: 'npx',
-    args: ['skills', 'add', 'pnsk-lab/hikkaku'],
+    args: ['skills', 'add', 'pnsk-lab/hikkaku/packages/skill'],
   }
 }
 
-const getInstallCommand = (pm) => {
+const getInstallCommand = (pm: PackageManager): string => {
   if (pm === 'deno') return 'deno install'
   if (pm === 'npm') return 'npm install'
   if (pm === 'pnpm') return 'pnpm install'
@@ -523,13 +594,19 @@ const getInstallCommand = (pm) => {
   return 'bun install'
 }
 
-const getDevCommand = (pm) => {
+const getDevCommand = (pm: PackageManager): string => {
   if (pm === 'deno') return 'deno task dev'
   if (pm === 'npm') return 'npm run dev'
   return `${pm} dev`
 }
 
-const printNextSteps = ({ projectPath, pm }) => {
+const printNextSteps = ({
+  projectPath,
+  pm,
+}: {
+  projectPath: string
+  pm: PackageManager
+}): void => {
   const relative = path.relative(process.cwd(), projectPath) || '.'
   const steps = []
   if (relative !== '.') {
@@ -557,7 +634,11 @@ const main = async () => {
   const packageManager =
     normalizePackageManager(detectedPackageManager) ?? 'npm'
   const interactive = process.stdin.isTTY && process.stdout.isTTY && !cli.yes
-  const prompter = interactive ? createPrompter() : undefined
+  let prompter = interactive ? createPrompter() : undefined
+  const closePrompter = () => {
+    prompter?.close()
+    prompter = undefined
+  }
 
   try {
     banner()
@@ -567,7 +648,7 @@ const main = async () => {
       )}`,
     )
 
-    let projectDir = cli.projectDir
+    let projectDir = cli.projectDir ?? ''
     if (!projectDir) {
       if (interactive && prompter) {
         projectDir = await prompter.askText(
@@ -626,6 +707,10 @@ const main = async () => {
       )
     }
 
+    // Release stdin before running child processes (e.g. `skills add`) to avoid
+    // waiting for an extra Enter keypress in some terminals.
+    closePrompter()
+
     if (!includeAgents && cli.linkClaude === true) {
       warning('--link-claude was ignored because AGENTS.md is disabled')
     }
@@ -678,7 +763,7 @@ const main = async () => {
 
     printNextSteps({ projectPath, pm: packageManager })
   } finally {
-    prompter?.close()
+    closePrompter()
   }
 }
 

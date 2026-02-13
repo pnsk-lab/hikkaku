@@ -39,12 +39,58 @@ const blocksSidebar = [
 
 const withTwoslashInlineCache = createTwoslashWithInlineCache({})
 
+const BASE = '/hikkaku/'
+const DOMAIN = 'https://pnsk-lab.github.io'
+
 export default withTwoslashInlineCache(
   defineConfig({
     title: 'Hikkaku',
     description: 'Write Scratch projects in TypeScript',
     lang: 'en-US',
-    base: '/hikkaku/',
+    base: BASE,
+    head: [
+      [
+        'link',
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          href: `${BASE}assets/logo.svg`,
+        },
+      ],
+      ['meta', { property: 'og:type', content: 'website' }],
+      ['meta', { property: 'og:title', content: 'Hikkaku' }],
+      [
+        'meta',
+        {
+          property: 'og:description',
+          content: 'Write Scratch projects in TypeScript',
+        },
+      ],
+      ['meta', { property: 'og:url', content: `${DOMAIN}${BASE}` }],
+      [
+        'meta',
+        {
+          property: 'og:image',
+          content: `${DOMAIN}${BASE}assets/logo.svg`,
+        },
+      ],
+      ['meta', { name: 'twitter:card', content: 'summary' }],
+      ['meta', { name: 'twitter:title', content: 'Hikkaku' }],
+      [
+        'meta',
+        {
+          name: 'twitter:description',
+          content: 'Write Scratch projects in TypeScript',
+        },
+      ],
+      [
+        'meta',
+        {
+          name: 'twitter:image',
+          content: `${DOMAIN}${BASE}assets/logo.svg`,
+        },
+      ],
+    ],
     markdown: {
       codeTransformers: [],
     },
