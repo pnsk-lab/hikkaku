@@ -1,5 +1,6 @@
 import { Project } from 'hikkaku'
 import { IMAGES } from 'hikkaku/assets'
+import './index.css'
 import {
   forever,
   ifOnEdgeBounce,
