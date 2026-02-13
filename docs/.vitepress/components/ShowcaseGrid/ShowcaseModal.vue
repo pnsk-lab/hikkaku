@@ -4,7 +4,7 @@
       class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
       role="dialog"
       aria-modal="true"
-      @click.self="emit('close')"
+      @click.self="handleClose"
     >
       <div
         class="relative flex h-[92vh] w-[95vw] max-w-6xl flex-col rounded-xl border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg)] shadow-2xl"
@@ -17,7 +17,7 @@
           <button
             class="inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] px-3 text-sm text-[var(--vp-c-text-1)]"
             type="button"
-            @click="emit('close')"
+            @click="handleClose"
           >
             Close
           </button>
@@ -34,5 +34,9 @@
 
 <script setup lang="ts">
 defineProps<{ title: string; src: string }>()
-const _emit = defineEmits<(event: 'close') => void>()
+const emit = defineEmits<(event: 'close') => void>()
+
+const handleClose = () => {
+  emit('close')
+}
 </script>

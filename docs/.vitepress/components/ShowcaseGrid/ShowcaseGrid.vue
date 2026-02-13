@@ -20,7 +20,7 @@
         v-for="entry in entries"
         :key="entry.id"
         :entry="entry"
-        @open="(entry, path) => open(entry, path)"
+        @open="handleOpen"
       />
     </div>
 
@@ -44,7 +44,7 @@ const isLoading = ref(true)
 const activeEntry = ref<ShowcaseEntry | null>(null)
 const isBrowser = typeof window !== 'undefined'
 
-const _open = (entry: ShowcaseEntry, path: string) => {
+const handleOpen = (entry: ShowcaseEntry, path: string) => {
   activeEntry.value = {
     ...entry,
     path,

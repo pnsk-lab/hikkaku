@@ -2,12 +2,12 @@
   <article
     class="grid gap-3 rounded-xl border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] px-5 py-4"
   >
-    <header class="flex items-center justify-between gap-3">
+  <header class="flex items-center justify-between gap-3">
       <div class="text-2xl font-bold font-family-[var(--vp-font-family-base)]">{{ entry.title }}</div>
       <ShowcaseLinks
         :entry="entry"
         :path="resolvedPath"
-        @open="(nextEntry, path) => emit('open', nextEntry, path)"
+        @open="handleOpen"
       />
     </header>
     <div class="aspect-4/3">
@@ -33,8 +33,12 @@ import { withBase } from 'vitepress'
 import type { ShowcaseEntry } from './types'
 
 const props = defineProps<{ entry: ShowcaseEntry }>()
-const _emit =
+const emit =
   defineEmits<(event: 'open', entry: ShowcaseEntry, path: string) => void>()
+
+const handleOpen = (nextEntry: ShowcaseEntry, path: string) => {
+  emit('open', nextEntry, path)
+}
 
 const _resolveShowcasePath = (value: string) => {
   const resolvedValue = value.startsWith('/') ? value : `/showcase/${value}`
@@ -47,5 +51,5 @@ const _resolveShowcasePath = (value: string) => {
   return `${resolvedValue}/index.html`
 }
 
-const _resolvedPath = withBase(_resolveShowcasePath(props.entry.path))
+const resolvedPath = withBase(_resolveShowcasePath(props.entry.path))
 </script>

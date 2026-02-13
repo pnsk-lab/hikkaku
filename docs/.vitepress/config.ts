@@ -3,6 +3,7 @@
 
 import { createTwoslashWithInlineCache } from '@shikijs/vitepress-twoslash/cache-inline'
 import tailwindcss from '@tailwindcss/vite'
+import type { Plugin, PluginOption } from 'vite'
 import { defineConfig } from 'vitepress'
 
 const guideSidebar = [

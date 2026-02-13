@@ -43,6 +43,10 @@
     "title": "Markdown Renderer",
     "path": "/showcase/markdown-renderer.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/markdown-renderer",
+    "author": {
+      "name": "EdamAmex",
+      "url": "https://x.com/evex_dev"
+    },
     "status": "ok"
   },
   {

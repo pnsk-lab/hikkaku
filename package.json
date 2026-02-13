@@ -28,5 +28,8 @@
   "type": "module",
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "overrides": {
+    "vite": "8.0.0-beta.13"
   }
 }
