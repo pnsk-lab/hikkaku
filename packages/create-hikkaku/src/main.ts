@@ -208,6 +208,17 @@ const parseCliArgs = (argv: string[]): CliArgs => {
   }
 
   const positionals: string[] = []
+
+  const parseAndValidatePackageManager = (value: string): PackageManager => {
+    const normalized = normalizePackageManager(value)
+    if (!normalized) {
+      throw new Error(
+        `Unsupported package manager "${value}". Use one of: ${PM_VALUES.join(', ')}`,
+      )
+    }
+    return normalized
+  }
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === undefined) continue
@@ -249,18 +260,22 @@ const parseCliArgs = (argv: string[]): CliArgs => {
       if (!next) {
         throw new Error(`${arg} requires a value`)
       }
-      parsed.packageManager = next
+      parsed.packageManager = parseAndValidatePackageManager(next)
       i++
       continue
     }
 
     if (arg.startsWith('--pm=')) {
-      parsed.packageManager = arg.slice('--pm='.length)
+      parsed.packageManager = parseAndValidatePackageManager(
+        arg.slice('--pm='.length),
+      )
       continue
     }
 
     if (arg.startsWith('--package-manager=')) {
-      parsed.packageManager = arg.slice('--package-manager='.length)
+      parsed.packageManager = parseAndValidatePackageManager(
+        arg.slice('--package-manager='.length),
+      )
       continue
     }
 
@@ -294,18 +309,6 @@ const parseCliArgs = (argv: string[]): CliArgs => {
 
   if (positionals[0]) {
     parsed.projectDir = positionals[0]
-  }
-
-  if (parsed.packageManager) {
-    const normalized = normalizePackageManager(parsed.packageManager)
-    if (!normalized) {
-      throw new Error(
-        `Unsupported package manager "${parsed.packageManager}". Use one of: ${PM_VALUES.join(
-          ', ',
-        )}`,
-      )
-    }
-    parsed.packageManager = normalized
   }
 
   return parsed
