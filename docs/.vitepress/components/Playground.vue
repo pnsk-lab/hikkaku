@@ -234,7 +234,6 @@ const BlocklyLoading = defineComponent({
   },
 })
 
-// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const BlocklyAsync = defineAsyncComponent({
   loader: () => import('./Blockly.vue'),
   loadingComponent: BlocklyLoading,
@@ -265,7 +264,6 @@ const resizeObserver = shallowRef<ResizeObserver | null>(null)
 const output = ref('')
 const error = ref('')
 const isInitialLoading = ref(true)
-// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const activeOutputTab = ref<'json' | 'blocks'>('blocks')
 const compiledProject = ref<ScratchProjectJsonLike | null>(null)
 const selectedTargetKey = ref<string | null>(null)
@@ -331,12 +329,10 @@ const selectedTarget = computed<ScratchTargetView | null>(() => {
   )
 })
 
-// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const selectedTargetLabel = computed(
   () => selectedTarget.value?.name ?? 'Target',
 )
 
-// biome-ignore lint/correctness/noUnusedVariables: Referenced from template.
 const selectedTargetBlocks = computed<PackedBlockMap | null>(() => {
   const blocks = selectedTarget.value?.blocks
   return isPackedBlockMap(blocks) ? blocks : null

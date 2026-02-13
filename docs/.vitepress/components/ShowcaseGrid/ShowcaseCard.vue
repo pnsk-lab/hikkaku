@@ -36,7 +36,7 @@ const props = defineProps<{ entry: ShowcaseEntry }>()
 const emit =
   defineEmits<(event: 'open', entry: ShowcaseEntry, path: string) => void>()
 
-const _handleOpen = (nextEntry: ShowcaseEntry, path: string) => {
+const handleOpen = (nextEntry: ShowcaseEntry, path: string) => {
   emit('open', nextEntry, path)
 }
 
@@ -51,5 +51,5 @@ const _resolveShowcasePath = (value: string) => {
   return `${resolvedValue}/index.html`
 }
 
-const _resolvedPath = withBase(_resolveShowcasePath(props.entry.path))
+const resolvedPath = withBase(_resolveShowcasePath(props.entry.path))
 </script>

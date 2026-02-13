@@ -36,7 +36,7 @@
 defineProps<{ title: string; src: string }>()
 const emit = defineEmits<(event: 'close') => void>()
 
-const _handleClose = () => {
+const handleClose = () => {
   emit('close')
 }
 </script>

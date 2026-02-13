@@ -4,5 +4,12 @@
   "extends": ["../biome.json"],
   "files": {
     "includes": ["**", "!./.vitepress/**/*.vue"]
+  },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUnusedVariables": "off"
+      }
+    }
   }
 }
