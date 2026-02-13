@@ -16,6 +16,11 @@ type ShowcaseEntry = {
   title: string
   path: string
   sourceUrl: string
+  author?: {
+    name: string
+    email?: string
+    url?: string
+  }
   status: 'ok' | 'error'
   error?: string
 }
@@ -68,6 +73,76 @@ const toTitle = (id: string) =>
         : `${segment[0]?.toUpperCase() ?? ''}${segment.slice(1)}`,
     )
     .join(' ')
+
+const parseAuthorFromPackageJson = (author: unknown) => {
+  if (!author) {
+    return undefined
+  }
+
+  if (typeof author === 'string') {
+    const trimmedAuthor = author.trim()
+    if (!trimmedAuthor) {
+      return undefined
+    }
+
+    const emailMatch = trimmedAuthor.match(/<([^>]+)>/)
+    const nameWithoutEmail = trimmedAuthor
+      .replace(/\s*<[^>]+>\s*/, ' ')
+      .trim()
+    const authorUrlMatch = nameWithoutEmail.match(/\(([^)]+)\)\s*$/)
+    const name = nameWithoutEmail
+      .replace(/\([^)]*\)\s*$/, '')
+      .trim()
+
+    if (!name) {
+      return undefined
+    }
+
+    return {
+      name,
+      ...(emailMatch ? { email: emailMatch[1]?.trim() } : {}),
+      ...(authorUrlMatch && authorUrlMatch[1]?.trim()
+        ? { url: authorUrlMatch[1]?.trim() }
+        : {}),
+    }
+  }
+
+  if (typeof author !== 'object' || Array.isArray(author)) {
+    return undefined
+  }
+
+  const candidate = author as {
+    name?: unknown
+    email?: unknown
+    url?: unknown
+  }
+
+  if (typeof candidate.name !== 'string') {
+    return undefined
+  }
+
+  const name = candidate.name.trim()
+  if (!name) {
+    return undefined
+  }
+
+  return {
+    name,
+    ...(typeof candidate.email === 'string' && candidate.email.trim()
+      ? { email: candidate.email.trim() }
+      : {}),
+    ...(typeof candidate.url === 'string' && candidate.url.trim()
+      ? { url: candidate.url.trim() }
+      : {}),
+  }
+}
+
+const readAuthorFromExamplePackage = async (projectDir: string) => {
+  const packageJsonPath = path.join(projectDir, 'package.json')
+  const packageJsonText = await readFile(packageJsonPath, 'utf8')
+  const packageJson = JSON.parse(packageJsonText) as { author?: unknown }
+  return parseAuthorFromPackageJson(packageJson.author)
+}
 
 const escapeHtml = (value: string) =>
   value
@@ -191,6 +266,7 @@ const main = async () => {
     const projectDir = path.join(examplesDir, exampleId)
     const sb3Path = path.join(projectDir, 'dist', 'project.sb3')
     const outputDir = path.join(showcaseDir, exampleId)
+    const author = await readAuthorFromExamplePackage(projectDir)
     let html = ''
     let status: ShowcaseEntry['status'] = 'ok'
     let error: string | undefined
@@ -238,6 +314,7 @@ const main = async () => {
       title: toTitle(exampleId),
       path: `/showcase/${exampleId}/index.html`,
       sourceUrl: `https://github.com/pnsk-lab/hikkaku/tree/main/examples/${exampleId}`,
+      ...(author ? { author } : {}),
       status,
       error,
     })
