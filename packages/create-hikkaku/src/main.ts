@@ -69,7 +69,7 @@ type CliArgs = {
   help: boolean
   yes: boolean
   projectDir?: string
-  packageManager?: string
+  packageManager?: PackageManager
   includeAgents?: boolean
   linkClaude?: boolean
   addSkills?: boolean
