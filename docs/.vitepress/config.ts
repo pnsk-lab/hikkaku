@@ -45,6 +45,52 @@ export default withTwoslashInlineCache(
     description: 'Write Scratch projects in TypeScript',
     lang: 'en-US',
     base: '/hikkaku/',
+    head: [
+      [
+        'link',
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          href: '/hikkaku/assets/logo.svg',
+        },
+      ],
+      ['meta', { property: 'og:type', content: 'website' }],
+      ['meta', { property: 'og:title', content: 'Hikkaku' }],
+      [
+        'meta',
+        {
+          property: 'og:description',
+          content: 'Write Scratch projects in TypeScript',
+        },
+      ],
+      [
+        'meta',
+        { property: 'og:url', content: 'https://pnsk-lab.github.io/hikkaku/' },
+      ],
+      [
+        'meta',
+        {
+          property: 'og:image',
+          content: 'https://pnsk-lab.github.io/hikkaku/assets/logo.svg',
+        },
+      ],
+      ['meta', { name: 'twitter:card', content: 'summary' }],
+      ['meta', { name: 'twitter:title', content: 'Hikkaku' }],
+      [
+        'meta',
+        {
+          name: 'twitter:description',
+          content: 'Write Scratch projects in TypeScript',
+        },
+      ],
+      [
+        'meta',
+        {
+          name: 'twitter:image',
+          content: 'https://pnsk-lab.github.io/hikkaku/assets/logo.svg',
+        },
+      ],
+    ],
     markdown: {
       codeTransformers: [],
     },
