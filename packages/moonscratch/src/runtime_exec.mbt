@@ -314,6 +314,29 @@ fn clear_target_looks_effect(vm : Vm, target_index : Int) -> Unit {
 }
 
 ///|
+fn sync_thread_warp_state(vm : Vm, thread : Thread) -> Unit {
+  match vm.procedure_frames.get(thread.id) {
+    Some(stack) =>
+      if stack.is_empty() {
+        thread.warp_mode = false
+        thread.warp_started_ms = 0
+      } else {
+        let frame = stack[stack.length() - 1]
+        thread.warp_mode = frame.warp_mode
+        if thread.warp_mode && thread.warp_started_ms == 0 {
+          thread.warp_started_ms = vm.now_ms
+        } else if !thread.warp_mode {
+          thread.warp_started_ms = 0
+        }
+      }
+    None => {
+      thread.warp_mode = false
+      thread.warp_started_ms = 0
+    }
+  }
+}
+
+///|
 fn unwind_control(vm : Vm, thread : Thread) -> Thread {
   let thread = thread
   while thread.pc is None {
@@ -341,9 +364,14 @@ fn unwind_control(vm : Vm, thread : Thread) -> Thread {
         }
       None =>
         match pop_procedure_frame(vm, thread.id) {
-          Some(frame) => thread.pc = frame.return_pc
+          Some(frame) => {
+            thread.pc = frame.return_pc
+            sync_thread_warp_state(vm, thread)
+          }
           None => {
             thread.done = true
+            thread.warp_mode = false
+            thread.warp_started_ms = 0
             return thread
           }
         }
@@ -805,6 +833,24 @@ fn block_mutation_string(block : ScratchBlock, key : String) -> String? {
 }
 
 ///|
+fn block_mutation_bool(block : ScratchBlock, key : String) -> Bool {
+  match block.mutation.get(key) {
+    Some(True) => true
+    Some(False) => false
+    Some(String(value)) => {
+      let normalized = value.trim().to_lower()
+      if normalized == "true" || normalized == "1" {
+        true
+      } else {
+        false
+      }
+    }
+    Some(Number(value, ..)) => value.to_int() != 0
+    _ => false
+  }
+}
+
+///|
 fn parse_json_string_array(raw : String) -> Array[String] {
   let parsed = try? @json.parse(raw)
   match parsed {
@@ -826,7 +872,7 @@ fn parse_json_value_array(raw : String) -> Array[Json] {
 fn find_procedure_body(
   target : TargetState,
   proccode : String,
-) -> (String, Array[String], Array[String], Array[Json])? {
+) -> (String, Array[String], Array[String], Array[Json], Bool)? {
   for _, block in target.blocks {
     if block.opcode != "procedures_definition" {
       continue
@@ -858,7 +904,8 @@ fn find_procedure_body(
                       Some(raw) => parse_json_value_array(raw)
                       None => []
                     }
-                    return Some((start_block, names, ids, defaults))
+                    let warp = block_mutation_bool(prototype, "warp")
+                    return Some((start_block, names, ids, defaults, warp))
                   }
                   None => return None
                 }
@@ -1339,6 +1386,17 @@ fn is_thread_blocked(vm : Vm, thread : Thread) -> Bool {
   }
   let waiting_children = vm.waiting_children.get_or_default(thread.id, 0) > 0
   waiting_time || waiting_input || waiting_children
+}
+
+///|
+fn is_warp_window_active(vm : Vm, thread : Thread) -> Bool {
+  if !thread.warp_mode {
+    return false
+  }
+  if thread.warp_started_ms <= 0 {
+    return false
+  }
+  vm.now_ms - thread.warp_started_ms <= 500
 }
 
 ///|
@@ -2236,7 +2294,15 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       }
       if proccode != "" {
         match find_procedure_body(target, proccode) {
-          Some((start_block, param_names, param_ids, param_defaults)) => {
+          Some(
+            (
+              start_block,
+              param_names,
+              param_ids,
+              param_defaults,
+              procedure_warp_mode,
+            )
+          ) => {
             let params = {}
             for i, param_id in param_ids {
               let name = if i < param_names.length() {
@@ -2256,9 +2322,18 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
               }
               params[name] = value
             }
+            let next_warp_mode = thread.warp_mode || procedure_warp_mode
+            if next_warp_mode && thread.warp_started_ms == 0 {
+              thread.warp_started_ms = vm.now_ms
+            } else if !next_warp_mode {
+              thread.warp_started_ms = 0
+            }
+            thread.warp_mode = next_warp_mode
             push_procedure_frame(vm, thread.id, {
               return_pc: block.next,
               params,
+              proccode,
+              warp_mode: next_warp_mode,
             })
             next_pc = Some(start_block)
           }
@@ -2436,14 +2511,22 @@ fn step_frame_runtime(
             continue
           }
 
-          let updated = execute_thread_once(vm, thread)
-          vm.threads[index] = updated
-          if !is_thread_blocked(vm, updated) && !updated.done {
-            stepped += 1
-            progressed = true
-          } else if updated.done {
-            stepped += 1
-            progressed = true
+          let mut updated = execute_thread_once(vm, thread)
+          while true {
+            vm.threads[index] = updated
+            let is_blocked = is_thread_blocked(vm, updated)
+            if !is_blocked && !updated.done {
+              stepped += 1
+              progressed = true
+              if is_warp_window_active(vm, updated) && stepped < budget {
+                updated = execute_thread_once(vm, updated)
+                continue
+              }
+            } else if updated.done {
+              stepped += 1
+              progressed = true
+            }
+            break
           }
         }
 

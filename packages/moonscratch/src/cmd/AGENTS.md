@@ -1,5 +1,5 @@
 # src/cmd
 
-- CLI 関連のコードを置くディレクトリ。
-- 実装追加は `src/cmd/main/` を起点に最小限で行う。
-- 共通ロジック化が必要な場合は `src/` 側へ移して再利用する。
+- Directory for CLI-related code.
+- Add implementations minimally via `src/cmd/main/`.
+- If shared logic is needed, move it to `src/` for reuse.

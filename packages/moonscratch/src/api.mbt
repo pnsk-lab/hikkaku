@@ -25,11 +25,7 @@ pub fn vm_green_flag(vm : Vm) -> Unit {
 }
 
 ///|
-pub fn vm_step_frame(
-  vm : Vm,
-  frame_count : Int,
-  frame_ms : Int,
-) -> FrameReport {
+pub fn vm_step_frame(vm : Vm, frame_count : Int, frame_ms : Int) -> FrameReport {
   step_frame_runtime(vm, frame_count, frame_ms)
 }
 

@@ -1,5 +1,5 @@
 # src/cmd/main
 
-- CLI のエントリポイントを管理する。
-- 引数解析や入出力はここで扱い、ドメインロジックは `src/` に寄せる。
-- 変更後は `moon test` で既存 CLI の挙動回帰がないことを確認する。
+- Manages the CLI entrypoint.
+- Handle argument parsing and I/O here, keeping domain logic in `src/`.
+- After changes, confirm no regression in existing CLI behavior with `moon test`.

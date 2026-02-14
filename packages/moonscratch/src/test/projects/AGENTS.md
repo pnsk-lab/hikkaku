@@ -1,5 +1,5 @@
 # src/test/projects
 
-- マクロなプロジェクト単位テストを配置する。
-- 実運用に近いケースを優先して追加し、重複する細粒度検証は `src/` のユニットテストに寄せる。
-- 期待出力が更新される変更では `moon test --update` を検討する。
+- Place macro project-level tests here.
+- Prefer adding cases close to real-world operation, and keep duplicate fine-grained checks in unit tests under `src/`.
+- For changes that update expected output, consider running `moon test --update`.

@@ -78,6 +78,8 @@ pub(all) struct Thread {
   mut wait_until_ms : Int?
   mut wait_for_input : String?
   mut done : Bool
+  mut warp_mode : Bool
+  mut warp_started_ms : Int
   mut stack : Array[ControlFrame]
   mut loop_counters : Map[String, Int]
   parent_waiter : Int?
@@ -87,4 +89,6 @@ pub(all) struct Thread {
 pub(all) struct ProcedureFrame {
   return_pc : String?
   params : Map[String, Json]
+  proccode : String
+  mut warp_mode : Bool
 }

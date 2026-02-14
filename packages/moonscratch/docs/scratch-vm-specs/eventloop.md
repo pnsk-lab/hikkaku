@@ -3,16 +3,6 @@
 This document records how `scratch-vm` controls frame stepping, thread ticks, and time,
 and how `moonscratch` mirrors that behavior.
 
-## Scope
-
-- Source of truth inspected:
-  - `../scratch-editor/packages/scratch-vm/src/engine/runtime.js`
-  - `../scratch-editor/packages/scratch-vm/src/engine/sequencer.js`
-  - `../scratch-editor/packages/scratch-vm/src/engine/thread.js`
-  - `../scratch-editor/packages/scratch-vm/src/engine/block-utility.js`
-  - `../scratch-editor/packages/scratch-vm/src/virtual-machine.js`
-- This spec is focused on scheduler/timing semantics.
-
 ## Terminology
 
 - `frame`

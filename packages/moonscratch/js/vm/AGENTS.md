@@ -1,5 +1,5 @@
 # js/vm
 
-- VM バインディングと実行補助ロジックを管理する。
-- 型ガード・正規化・JSON 変換は仕様差分が出やすいためテストを必須にする。
-- テスト用データは `test-projects.ts` を利用して重複を減らす。
+- Manages VM bindings and execution support logic.
+- Since type guards, normalization, and JSON conversion are prone to spec drift, tests are required.
+- Use shared test data in `test-projects.ts` to reduce duplication.

@@ -1,3 +1,3 @@
 # test
 
-- projects にはマクロな単位のプロジェクトの動作テストケースを大量に書く
+- Use `projects` for large project-level behavior test cases.

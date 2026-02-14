@@ -153,6 +153,283 @@ test "procedures call and argument reporters" {
 }
 
 ///|
+let procedures_project_nonwarp =
+  #|{
+  #|  "targets": [
+  #|    {
+  #|      "isStage": true,
+  #|      "name": "Stage",
+  #|      "variables": {
+  #|        "var_inside": ["inside", 0],
+  #|        "var_outside": ["outside", 0]
+  #|      },
+  #|      "lists": {},
+  #|      "blocks": {}
+  #|    },
+  #|    {
+  #|      "isStage": false,
+  #|      "name": "Sprite1",
+  #|      "variables": {},
+  #|      "lists": {},
+  #|      "blocks": {
+  #|        "hat_main": {
+  #|          "opcode": "event_whenflagclicked",
+  #|          "next": "call_proc",
+  #|          "parent": null,
+  #|          "inputs": {},
+  #|          "fields": {},
+  #|          "topLevel": true
+  #|        },
+  #|        "call_proc": {
+  #|          "opcode": "procedures_call",
+  #|          "next": null,
+  #|          "parent": "hat_main",
+  #|          "inputs": {},
+  #|          "fields": {},
+  #|          "mutation": {
+  #|            "proccode": "long task",
+  #|            "argumentids": "[]",
+  #|            "argumentnames": "[]",
+  #|            "argumentdefaults": "[]",
+  #|            "warp": "false"
+  #|          },
+  #|          "topLevel": false
+  #|        },
+  #|        "proc_def": {
+  #|          "opcode": "procedures_definition",
+  #|          "next": "repeat_proc",
+  #|          "parent": null,
+  #|          "inputs": {
+  #|            "custom_block": [1, "proc_proto"]
+  #|          },
+  #|          "fields": {},
+  #|          "topLevel": true
+  #|        },
+  #|        "proc_proto": {
+  #|          "opcode": "procedures_prototype",
+  #|          "next": null,
+  #|          "parent": "proc_def",
+  #|          "inputs": {},
+  #|          "fields": {},
+  #|          "mutation": {
+  #|            "proccode": "long task",
+  #|            "argumentids": "[]",
+  #|            "argumentnames": "[]",
+  #|            "argumentdefaults": "[]",
+  #|            "warp": "false"
+  #|          },
+  #|          "topLevel": false
+  #|        },
+  #|        "repeat_proc": {
+  #|          "opcode": "control_repeat",
+  #|          "next": null,
+  #|          "parent": "proc_def",
+  #|          "inputs": {
+  #|            "TIMES": [4, 250],
+  #|            "SUBSTACK": [2, "inc_inside"]
+  #|          },
+  #|          "fields": {},
+  #|          "topLevel": false
+  #|        },
+  #|        "inc_inside": {
+  #|          "opcode": "data_changevariableby",
+  #|          "next": null,
+  #|          "parent": "repeat_proc",
+  #|          "inputs": {
+  #|            "VALUE": [4, 1]
+  #|          },
+  #|          "fields": {
+  #|            "VARIABLE": ["inside", "var_inside"]
+  #|          },
+  #|          "topLevel": false
+  #|        },
+  #|        "hat_outside": {
+  #|          "opcode": "event_whenflagclicked",
+  #|          "next": "set_outside",
+  #|          "parent": null,
+  #|          "inputs": {},
+  #|          "fields": {},
+  #|          "topLevel": true
+  #|        },
+  #|        "set_outside": {
+  #|          "opcode": "data_setvariableto",
+  #|          "next": null,
+  #|          "parent": "hat_outside",
+  #|          "inputs": {
+  #|            "VALUE": [4, 1]
+  #|          },
+  #|          "fields": {
+  #|            "VARIABLE": ["outside", "var_outside"]
+  #|          },
+  #|          "topLevel": false
+  #|        }
+  #|      }
+  #|    }
+  #|  ]
+  #|}
+
+///|
+test "procedures call non-warp yields before procedure loop in same frame" {
+  let vm = unwrap_result(
+    try? @moonscratch.vm_new_from_json(procedures_project_nonwarp),
+    "vm init failed",
+  )
+  @moonscratch.vm_green_flag(vm)
+  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+  let snapshot = unwrap_result(
+    try? @json.parse(@moonscratch.vm_snapshot_json(vm)),
+    "snapshot parse failed",
+  )
+  let root_obj = match snapshot {
+    Object(obj) => obj
+    _ => fail("snapshot must be object")
+  }
+  let targets = match root_obj["targets"] {
+    Array(items) => items
+    _ => fail("targets must be array")
+  }
+  let stage = match targets[0] {
+    Object(obj) => obj
+    _ => fail("stage must be object")
+  }
+  let vars = match stage["variables"] {
+    Object(obj) => obj
+    _ => fail("variables must be object")
+  }
+  assert_eq(vars["var_outside"], Json::number(1.0))
+}
+
+///|
+let procedures_project_warp =
+  #|{
+  #|  "targets": [
+  #|    {
+  #|      "isStage": true,
+  #|      "name": "Stage",
+  #|      "variables": {
+  #|        "var_inside": ["inside", 0],
+  #|        "var_outside": ["outside", 0]
+  #|      },
+  #|      "lists": {},
+  #|      "blocks": {}
+  #|    },
+  #|    {
+  #|      "isStage": false,
+  #|      "name": "Sprite1",
+  #|      "variables": {},
+  #|      "lists": {},
+  #|      "blocks": {
+  #|        "hat_flag": {
+  #|          "opcode": "event_whenflagclicked",
+  #|          "next": "call_proc",
+  #|          "parent": null,
+  #|          "inputs": {},
+  #|          "fields": {},
+  #|          "topLevel": true
+  #|        },
+  #|        "call_proc": {
+  #|          "opcode": "procedures_call",
+  #|          "next": null,
+  #|          "parent": "hat_flag",
+  #|          "inputs": {
+  #|            "arg_id": [1, [4, 7]]
+  #|          },
+  #|          "fields": {},
+  #|          "mutation": {
+  #|            "proccode": "set inside %s",
+  #|            "argumentids": "[\"arg_id\"]",
+  #|            "argumentnames": "[\"x\"]",
+  #|            "argumentdefaults": "[0]",
+  #|            "warp": "true"
+  #|          },
+  #|          "topLevel": false
+  #|        },
+  #|        "proc_def": {
+  #|          "opcode": "procedures_definition",
+  #|          "next": "set_inside",
+  #|          "parent": null,
+  #|          "inputs": {
+  #|            "custom_block": [1, "proc_proto"]
+  #|          },
+  #|          "fields": {},
+  #|          "topLevel": true
+  #|        },
+  #|        "proc_proto": {
+  #|          "opcode": "procedures_prototype",
+  #|          "next": null,
+  #|          "parent": "proc_def",
+  #|          "inputs": {},
+  #|          "fields": {},
+  #|          "mutation": {
+  #|            "proccode": "set inside %s",
+  #|            "argumentids": "[\"arg_id\"]",
+  #|            "argumentnames": "[\"x\"]",
+  #|            "argumentdefaults": "[0]",
+  #|            "warp": "true"
+  #|          },
+  #|          "topLevel": false
+  #|        },
+  #|        "set_inside": {
+  #|          "opcode": "data_setvariableto",
+  #|          "next": null,
+  #|          "parent": "proc_def",
+  #|          "inputs": {
+  #|            "VALUE": [2, "arg_inside"]
+  #|          },
+  #|          "fields": {
+  #|            "VARIABLE": ["inside", "var_inside"]
+  #|          },
+  #|          "topLevel": false
+  #|        },
+  #|        "arg_inside": {
+  #|          "opcode": "argument_reporter_string_number",
+  #|          "next": null,
+  #|          "parent": "set_inside",
+  #|          "inputs": {},
+  #|          "fields": {
+  #|            "VALUE": ["x", null]
+  #|          },
+  #|          "topLevel": false
+  #|        }
+  #|      }
+  #|    }
+  #|  ]
+  #|}
+
+///|
+test "procedures call warp mode executes body in same frame" {
+  let vm = unwrap_result(
+    try? @moonscratch.vm_new_from_json(procedures_project_warp),
+    "vm init failed",
+  )
+  @moonscratch.vm_green_flag(vm)
+  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+
+  let snapshot = unwrap_result(
+    try? @json.parse(@moonscratch.vm_snapshot_json(vm)),
+    "snapshot parse failed",
+  )
+  let root_obj = match snapshot {
+    Object(obj) => obj
+    _ => fail("snapshot must be object")
+  }
+  let targets = match root_obj["targets"] {
+    Array(items) => items
+    _ => fail("targets must be array")
+  }
+  let stage = match targets[0] {
+    Object(obj) => obj
+    _ => fail("stage must be object")
+  }
+  let vars = match stage["variables"] {
+    Object(obj) => obj
+    _ => fail("variables must be object")
+  }
+  assert_eq(vars["var_inside"], Json::number(7.0))
+  assert_eq(vars["var_outside"], Json::number(0.0))
+}
+
+///|
 let sensing_sound_project =
   #|{
   #|  "targets": [

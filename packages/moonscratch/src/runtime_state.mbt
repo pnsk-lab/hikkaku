@@ -395,6 +395,8 @@ fn spawn_thread(
     wait_until_ms: None,
     wait_for_input: None,
     done: false,
+    warp_mode: false,
+    warp_started_ms: 0,
     stack: [],
     loop_counters: {},
     parent_waiter,

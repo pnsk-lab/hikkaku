@@ -1,5 +1,5 @@
 # js/assets
 
-- Asset 生成・検証・変換ロジックを管理する。
-- 新規機能は `*.test.ts` を同時に追加して入力バリエーションを固定する。
-- 破壊的変更は `index.ts` の公開面を通じた互換性を確認する。
+- Manages asset generation, validation, and conversion logic.
+- Add corresponding `*.test.ts` files with new features to fix input variation coverage.
+- For breaking changes, verify compatibility through the public surface in `index.ts`.

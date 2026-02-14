@@ -3,8 +3,8 @@
   "type": "module",
   "module": "js/index.ts",
   "scripts": {
-    "test": "vp test run",
-    "build": "vp pack",
+    "test": "moon test && vp test run",
+    "build": "moon build && vp pack",
     "typecheck": "tsgo"
   },
   "devDependencies": {
