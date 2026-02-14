@@ -21,7 +21,7 @@
     "@tailwindcss/vite": "^4.1.7",
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20260210.1",
-    "monaco-editor": "^0.50.0",
+    "monaco-editor": "^0.55.1",
     "oxc-minify": "^0.112.0",
     "tailwindcss": "^4.1.7",
     "typescript": "^5",
