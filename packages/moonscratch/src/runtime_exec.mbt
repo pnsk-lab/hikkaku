@@ -2388,40 +2388,82 @@ fn post_io_json_runtime(
 }
 
 ///|
-fn step_runtime(vm : Vm, dt_ms : Int) -> StepReport {
-  if dt_ms > 0 {
-    vm.now_ms += dt_ms
-  }
+fn set_now_ms_runtime(vm : Vm, now_ms : Int) -> Unit {
+  vm.now_ms = now_ms
+  vm.timer_start_ms = now_ms
+}
 
-  let spawned_io = dispatch_io_event_hats(vm)
-  let spawned_predicates = spawn_predicate_hats(vm)
-  if spawned_io > 0 || spawned_predicates > 0 {
-    vm.running = true
-  }
+///|
+fn step_frame_runtime(
+  vm : Vm,
+  frame_count : Int,
+  frame_ms : Int,
+) -> FrameReport {
+  let normalized_frame_count = if frame_count <= 0 { 1 } else { frame_count }
+  let normalized_frame_ms = if frame_ms < 0 { 0 } else { frame_ms }
+  let mut total_ticks = 0
+  let mut total_ops = 0
 
-  let mut stepped = 0
-  if vm.running {
-    let budget = current_step_budget(vm)
-    let mut index = 0
-    while index < vm.threads.length() && stepped < budget {
-      let thread = vm.threads[index]
-      let updated = execute_thread_once(vm, thread)
-      vm.threads[index] = updated
-      if !is_thread_blocked(vm, updated) && !updated.done {
-        stepped += 1
-      } else if updated.done {
-        stepped += 1
-      }
-      index += 1
+  for _ in 0..<normalized_frame_count {
+    if normalized_frame_ms > 0 {
+      vm.now_ms += normalized_frame_ms
     }
-  }
 
-  cleanup_done_threads(vm)
+    let spawned_io = dispatch_io_event_hats(vm)
+    let spawned_predicates = spawn_predicate_hats(vm)
+    if spawned_io > 0 || spawned_predicates > 0 {
+      vm.running = true
+    }
+
+    let mut stepped = 0
+    let mut ticks = 0
+    if vm.running {
+      let budget = current_step_budget(vm)
+      while stepped < budget {
+        let thread_count = vm.threads.length()
+        if thread_count <= 0 {
+          break
+        }
+
+        let mut progressed = false
+        for index in 0..<thread_count {
+          if stepped >= budget {
+            break
+          }
+
+          let thread = vm.threads[index]
+          if thread.done {
+            continue
+          }
+
+          let updated = execute_thread_once(vm, thread)
+          vm.threads[index] = updated
+          if !is_thread_blocked(vm, updated) && !updated.done {
+            stepped += 1
+            progressed = true
+          } else if updated.done {
+            stepped += 1
+            progressed = true
+          }
+        }
+
+        if !progressed {
+          break
+        }
+        ticks += 1
+      }
+    }
+
+    total_ops += stepped
+    total_ticks += ticks
+    cleanup_done_threads(vm)
+  }
 
   {
     now_ms: vm.now_ms,
     active_threads: vm.threads.length(),
-    stepped_threads: stepped,
+    tick_count: total_ticks,
+    op_count: total_ops,
     emitted_effects: vm.effects.length(),
   }
 }

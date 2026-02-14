@@ -125,7 +125,7 @@ test "procedures call and argument reporters" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<20 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
 
   let snapshot = unwrap_result(
@@ -756,7 +756,7 @@ test "sensing and sound reporters work in headless runtime" {
   @moonscratch.vm_post_io_json(vm, "current_timestamp_ms", "946684800000")
 
   for _ in 0..<90 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
 
   let snapshot = unwrap_result(

@@ -13,6 +13,7 @@ export const createHeadlessVM = ({
   projectJson,
   assets = {},
   options,
+  initialNowMs,
   viewerLanguage,
   translateCache,
 }: CreateHeadlessVMOptions): HeadlessVM => {
@@ -26,6 +27,7 @@ export const createHeadlessVM = ({
   )
 
   const runtime = new HeadlessVM(vm)
+  runtime.setNowMs(initialNowMs ?? Date.now())
   if (viewerLanguage !== undefined) {
     runtime.setViewerLanguage(viewerLanguage)
   }
@@ -41,6 +43,7 @@ export const createHeadlessVMWithScratchAssets = async ({
   projectJson,
   assets = {},
   options,
+  initialNowMs,
   viewerLanguage,
   translateCache,
   scratchCdnBaseUrl,
@@ -59,6 +62,7 @@ export const createHeadlessVMWithScratchAssets = async ({
     projectJson,
     assets: resolvedAssets,
     options,
+    initialNowMs,
     viewerLanguage,
     translateCache,
   })

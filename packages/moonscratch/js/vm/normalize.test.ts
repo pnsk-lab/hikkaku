@@ -2,9 +2,12 @@ import { describe, expect, test } from 'vite-plus/test'
 
 import {
   cloneTranslateCache,
+  normalizeFrameCount,
+  normalizeFrameMs,
   normalizeLanguage,
-  normalizeStepMs,
-  toStepReport,
+  normalizeMaxFrames,
+  normalizeNowMs,
+  toFrameReport,
 } from './normalize.ts'
 
 describe('moonscratch/js/vm/normalize.ts', () => {
@@ -18,27 +21,38 @@ describe('moonscratch/js/vm/normalize.ts', () => {
     expect(cache).toEqual({ ja: { hello: 'こんにちは' } })
   })
 
-  test('normalizes step milliseconds', () => {
-    expect(normalizeStepMs(16.9)).toBe(16)
-    expect(normalizeStepMs(-1)).toBe(0)
-    expect(() => normalizeStepMs(Number.POSITIVE_INFINITY)).toThrow(
-      'dtMs must be a finite number',
+  test('normalizes frame inputs', () => {
+    expect(normalizeFrameCount(3.9)).toBe(3)
+    expect(normalizeFrameMs(1000 / 30)).toBe(33)
+    expect(normalizeNowMs(16.9)).toBe(16)
+    expect(normalizeMaxFrames(10.7)).toBe(10)
+    expect(() => normalizeFrameCount(0)).toThrow(
+      'frameCount must be greater than 0',
     )
   })
 
-  test('maps raw step report fields', () => {
+  test('maps raw frame report fields', () => {
     expect(
-      toStepReport({
-        now_ms: 16,
-        active_threads: 2,
-        stepped_threads: 1,
-        emitted_effects: 3,
-      }),
+      toFrameReport(
+        {
+          now_ms: 33,
+          active_threads: 2,
+          tick_count: 4,
+          op_count: 100,
+          emitted_effects: 3,
+        },
+        1,
+        33,
+      ),
     ).toEqual({
-      nowMs: 16,
+      nowMs: 33,
       activeThreads: 2,
-      steppedThreads: 1,
+      ticks: 4,
+      ops: 100,
       emittedEffects: 3,
+      frameCount: 1,
+      frameMs: 33,
+      elapsedMs: 33,
     })
   })
 })

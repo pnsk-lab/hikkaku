@@ -48,3 +48,6 @@
   * `bun fmt`: apply formatting
   * `bun typecheck`: run type checking
   * `bun ref:build`: update the docs
+* when changes include `packages/moonscratch`, you also have to run:
+  * `moon check` (in `packages/moonscratch`)
+  * `bun run test` (in `packages/moonscratch`)

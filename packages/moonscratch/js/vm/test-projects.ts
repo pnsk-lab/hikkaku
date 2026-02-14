@@ -172,7 +172,5 @@ export const getStageVariables = (
 }
 
 export const stepMany = (vm: HeadlessVM, count: number): void => {
-  for (let i = 0; i < count; i += 1) {
-    vm.step(16)
-  }
+  vm.stepFrame(count)
 }

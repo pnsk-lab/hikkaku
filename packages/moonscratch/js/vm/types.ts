@@ -26,11 +26,31 @@ export interface VMOptionsInput extends Partial<VMOptions> {
   pen_height?: number
 }
 
-export interface StepReport {
+export interface FrameReport {
   nowMs: number
   activeThreads: number
-  steppedThreads: number
+  ticks: number
+  ops: number
   emittedEffects: number
+  frameCount: number
+  frameMs: number
+  elapsedMs: number
+}
+
+export type RunEndedBy = 'idle' | 'frame_limit' | 'time_limit'
+
+export interface RunReport {
+  frames: number
+  ticks: number
+  ops: number
+  elapsedMs: number
+  activeThreads: number
+  endedBy: RunEndedBy
+}
+
+export interface RunUntilIdleOptions {
+  frameMs?: number
+  maxFrames?: number
 }
 
 export interface VMSnapshotTarget {
@@ -167,6 +187,7 @@ export interface CreateHeadlessVMOptions {
   projectJson: string | ProjectJson
   assets?: string | Record<string, JsonValue>
   options?: string | VMOptionsInput
+  initialNowMs?: number
   viewerLanguage?: string
   translateCache?: TranslateCache
 }

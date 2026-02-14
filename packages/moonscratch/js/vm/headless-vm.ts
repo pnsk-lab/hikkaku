@@ -1,5 +1,5 @@
 import { moonscratch } from './bindings.ts'
-import { DEFAULT_STEP_MS } from './constants.ts'
+import { DEFAULT_FRAME_MS, DEFAULT_MAX_FRAMES } from './constants.ts'
 import {
   isMusicPlayDrumEffect,
   isMusicPlayNoteEffect,
@@ -9,14 +9,20 @@ import {
 import { parseJson } from './json.ts'
 import {
   cloneTranslateCache,
+  normalizeDurationMs,
+  normalizeFrameCount,
+  normalizeFrameMs,
   normalizeLanguage,
-  normalizeStepMs,
-  toStepReport,
+  normalizeMaxFrames,
+  normalizeNowMs,
+  toFrameReport,
 } from './normalize.ts'
 import type {
   EffectHandlers,
+  FrameReport,
   JsonValue,
-  StepReport,
+  RunReport,
+  RunUntilIdleOptions,
   TranslateCache,
   VMEffect,
   VMSnapshot,
@@ -42,9 +48,80 @@ export class HeadlessVM {
     moonscratch.vm_green_flag(this.vmHandle)
   }
 
-  step(dtMs = DEFAULT_STEP_MS): StepReport {
-    const raw = moonscratch.vm_step(this.vmHandle, normalizeStepMs(dtMs))
-    return toStepReport(raw)
+  stepFrame(frameCount = 1, frameMs = DEFAULT_FRAME_MS): FrameReport {
+    const normalizedFrameCount = normalizeFrameCount(frameCount)
+    const normalizedFrameMs = normalizeFrameMs(frameMs)
+    const raw = moonscratch.vm_step_frame(
+      this.vmHandle,
+      normalizedFrameCount,
+      normalizedFrameMs,
+    )
+    return toFrameReport(raw, normalizedFrameCount, normalizedFrameMs)
+  }
+
+  runFrames(frameCount: number, frameMs = DEFAULT_FRAME_MS): RunReport {
+    const frame = this.stepFrame(frameCount, frameMs)
+    return {
+      frames: frame.frameCount,
+      ticks: frame.ticks,
+      ops: frame.ops,
+      elapsedMs: frame.elapsedMs,
+      activeThreads: frame.activeThreads,
+      endedBy: 'frame_limit',
+    }
+  }
+
+  runForTime(durationMs: number, frameMs = DEFAULT_FRAME_MS): RunReport {
+    const normalizedDurationMs = normalizeDurationMs(durationMs)
+    const normalizedFrameMs = normalizeFrameMs(frameMs)
+    if (normalizedDurationMs <= 0) {
+      return {
+        frames: 0,
+        ticks: 0,
+        ops: 0,
+        elapsedMs: 0,
+        activeThreads: this.snapshot().activeThreads,
+        endedBy: 'time_limit',
+      }
+    }
+    const frameCount = Math.ceil(normalizedDurationMs / normalizedFrameMs)
+    const frame = this.stepFrame(frameCount, normalizedFrameMs)
+    return {
+      frames: frame.frameCount,
+      ticks: frame.ticks,
+      ops: frame.ops,
+      elapsedMs: frame.elapsedMs,
+      activeThreads: frame.activeThreads,
+      endedBy: 'time_limit',
+    }
+  }
+
+  runUntilIdle(options: RunUntilIdleOptions = {}): RunReport {
+    const normalizedFrameMs = normalizeFrameMs(
+      options.frameMs ?? DEFAULT_FRAME_MS,
+    )
+    const normalizedMaxFrames = normalizeMaxFrames(
+      options.maxFrames ?? DEFAULT_MAX_FRAMES,
+    )
+    let frames = 0
+    let ticks = 0
+    let ops = 0
+    let activeThreads = this.snapshot().activeThreads
+    while (activeThreads > 0 && frames < normalizedMaxFrames) {
+      const frame = this.stepFrame(1, normalizedFrameMs)
+      frames += frame.frameCount
+      ticks += frame.ticks
+      ops += frame.ops
+      activeThreads = frame.activeThreads
+    }
+    return {
+      frames,
+      ticks,
+      ops,
+      elapsedMs: frames * normalizedFrameMs,
+      activeThreads,
+      endedBy: activeThreads === 0 ? 'idle' : 'frame_limit',
+    }
   }
 
   postIO(device: string, payload: JsonValue): void {
@@ -81,6 +158,10 @@ export class HeadlessVM {
 
   stopAll(): void {
     moonscratch.vm_stop_all(this.vmHandle)
+  }
+
+  setNowMs(nowMs: number): void {
+    moonscratch.vm_set_now_ms(this.vmHandle, normalizeNowMs(nowMs))
   }
 
   takeEffects(): VMEffect[] {

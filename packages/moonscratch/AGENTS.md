@@ -15,12 +15,12 @@ You can browse and install extra skills here:
 - In the toplevel directory, there is a `moon.mod.json` file listing module
   metadata.
 
-* src/ にあるテストはユニットテストのみで、マクロなテストは test/ に書く
+* Tests under `src/` are unit tests only; macro-style tests should be written in `test/`.
 
 ## AGENTS.md Maintenance
 
-- AGENTS.md はルートだけでなく、責務が分かれる主要ディレクトリにも配置する。
-- エージェントはプロジェクト構成や運用ルールの変更を検知したら、関連する AGENTS.md を必要に応じて自律的に更新し、現状と乖離させない。
+- Place `AGENTS.md` files not only at the root but also in major directories where responsibilities diverge.
+- Agents should autonomously update related `AGENTS.md` files when project structure or operating rules change, keeping instructions synchronized with the current state.
 
 ## Coding convention
 
@@ -77,3 +77,7 @@ You can browse and install extra skills here:
 - `bun run test` to run tests. `vite-plus/test` API is same as `vitest`.
 - `bun run build` to build the project.
 - `bun typecheck` to typecheck the code using `tsgo`.
+- Required before finishing any change in `packages/moonscratch`:
+  - `bun typecheck`
+  - `moon check`
+  - `bun run test`

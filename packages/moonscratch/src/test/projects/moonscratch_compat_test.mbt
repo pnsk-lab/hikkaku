@@ -120,7 +120,7 @@ test "music extension opcodes update tempo and emit note/drum effects" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<40 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
 
   let snapshot = unwrap_result(
@@ -307,11 +307,11 @@ test "text2speech and translate extension opcodes use JS-provided API data" {
   )
 
   for _ in 0..<6 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
   @moonscratch.vm_post_io_json(vm, "text2speech_done_1", "true")
   for _ in 0..<10 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
 
   let snapshot = unwrap_result(
@@ -544,7 +544,7 @@ test "pen opcodes draw into headless buffer and touching color reporters read it
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<60 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
 
   let snapshot = unwrap_result(
@@ -604,7 +604,7 @@ test "render_svg outputs composited scene colors" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<60 {
-    ignore(@moonscratch.vm_step(vm, 16))
+    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
   }
 
   let svg = @moonscratch.vm_render_svg(vm)

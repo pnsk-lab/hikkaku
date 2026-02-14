@@ -31,7 +31,7 @@ JS からは Wasm ラッパ API で利用可能にする。
   - new/start/green_flag/step/post_io/broadcast/stop_all/snapshot/dispose
 - JS API
   - createHeadlessVM({projectJson, assets, options, host})
-  - start(), greenFlag(), step(dtMs), postIO(), onEffect(), getSnapshot()
+  - start(), greenFlag(), stepFrame(frameCount?, frameMs?), postIO(), onEffect(), getSnapshot()
 
 ### Implementation
 

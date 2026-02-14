@@ -9,22 +9,30 @@ import {
 } from './test-projects.ts'
 
 describe('moonscratch/js/vm/headless-vm.ts', () => {
-  test('runs project and normalizes step dt values', () => {
-    const vm = createHeadlessVM({ projectJson: EXAMPLE_PROJECT })
+  test('runs project and normalizes frame values', () => {
+    const vm = createHeadlessVM({
+      projectJson: EXAMPLE_PROJECT,
+      initialNowMs: 0,
+    })
     vm.greenFlag()
 
-    const first = vm.step(16.9)
-    const clamped = vm.step(-4)
+    const first = vm.stepFrame(1, 16.9)
+    const second = vm.stepFrame()
 
     expect(first).toEqual({
-      nowMs: 16,
+      nowMs: 17,
       activeThreads: 0,
-      steppedThreads: 1,
+      ticks: 1,
+      ops: 1,
       emittedEffects: 0,
+      frameCount: 1,
+      frameMs: 17,
+      elapsedMs: 17,
     })
-    expect(clamped.nowMs).toBe(16)
-    expect(() => vm.step(Number.POSITIVE_INFINITY)).toThrow(
-      'dtMs must be a finite number',
+    expect(second.frameMs).toBe(33)
+    expect(second.nowMs).toBe(50)
+    expect(() => vm.stepFrame(1, Number.POSITIVE_INFINITY)).toThrow(
+      'frameMs must be a finite number',
     )
     expect(getStageVariables(vm).var_score).toBe(42)
   })

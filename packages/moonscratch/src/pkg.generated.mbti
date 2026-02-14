@@ -16,11 +16,13 @@ pub fn vm_post_io_json(Vm, String, String) -> Unit
 
 pub fn vm_render_svg(Vm) -> String
 
+pub fn vm_set_now_ms(Vm, Int) -> Unit
+
 pub fn vm_snapshot_json(Vm) -> String
 
 pub fn vm_start(Vm) -> Unit
 
-pub fn vm_step(Vm, Int) -> StepReport
+pub fn vm_step_frame(Vm, Int, Int) -> FrameReport
 
 pub fn vm_stop_all(Vm) -> Unit
 
@@ -60,6 +62,17 @@ pub(all) struct CostumeImage {
   height : Int
   pixels : Array[Byte]
 }
+
+pub(all) struct FrameReport {
+  now_ms : Int
+  active_threads : Int
+  tick_count : Int
+  op_count : Int
+  emitted_effects : Int
+}
+pub impl Eq for FrameReport
+pub impl Show for FrameReport
+pub impl ToJson for FrameReport
 
 pub enum HostEffect {
   PlaySound(String, String)
@@ -104,16 +117,6 @@ pub(all) struct ScratchBlock {
 pub impl Eq for ScratchBlock
 pub impl Show for ScratchBlock
 pub impl ToJson for ScratchBlock
-
-pub(all) struct StepReport {
-  now_ms : Int
-  active_threads : Int
-  stepped_threads : Int
-  emitted_effects : Int
-}
-pub impl Eq for StepReport
-pub impl Show for StepReport
-pub impl ToJson for StepReport
 
 pub(all) struct TargetState {
   id : String

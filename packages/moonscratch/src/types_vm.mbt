@@ -29,9 +29,10 @@ pub(all) struct Vm {
 }
 
 ///|
-pub(all) struct StepReport {
+pub(all) struct FrameReport {
   now_ms : Int
   active_threads : Int
-  stepped_threads : Int
+  tick_count : Int
+  op_count : Int
   emitted_effects : Int
 } derive(Show, Eq, ToJson)

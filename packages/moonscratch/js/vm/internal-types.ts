@@ -8,10 +8,11 @@ export interface RawVMOptions {
   pen_height?: number
 }
 
-export interface RawStepReport {
+export interface RawFrameReport {
   now_ms: number
   active_threads: number
-  stepped_threads: number
+  tick_count: number
+  op_count: number
   emitted_effects: number
 }
 

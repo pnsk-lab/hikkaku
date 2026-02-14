@@ -17,7 +17,7 @@ fn main {
   match vm_result {
     Ok(vm) => {
       @moonscratch.vm_start(vm)
-      let report = @moonscratch.vm_step(vm, 16)
+      let report = @moonscratch.vm_step_frame(vm, 1, 16)
       println("step report: \{report}")
     }
     Err(_) => println("failed to initialize vm")
