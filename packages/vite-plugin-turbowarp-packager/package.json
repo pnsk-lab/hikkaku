@@ -30,6 +30,6 @@
   "dependencies": {
     "@turbowarp/packager": "^3.11.0",
     "fflate": "^0.8.2",
-    "vite": "8.0.0-beta.13"
+    "vite": "8.0.0-beta.14"
   }
 }

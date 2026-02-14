@@ -33,7 +33,7 @@
         "oxc-minify": "^0.112.0",
         "tailwindcss": "^4.1.7",
         "typescript": "^5",
-        "vite": "^8.0.0-beta.13",
+        "vite": "^8.0.0-beta.14",
         "vitepress": "2.0.0-alpha.16",
         "vue-tsc": "^3.2.4",
       },
@@ -45,7 +45,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/3d-cube": {
@@ -55,7 +55,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/bullet-hell": {
@@ -65,7 +65,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/daw": {
@@ -75,7 +75,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/json-parser": {
@@ -85,7 +85,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/markdown-renderer": {
@@ -95,7 +95,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/rectangle": {
@@ -105,7 +105,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/reversi": {
@@ -115,7 +115,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/rubiks-cube": {
@@ -125,7 +125,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/simple": {
@@ -135,7 +135,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/tesseract": {
@@ -145,7 +145,7 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "examples/tetris": {
@@ -155,12 +155,12 @@
       },
       "devDependencies": {
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
     },
     "packages/create-hikkaku": {
       "name": "create-hikkaku",
-      "version": "0.2.2",
+      "version": "0.3.1",
       "bin": {
         "create-hikkaku": "./dist/main.js",
       },
@@ -195,11 +195,11 @@
     },
     "packages/hikkaku": {
       "name": "hikkaku",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "dependencies": {
         "fflate": "^0.8.2",
         "sb3-types": "^0.1.16",
-        "vite": "8.0.0-beta.8",
+        "vite": "8.0.0-beta.14",
       },
       "devDependencies": {
         "@turbowarp/packager": "^3.11.0",
@@ -242,7 +242,7 @@
       "dependencies": {
         "@turbowarp/packager": "^3.11.0",
         "fflate": "^0.8.2",
-        "vite": "8.0.0-beta.13",
+        "vite": "8.0.0-beta.14",
       },
       "devDependencies": {
         "@types/bun": "latest",
