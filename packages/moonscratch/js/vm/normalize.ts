@@ -43,7 +43,12 @@ export const normalizeMaxFrames = (maxFrames: number): number => {
 }
 
 const toFrameStopReason = (reason: string): FrameStopReason => {
-  if (reason === 'finished' || reason === 'timeout' || reason === 'rerender') {
+  if (
+    reason === 'finished' ||
+    reason === 'timeout' ||
+    reason === 'rerender' ||
+    reason === 'warp-exit'
+  ) {
     return reason
   }
   return 'timeout'

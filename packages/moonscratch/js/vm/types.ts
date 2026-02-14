@@ -29,7 +29,11 @@ export interface VMOptionsInput extends Partial<VMOptions> {
   stepTimeoutTicks?: number
 }
 
-export type FrameStopReason = 'finished' | 'timeout' | 'rerender'
+export type FrameStopReason =
+  | 'finished'
+  | 'timeout'
+  | 'rerender'
+  | 'warp-exit'
 
 export interface FrameReport {
   activeThreads: number

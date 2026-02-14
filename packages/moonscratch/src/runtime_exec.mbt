@@ -340,6 +340,29 @@ fn sync_thread_warp_state(vm : Vm, thread : Thread) -> Unit {
 fn unwind_control(vm : Vm, thread : Thread) -> Thread {
   let thread = thread
   while thread.pc is None {
+    let mut should_pop_procedure_first = false
+    match vm.procedure_frames.get(thread.id) {
+      Some(proc_stack) =>
+        if !proc_stack.is_empty() {
+          let current_proc = proc_stack[proc_stack.length() - 1]
+          if thread.stack.length() <= current_proc.control_depth {
+            should_pop_procedure_first = true
+          }
+        }
+      None => ()
+    }
+
+    if should_pop_procedure_first {
+      match pop_procedure_frame(vm, thread.id) {
+        Some(frame) => {
+          thread.pc = frame.return_pc
+          sync_thread_warp_state(vm, thread)
+          continue
+        }
+        None => ()
+      }
+    }
+
     match thread.stack.pop() {
       Some(frame) =>
         match frame.kind {
@@ -1406,9 +1429,60 @@ fn is_warp_window_active(vm : Vm, thread : Thread) -> Bool {
 }
 
 ///|
+fn has_active_warp_thread(vm : Vm) -> Bool {
+  for thread in vm.threads {
+    if thread.done {
+      continue
+    }
+    if thread.warp_mode {
+      return true
+    }
+    match vm.procedure_frames.get(thread.id) {
+      Some(frames) =>
+        for frame in frames {
+          if frame.warp_mode {
+            return true
+          }
+        }
+      None => ()
+    }
+  }
+  false
+}
+
+///|
+fn is_current_thread_in_warp_context(vm : Vm) -> Bool {
+  match vm.current_thread_id {
+    Some(thread_id) => {
+      for thread in vm.threads {
+        if thread.id == thread_id {
+          if thread.warp_mode {
+            return true
+          }
+          break
+        }
+      }
+      match vm.procedure_frames.get(thread_id) {
+        Some(frames) =>
+          for frame in frames {
+            if frame.warp_mode {
+              return true
+            }
+          }
+        None => ()
+      }
+      false
+    }
+    None => false
+  }
+}
+
 ///|
 fn request_redraw(vm : Vm) -> Unit {
   vm.redraw_requested = true
+  if is_current_thread_in_warp_context(vm) {
+    vm.redraw_requested_while_warp = true
+  }
 }
 
 ///|
@@ -2399,8 +2473,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
               thread.warp_started_ms = 0
             }
             thread.warp_mode = next_warp_mode
+            if next_warp_mode {
+              vm.redraw_requested_while_warp = true
+            }
             push_procedure_frame(vm, thread.id, {
               return_pc: block.next,
+              control_depth: thread.stack.length(),
               params,
               proccode,
               warp_mode: next_warp_mode,
@@ -2496,6 +2574,7 @@ fn green_flag_runtime(vm : Vm) -> Unit {
   vm.timer_start_ms = vm.now_ms
   vm.run_id += 1
   vm.redraw_requested = false
+  vm.redraw_requested_while_warp = false
   vm.running = true
   let spawned = spawn_green_flag_hats(vm)
   if spawned == 0 {
@@ -2557,14 +2636,9 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
   }
 
   if vm.running {
+    let mut saw_warp_context = has_active_warp_thread(vm) ||
+      vm.redraw_requested_while_warp
     while total_ticks < tick_timeout {
-      if vm.redraw_requested && !vm.options.turbo {
-        stop_reason = "rerender"
-        should_render = true
-        vm.redraw_requested = false
-        break
-      }
-
       let thread_count = vm.threads.length()
       if thread_count <= 0 {
         stop_reason = "finished"
@@ -2573,6 +2647,8 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
       }
 
       let mut progressed = false
+      let mut warp_active_in_tick = false
+      let mut warp_exit_detected = false
       let budget = current_step_budget(vm)
       let warp_window_extra_steps = budget * 8
 
@@ -2586,6 +2662,9 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
         let mut warp_steps = warp_window_extra_steps
         while true {
           vm.threads[index] = updated
+          if is_warp_window_active(vm, updated) {
+            warp_active_in_tick = true
+          }
           let is_blocked = is_thread_blocked(vm, updated)
           if !is_blocked && !updated.done {
             total_ops += 1
@@ -2601,10 +2680,29 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
           }
           break
         }
+
+        if warp_active_in_tick {
+          saw_warp_context = true
+        }
+        if vm.redraw_requested_while_warp {
+          saw_warp_context = true
+        }
+        if saw_warp_context && !has_active_warp_thread(vm) {
+          stop_reason = "warp-exit"
+          should_render = true
+          vm.redraw_requested = false
+          vm.redraw_requested_while_warp = false
+          warp_exit_detected = true
+          break
+        }
       }
 
       total_ticks += 1
       cleanup_done_threads(vm)
+
+      if warp_exit_detected {
+        break
+      }
 
       if vm.threads.length() <= 0 {
         stop_reason = "finished"
@@ -2612,10 +2710,30 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
         break
       }
 
-      if vm.redraw_requested && !vm.options.turbo {
+      if warp_active_in_tick {
+        saw_warp_context = true
+      }
+      let warp_active_after_tick = has_active_warp_thread(vm)
+      if vm.redraw_requested_while_warp {
+        saw_warp_context = true
+      }
+      if saw_warp_context && !warp_active_after_tick {
+        stop_reason = "warp-exit"
+        should_render = true
+        vm.redraw_requested = false
+        vm.redraw_requested_while_warp = false
+        break
+      }
+
+      if vm.redraw_requested &&
+        !vm.options.turbo &&
+        !warp_active_in_tick &&
+        !vm.redraw_requested_while_warp &&
+        !warp_active_after_tick {
         stop_reason = "rerender"
         should_render = true
         vm.redraw_requested = false
+        vm.redraw_requested_while_warp = false
         break
       }
 
@@ -2632,7 +2750,11 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
     stop_reason = "finished"
     should_render = true
     vm.redraw_requested = false
-  } else if stop_reason != "rerender" && stop_reason != "finished" {
+    vm.redraw_requested_while_warp = false
+  } else if
+    stop_reason != "rerender" &&
+    stop_reason != "warp-exit" &&
+    stop_reason != "finished" {
     stop_reason = "timeout"
     should_render = false
   }

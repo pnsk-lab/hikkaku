@@ -119,17 +119,17 @@ const WARP_REDRAW_PROJECT: ProjectJson = {
           parent: 'proc_def',
           inputs: {
             TIMES: [4, 6000000],
-            SUBSTACK: [2, 'wait_zero_warp'],
+            SUBSTACK: [2, 'looks_say_warp'],
           },
           fields: {},
           topLevel: false,
         },
-        wait_zero_warp: {
-          opcode: 'control_wait',
+        looks_say_warp: {
+          opcode: 'looks_say',
           next: null,
           parent: 'repeat_proc',
           inputs: {
-            DURATION: [1, [4, 0]],
+            MESSAGE: [1, [10, 'warp']],
           },
           fields: {},
           topLevel: false,
@@ -155,18 +155,21 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
     expect(frame.activeThreads).toBeGreaterThan(0)
   })
 
-  test('warp redraw requests render when redraw is raised', () => {
+  test('warp redraw does not request render while warp is still active', () => {
     const vm = createHeadlessVM({
       projectJson: WARP_REDRAW_PROJECT,
       initialNowMs: 0,
+      options: {
+        stepTimeoutTicks: 1,
+      },
     })
     vm.greenFlag()
     vm.setTime(16)
 
     const frame = vm.stepFrame()
 
-    expect(frame.stopReason).toBe('rerender')
-    expect(frame.shouldRender).toBe(true)
+    expect(frame.stopReason).toBe('timeout')
+    expect(frame.shouldRender).toBe(false)
     expect(frame.activeThreads).toBeGreaterThan(0)
   })
 })

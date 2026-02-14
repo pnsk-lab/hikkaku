@@ -95,6 +95,7 @@ pub(all) struct Thread {
 ///|
 pub(all) struct ProcedureFrame {
   return_pc : String?
+  control_depth : Int
   params : Map[String, Json]
   proccode : String
   mut warp_mode : Bool

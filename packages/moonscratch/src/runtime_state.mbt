@@ -40,6 +40,7 @@ fn vm_new_internal(
     procedure_frames: {},
     pending_translate_requests: {},
     redraw_requested: false,
+    redraw_requested_while_warp: false,
     current_thread_id: None,
   }
 }
@@ -411,6 +412,7 @@ fn clear_threads(vm : Vm) -> Unit {
   vm.waiting_children.clear()
   vm.procedure_frames.clear()
   vm.current_thread_id = None
+  vm.redraw_requested_while_warp = false
   vm.running = false
 }
 

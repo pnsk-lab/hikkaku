@@ -26,6 +26,7 @@ pub(all) struct Vm {
   mut procedure_frames : Map[Int, Array[ProcedureFrame]]
   mut pending_translate_requests : Map[String, Bool]
   mut redraw_requested : Bool
+  mut redraw_requested_while_warp : Bool
   mut current_thread_id : Int?
 }
 
