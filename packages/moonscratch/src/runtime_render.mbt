@@ -364,6 +364,7 @@ fn render_draw_pen_point(vm : Vm, target_index : Int) -> Unit {
   if a <= 0 {
     return
   }
+  vm.redraw_requested = true
   let radius = render_pen_brush_radius(vm, target)
   let (x, y) = render_stage_to_pixel(vm, target.x, target.y)
   render_draw_pen_circle(vm, x, y, radius, (r, g, b, a))
@@ -383,9 +384,13 @@ fn move_target_with_pen(
   let old_y = vm.targets[target_index].y
   vm.targets[target_index].x = new_x
   vm.targets[target_index].y = new_y
+  if old_x != new_x || old_y != new_y {
+    vm.redraw_requested = true
+  }
   let target = vm.targets[target_index]
   if target.pen_down && !target.deleted && !target.is_stage {
     render_draw_pen_line(vm, target_index, old_x, old_y, new_x, new_y)
+    vm.redraw_requested = true
   }
 }
 
@@ -745,7 +750,7 @@ fn render_scene_to_frame(vm : Vm) -> RenderFrame {
   let height = vm.pen_height
   let pixels = []
   if width <= 0 || height <= 0 {
-    return RenderFrame::{width: width, height: height, pixels: pixels}
+    return RenderFrame::{ width, height, pixels }
   }
   for py in 0..<height {
     for px in 0..<width {
@@ -756,7 +761,7 @@ fn render_scene_to_frame(vm : Vm) -> RenderFrame {
       pixels.push(color.3.to_byte())
     }
   }
-  RenderFrame::{width: width, height: height, pixels: pixels}
+  RenderFrame::{ width, height, pixels }
 }
 
 ///|

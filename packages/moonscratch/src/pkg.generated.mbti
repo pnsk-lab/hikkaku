@@ -16,13 +16,13 @@ pub fn vm_post_io_json(Vm, String, String) -> Unit
 
 pub fn vm_render_frame(Vm) -> RenderFrame
 
-pub fn vm_set_now_ms(Vm, Int) -> Unit
+pub fn vm_set_time(Vm, Int) -> Unit
 
 pub fn vm_snapshot_json(Vm) -> String
 
 pub fn vm_start(Vm) -> Unit
 
-pub fn vm_step_frame(Vm, Int, Int) -> FrameReport
+pub fn vm_step_frame(Vm) -> FrameReport
 
 pub fn vm_stop_all(Vm) -> Unit
 
@@ -63,18 +63,13 @@ pub(all) struct CostumeImage {
   pixels : Array[Byte]
 }
 
-pub(all) struct RenderFrame {
-  width : Int
-  height : Int
-  pixels : Array[Byte]
-}
-
 pub(all) struct FrameReport {
-  now_ms : Int
   active_threads : Int
   tick_count : Int
   op_count : Int
   emitted_effects : Int
+  stop_reason : String
+  should_render : Bool
 }
 pub impl Eq for FrameReport
 pub impl Show for FrameReport
@@ -111,6 +106,12 @@ pub(all) struct ProjectBundle {
 pub impl Eq for ProjectBundle
 pub impl Show for ProjectBundle
 pub impl ToJson for ProjectBundle
+
+pub(all) struct RenderFrame {
+  width : Int
+  height : Int
+  pixels : Array[Byte]
+}
 
 pub(all) struct ScratchBlock {
   id : String
@@ -205,6 +206,7 @@ pub(all) struct Vm {
   mut tts_language : String
   mut procedure_frames : Map[Int, Array[ProcedureFrame]]
   mut pending_translate_requests : Map[String, Bool]
+  mut redraw_requested : Bool
   mut current_thread_id : Int?
 }
 
@@ -216,6 +218,7 @@ pub(all) struct VmOptions {
   mut seed : Int
   mut pen_width : Int
   mut pen_height : Int
+  mut step_timeout_ticks : Int
 }
 pub impl Eq for VmOptions
 pub impl Show for VmOptions
@@ -224,3 +227,4 @@ pub impl ToJson for VmOptions
 // Type aliases
 
 // Traits
+

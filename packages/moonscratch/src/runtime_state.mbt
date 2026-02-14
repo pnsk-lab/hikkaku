@@ -39,6 +39,7 @@ fn vm_new_internal(
     tts_language: "en",
     procedure_frames: {},
     pending_translate_requests: {},
+    redraw_requested: false,
     current_thread_id: None,
   }
 }

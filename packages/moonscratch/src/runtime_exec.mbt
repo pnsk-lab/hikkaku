@@ -577,8 +577,13 @@ fn point_towards_position(
   if dx == 0.0 && dy == 0.0 {
     return
   }
+  let old_direction = vm.targets[target_index].direction
   let angle = 90.0 - @math.atan2(dy, dx) * 180.0 / @math.PI
-  vm.targets[target_index].direction = normalized_scratch_direction(angle)
+  let new_direction = normalized_scratch_direction(angle)
+  vm.targets[target_index].direction = new_direction
+  if old_direction != new_direction {
+    request_redraw(vm)
+  }
 }
 
 ///|
@@ -608,7 +613,12 @@ fn apply_if_on_edge_bounce(vm : Vm, target_index : Int) -> Unit {
   if x != original_x || y != original_y {
     move_target_with_pen(vm, target_index, x, y)
   }
-  vm.targets[target_index].direction = normalized_scratch_direction(direction)
+  let old_direction = vm.targets[target_index].direction
+  let new_direction = normalized_scratch_direction(direction)
+  vm.targets[target_index].direction = new_direction
+  if old_direction != new_direction {
+    request_redraw(vm)
+  }
 }
 
 ///|
@@ -803,6 +813,7 @@ fn set_stage_backdrop_index(
   vm.targets[stage_index].current_costume = normalized
   let after = target_costume_name(vm.targets[stage_index], normalized)
   if after != before {
+    request_redraw(vm)
     spawn_hats_for_backdrop(vm, after, parent_waiter)
   } else {
     0
@@ -1390,13 +1401,14 @@ fn is_thread_blocked(vm : Vm, thread : Thread) -> Bool {
 
 ///|
 fn is_warp_window_active(vm : Vm, thread : Thread) -> Bool {
-  if !thread.warp_mode {
-    return false
-  }
-  if thread.warp_started_ms <= 0 {
-    return false
-  }
-  vm.now_ms - thread.warp_started_ms <= 500
+  ignore(vm)
+  thread.warp_mode
+}
+
+///|
+///|
+fn request_redraw(vm : Vm) -> Unit {
+  vm.redraw_requested = true
 }
 
 ///|
@@ -1573,23 +1585,36 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       )
     }
     "motion_turnright" => {
+      let old_direction = vm.targets[target_index].direction
       let degrees = json_to_number_value(
         value_from_input(vm, target_index, block, "DEGREES", 0),
       )
       vm.targets[target_index].direction += degrees
+      if old_direction != vm.targets[target_index].direction {
+        request_redraw(vm)
+      }
     }
     "motion_turnleft" => {
+      let old_direction = vm.targets[target_index].direction
       let degrees = json_to_number_value(
         value_from_input(vm, target_index, block, "DEGREES", 0),
       )
       vm.targets[target_index].direction -= degrees
+      if old_direction != vm.targets[target_index].direction {
+        request_redraw(vm)
+      }
     }
-    "motion_pointindirection" =>
+    "motion_pointindirection" => {
+      let old_direction = vm.targets[target_index].direction
       vm.targets[target_index].direction = normalized_scratch_direction(
         json_to_number_value(
           value_from_input(vm, target_index, block, "DIRECTION", 0),
         ),
       )
+      if old_direction != vm.targets[target_index].direction {
+        request_redraw(vm)
+      }
+    }
     "motion_pointtowards" => {
       let menu_value = json_to_string_value(
         value_from_input(vm, target_index, block, "TOWARDS", 0),
@@ -1683,15 +1708,36 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     | "motion_align_scene"
     | "motion_scroll_right"
     | "motion_scroll_up" => ()
-    "looks_show" => vm.targets[target_index].visible = true
-    "looks_hide" => vm.targets[target_index].visible = false
-    "looks_hideallsprites" =>
+    "looks_show" => {
+      let was_visible = vm.targets[target_index].visible
+      vm.targets[target_index].visible = true
+      if !was_visible {
+        request_redraw(vm)
+      }
+    }
+    "looks_hide" => {
+      let was_visible = vm.targets[target_index].visible
+      vm.targets[target_index].visible = false
+      if was_visible {
+        request_redraw(vm)
+      }
+    }
+    "looks_hideallsprites" => {
+      let mut changed = false
       for i, candidate in vm.targets {
         if !candidate.deleted && !candidate.is_stage {
+          if vm.targets[i].visible {
+            changed = true
+          }
           vm.targets[i].visible = false
         }
       }
+      if changed {
+        request_redraw(vm)
+      }
+    }
     "looks_switchcostumeto" => {
+      let before = vm.targets[target_index].current_costume
       let input_value = value_from_input(vm, target_index, block, "COSTUME", 0)
       let resolved = match
         resolve_target_costume_index(vm, target_index, input_value, false) {
@@ -1712,13 +1758,20 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         Some(index) => vm.targets[target_index].current_costume = index
         None => ()
       }
+      if before != vm.targets[target_index].current_costume {
+        request_redraw(vm)
+      }
     }
     "looks_nextcostume" => {
       let target = vm.targets[target_index]
+      let before = target.current_costume
       vm.targets[target_index].current_costume = normalized_target_costume_index(
         target,
         target.current_costume + 1,
       )
+      if before != vm.targets[target_index].current_costume {
+        request_redraw(vm)
+      }
     }
     "looks_switchbackdropto" => {
       let value = block_backdrop_value(vm, target_index, block)
@@ -1744,6 +1797,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         value_from_input(vm, target_index, block, "CHANGE", 0),
       )
       set_target_looks_effect(vm, target_index, effect, amount, true)
+      request_redraw(vm)
     }
     "looks_seteffectto" => {
       let effect = input_or_field_string(
@@ -1753,8 +1807,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         value_from_input(vm, target_index, block, "VALUE", 0),
       )
       set_target_looks_effect(vm, target_index, effect, amount, false)
+      request_redraw(vm)
     }
-    "looks_cleargraphiceffects" => clear_target_looks_effect(vm, target_index)
+    "looks_cleargraphiceffects" => {
+      clear_target_looks_effect(vm, target_index)
+      request_redraw(vm)
+    }
     "looks_changestretchby"
     | "looks_setstretchto"
     | "looks_gotofrontback"
@@ -1764,24 +1822,28 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         value_from_input(vm, target_index, block, "CHANGE", 0),
       )
       vm.targets[target_index].size += delta
+      request_redraw(vm)
     }
     "looks_setsizeto" => {
       let size = json_to_number_value(
         value_from_input(vm, target_index, block, "SIZE", 0),
       )
       vm.targets[target_index].size = size
+      request_redraw(vm)
     }
     "looks_say" => {
       let message = json_to_string_value(
         value_from_input(vm, target_index, block, "MESSAGE", 0),
       )
       push_effect(vm, HostEffect::Say(vm.targets[target_index].name, message))
+      request_redraw(vm)
     }
     "looks_think" => {
       let message = json_to_string_value(
         value_from_input(vm, target_index, block, "MESSAGE", 0),
       )
       push_effect(vm, HostEffect::Think(vm.targets[target_index].name, message))
+      request_redraw(vm)
     }
     "looks_sayforsecs" => {
       let message = json_to_string_value(
@@ -1793,6 +1855,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       push_effect(vm, HostEffect::Say(vm.targets[target_index].name, message))
       let duration = if seconds < 0.0 { 0.0 } else { seconds }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
+      request_redraw(vm)
     }
     "looks_thinkforsecs" => {
       let message = json_to_string_value(
@@ -1804,8 +1867,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       push_effect(vm, HostEffect::Think(vm.targets[target_index].name, message))
       let duration = if seconds < 0.0 { 0.0 } else { seconds }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
+      request_redraw(vm)
     }
-    "pen_clear" => vm_clear_pen_pixels(vm)
+    "pen_clear" => {
+      vm_clear_pen_pixels(vm)
+      request_redraw(vm)
+    }
     "pen_stamp" =>
       if target_index >= 0 &&
         target_index < vm.targets.length() &&
@@ -1823,10 +1890,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
             }
           }
         }
+        request_redraw(vm)
       }
     "pen_penDown" => {
       vm.targets[target_index].pen_down = true
       render_draw_pen_point(vm, target_index)
+      request_redraw(vm)
     }
     "pen_penUp" => vm.targets[target_index].pen_down = false
     "pen_setPenColorToColor" => {
@@ -2147,6 +2216,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       )
       let duration = if duration_raw < 0.0 { 0.0 } else { duration_raw }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
+      request_redraw(vm)
     }
     "control_wait_until" => {
       let condition = json_to_bool_value(
@@ -2425,6 +2495,7 @@ fn green_flag_runtime(vm : Vm) -> Unit {
   vm.answer = ""
   vm.timer_start_ms = vm.now_ms
   vm.run_id += 1
+  vm.redraw_requested = false
   vm.running = true
   let spawned = spawn_green_flag_hats(vm)
   if spawned == 0 {
@@ -2463,90 +2534,115 @@ fn post_io_json_runtime(
 }
 
 ///|
-fn set_now_ms_runtime(vm : Vm, now_ms : Int) -> Unit {
+fn set_time_runtime(vm : Vm, now_ms : Int) -> Unit {
   vm.now_ms = now_ms
-  vm.timer_start_ms = now_ms
 }
 
 ///|
-fn step_frame_runtime(
-  vm : Vm,
-  frame_count : Int,
-  frame_ms : Int,
-) -> FrameReport {
-  let normalized_frame_count = if frame_count <= 0 { 1 } else { frame_count }
-  let normalized_frame_ms = if frame_ms < 0 { 0 } else { frame_ms }
+fn step_frame_runtime(vm : Vm) -> FrameReport {
+  let spawned_io = dispatch_io_event_hats(vm)
+  let spawned_predicates = spawn_predicate_hats(vm)
+  if spawned_io > 0 || spawned_predicates > 0 {
+    vm.running = true
+  }
+
   let mut total_ticks = 0
   let mut total_ops = 0
+  let mut stop_reason = "timeout"
+  let mut should_render = false
+  let tick_timeout = if vm.options.step_timeout_ticks > 0 {
+    vm.options.step_timeout_ticks
+  } else {
+    2048
+  }
 
-  for _ in 0..<normalized_frame_count {
-    if normalized_frame_ms > 0 {
-      vm.now_ms += normalized_frame_ms
-    }
+  if vm.running {
+    while total_ticks < tick_timeout {
+      if vm.redraw_requested && !vm.options.turbo {
+        stop_reason = "rerender"
+        should_render = true
+        vm.redraw_requested = false
+        break
+      }
 
-    let spawned_io = dispatch_io_event_hats(vm)
-    let spawned_predicates = spawn_predicate_hats(vm)
-    if spawned_io > 0 || spawned_predicates > 0 {
-      vm.running = true
-    }
+      let thread_count = vm.threads.length()
+      if thread_count <= 0 {
+        stop_reason = "finished"
+        should_render = true
+        break
+      }
 
-    let mut stepped = 0
-    let mut ticks = 0
-    if vm.running {
+      let mut progressed = false
       let budget = current_step_budget(vm)
-      while stepped < budget {
-        let thread_count = vm.threads.length()
-        if thread_count <= 0 {
-          break
+      let warp_window_extra_steps = budget * 8
+
+      for index in 0..<thread_count {
+        let thread = vm.threads[index]
+        if thread.done {
+          continue
         }
 
-        let mut progressed = false
-        for index in 0..<thread_count {
-          if stepped >= budget {
-            break
-          }
-
-          let thread = vm.threads[index]
-          if thread.done {
-            continue
-          }
-
-          let mut updated = execute_thread_once(vm, thread)
-          while true {
-            vm.threads[index] = updated
-            let is_blocked = is_thread_blocked(vm, updated)
-            if !is_blocked && !updated.done {
-              stepped += 1
-              progressed = true
-              if is_warp_window_active(vm, updated) && stepped < budget {
-                updated = execute_thread_once(vm, updated)
-                continue
-              }
-            } else if updated.done {
-              stepped += 1
-              progressed = true
+        let mut updated = execute_thread_once(vm, thread)
+        let mut warp_steps = warp_window_extra_steps
+        while true {
+          vm.threads[index] = updated
+          let is_blocked = is_thread_blocked(vm, updated)
+          if !is_blocked && !updated.done {
+            total_ops += 1
+            progressed = true
+            if is_warp_window_active(vm, updated) && warp_steps > 0 {
+              warp_steps -= 1
+              updated = execute_thread_once(vm, updated)
+              continue
             }
-            break
+          } else if updated.done {
+            total_ops += 1
+            progressed = true
           }
-        }
-
-        if !progressed {
           break
         }
-        ticks += 1
+      }
+
+      total_ticks += 1
+      cleanup_done_threads(vm)
+
+      if vm.threads.length() <= 0 {
+        stop_reason = "finished"
+        should_render = true
+        break
+      }
+
+      if vm.redraw_requested && !vm.options.turbo {
+        stop_reason = "rerender"
+        should_render = true
+        vm.redraw_requested = false
+        break
+      }
+
+      if !progressed {
+        stop_reason = "timeout"
+        break
       }
     }
+  }
 
-    total_ops += stepped
-    total_ticks += ticks
-    cleanup_done_threads(vm)
+  cleanup_done_threads(vm)
+  if vm.threads.length() <= 0 {
+    vm.running = false
+    stop_reason = "finished"
+    should_render = true
+    vm.redraw_requested = false
+  } else if stop_reason != "rerender" && stop_reason != "finished" {
+    stop_reason = "timeout"
+    should_render = false
   }
 
   {
-    now_ms: vm.now_ms,
     active_threads: vm.threads.length(),
     tick_count: total_ticks,
     op_count: total_ops,
     emitted_effects: vm.effects.length(),
+    stop_reason,
+    should_render,
   }
 }

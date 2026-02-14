@@ -6,14 +6,16 @@ export interface RawVMOptions {
   seed?: number
   pen_width?: number
   pen_height?: number
+  step_timeout_ticks?: number
 }
 
 export interface RawFrameReport {
-  now_ms: number
   active_threads: number
   tick_count: number
   op_count: number
   emitted_effects: number
+  stop_reason: string
+  should_render: boolean
 }
 
 interface MoonOk<T> {

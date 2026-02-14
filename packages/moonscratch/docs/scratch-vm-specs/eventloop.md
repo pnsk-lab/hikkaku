@@ -82,22 +82,22 @@ and how `moonscratch` mirrors that behavior.
 ## Time model
 
 - Runtime clock is virtual: `nowMs`.
-- `Date.now()` is used only once for initialization when caller does not provide `initialNowMs`.
-- During execution, time progresses only by explicit frame advancement.
+- Time is updated only via explicit `setTime(nowMs)`.
+- `stepFrame` does not advance clock time.
 
 ## Frame API policy
 
-- Default stepping policy is 30 fps.
-- API remains configurable by frame duration (`frameMs`), so callers can run 60 fps or custom rates.
 - Canonical API:
-  - `stepFrame(frameCount = 1, frameMs = 1000 / 30)`
+  - `setTime(nowMs)`
+  - `stepFrame(frameCount = 1)`
   - `runFrames(...)`
-  - `runForTime(...)`
   - `runUntilIdle(...)`
+- Recommended viewer loop:
+  1. call `setTime(...)` once per RAF/tick,
+  2. run one or more `stepFrame(...)` calls within a work budget,
+  3. render once after stepping.
 
 ## Compatibility note
 
-- The project defaults to 30 fps by policy.
-- This differs from scratch-vm's normal 60 fps default but keeps runtime behavior configurable.
-- Scheduler semantics (frame/tick split, turbo behavior, yielding model) should remain compatible.
-
+- `scratch-vm` uses one draw per `Runtime._step()` and uses `redrawRequested` to decide whether to continue stepping in the same frame.
+- `moonscratch` should preserve this shape: avoid exposing intermediate script progress by rendering between partial step chunks.

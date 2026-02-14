@@ -27,7 +27,7 @@ export const createHeadlessVM = ({
   )
 
   const runtime = new HeadlessVM(vm)
-  runtime.setNowMs(initialNowMs ?? Date.now())
+  runtime.setTime(initialNowMs ?? Date.now())
   if (viewerLanguage !== undefined) {
     runtime.setViewerLanguage(viewerLanguage)
   }

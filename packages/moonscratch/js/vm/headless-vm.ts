@@ -1,5 +1,5 @@
 import { moonscratch } from './bindings.ts'
-import { DEFAULT_FRAME_MS, DEFAULT_MAX_FRAMES } from './constants.ts'
+import { DEFAULT_MAX_FRAMES } from './constants.ts'
 import {
   isMusicPlayDrumEffect,
   isMusicPlayNoteEffect,
@@ -11,9 +11,6 @@ import { normalizeRenderFrame } from '../render/index.ts'
 import { renderFrameFromLegacySVG } from './legacy_render_frame.ts'
 import {
   cloneTranslateCache,
-  normalizeDurationMs,
-  normalizeFrameCount,
-  normalizeFrameMs,
   normalizeLanguage,
   normalizeMaxFrames,
   normalizeNowMs,
@@ -34,6 +31,7 @@ import type {
 
 type BoundWasmVmHandle = unknown
 type BoundMoonscratch = {
+  vm_set_time?: (vmHandle: BoundWasmVmHandle, nowMs: number) => void
   vm_render_frame?: (vmHandle: BoundWasmVmHandle) => unknown
   vm_render_svg?: (vmHandle: BoundWasmVmHandle) => string
 }
@@ -58,68 +56,20 @@ export class HeadlessVM {
     moonscratch.vm_green_flag(this.vmHandle)
   }
 
-  stepFrame(frameCount = 1, frameMs = DEFAULT_FRAME_MS): FrameReport {
-    const normalizedFrameCount = normalizeFrameCount(frameCount)
-    const normalizedFrameMs = normalizeFrameMs(frameMs)
-    const raw = moonscratch.vm_step_frame(
-      this.vmHandle,
-      normalizedFrameCount,
-      normalizedFrameMs,
-    )
-    return toFrameReport(raw, normalizedFrameCount, normalizedFrameMs)
+  stepFrame(): FrameReport {
+    const raw = moonscratch.vm_step_frame(this.vmHandle)
+    return toFrameReport(raw)
   }
 
-  runFrames(frameCount: number, frameMs = DEFAULT_FRAME_MS): RunReport {
-    const frame = this.stepFrame(frameCount, frameMs)
-    return {
-      frames: frame.frameCount,
-      ticks: frame.ticks,
-      ops: frame.ops,
-      elapsedMs: frame.elapsedMs,
-      activeThreads: frame.activeThreads,
-      endedBy: 'frame_limit',
-    }
-  }
-
-  runForTime(durationMs: number, frameMs = DEFAULT_FRAME_MS): RunReport {
-    const normalizedDurationMs = normalizeDurationMs(durationMs)
-    const normalizedFrameMs = normalizeFrameMs(frameMs)
-    if (normalizedDurationMs <= 0) {
-      return {
-        frames: 0,
-        ticks: 0,
-        ops: 0,
-        elapsedMs: 0,
-        activeThreads: this.snapshot().activeThreads,
-        endedBy: 'time_limit',
-      }
-    }
-    const frameCount = Math.ceil(normalizedDurationMs / normalizedFrameMs)
-    const frame = this.stepFrame(frameCount, normalizedFrameMs)
-    return {
-      frames: frame.frameCount,
-      ticks: frame.ticks,
-      ops: frame.ops,
-      elapsedMs: frame.elapsedMs,
-      activeThreads: frame.activeThreads,
-      endedBy: 'time_limit',
-    }
-  }
-
-  runUntilIdle(options: RunUntilIdleOptions = {}): RunReport {
-    const normalizedFrameMs = normalizeFrameMs(
-      options.frameMs ?? DEFAULT_FRAME_MS,
-    )
-    const normalizedMaxFrames = normalizeMaxFrames(
-      options.maxFrames ?? DEFAULT_MAX_FRAMES,
-    )
+  runFrames(frameCount: number): RunReport {
+    const normalizedFrameCount = normalizeMaxFrames(frameCount)
     let frames = 0
     let ticks = 0
     let ops = 0
     let activeThreads = this.snapshot().activeThreads
-    while (activeThreads > 0 && frames < normalizedMaxFrames) {
-      const frame = this.stepFrame(1, normalizedFrameMs)
-      frames += frame.frameCount
+    while (activeThreads > 0 && frames < normalizedFrameCount) {
+      const frame = this.stepFrame()
+      frames += 1
       ticks += frame.ticks
       ops += frame.ops
       activeThreads = frame.activeThreads
@@ -128,7 +78,30 @@ export class HeadlessVM {
       frames,
       ticks,
       ops,
-      elapsedMs: frames * normalizedFrameMs,
+      activeThreads,
+      endedBy: 'frame_limit',
+    }
+  }
+
+  runUntilIdle(options: RunUntilIdleOptions = {}): RunReport {
+    const normalizedMaxFrames = normalizeMaxFrames(
+      options.maxFrames ?? DEFAULT_MAX_FRAMES,
+    )
+    let frames = 0
+    let ticks = 0
+    let ops = 0
+    let activeThreads = this.snapshot().activeThreads
+    while (activeThreads > 0 && frames < normalizedMaxFrames) {
+      const frame = this.stepFrame()
+      frames += 1
+      ticks += frame.ticks
+      ops += frame.ops
+      activeThreads = frame.activeThreads
+    }
+    return {
+      frames,
+      ticks,
+      ops,
       activeThreads,
       endedBy: activeThreads === 0 ? 'idle' : 'frame_limit',
     }
@@ -170,8 +143,15 @@ export class HeadlessVM {
     moonscratch.vm_stop_all(this.vmHandle)
   }
 
-  setNowMs(nowMs: number): void {
-    moonscratch.vm_set_now_ms(this.vmHandle, normalizeNowMs(nowMs))
+  setTime(nowMs: number): void {
+    const binding = moonscratch as unknown as BoundMoonscratch
+    if (typeof binding.vm_set_time === 'function') {
+      binding.vm_set_time(this.vmHandle, normalizeNowMs(nowMs))
+      return
+    }
+    throw new Error(
+      'vm_set_time is unavailable in this build. Please rebuild moonscratch JS bindings.',
+    )
   }
 
   takeEffects(): VMEffect[] {

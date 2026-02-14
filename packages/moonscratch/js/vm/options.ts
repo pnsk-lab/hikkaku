@@ -45,5 +45,11 @@ export const toOptionsJson = (
     raw.pen_height = penHeight
   }
 
+  const stepTimeoutTicks =
+    options.stepTimeoutTicks ?? options.step_timeout_ticks
+  if (stepTimeoutTicks !== undefined) {
+    raw.step_timeout_ticks = stepTimeoutTicks
+  }
+
   return JSON.stringify(raw)
 }

@@ -25,13 +25,13 @@ pub fn vm_green_flag(vm : Vm) -> Unit {
 }
 
 ///|
-pub fn vm_step_frame(vm : Vm, frame_count : Int, frame_ms : Int) -> FrameReport {
-  step_frame_runtime(vm, frame_count, frame_ms)
+pub fn vm_step_frame(vm : Vm) -> FrameReport {
+  step_frame_runtime(vm)
 }
 
 ///|
-pub fn vm_set_now_ms(vm : Vm, now_ms : Int) -> Unit {
-  set_now_ms_runtime(vm, now_ms)
+pub fn vm_set_time(vm : Vm, now_ms : Int) -> Unit {
+  set_time_runtime(vm, now_ms)
 }
 
 ///|

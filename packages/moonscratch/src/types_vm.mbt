@@ -25,14 +25,16 @@ pub(all) struct Vm {
   mut tts_language : String
   mut procedure_frames : Map[Int, Array[ProcedureFrame]]
   mut pending_translate_requests : Map[String, Bool]
+  mut redraw_requested : Bool
   mut current_thread_id : Int?
 }
 
 ///|
 pub(all) struct FrameReport {
-  now_ms : Int
   active_threads : Int
   tick_count : Int
   op_count : Int
   emitted_effects : Int
+  stop_reason : String
+  should_render : Bool
 } derive(Show, Eq, ToJson)

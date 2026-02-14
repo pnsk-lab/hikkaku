@@ -25,7 +25,8 @@ test {
     Err(_) => fail("failed to create vm")
   }
   @moonscratch.vm_start(vm)
-  let report = @moonscratch.vm_step_frame(vm, 1, 33)
+  @moonscratch.vm_set_time(vm, 33)
+  let report = @moonscratch.vm_step_frame(vm, 1)
   let snapshot_json = @moonscratch.vm_snapshot_json(vm)
   inspect(report.active_threads >= 0, content="true")
   inspect(snapshot_json.contains("targets"), content="true")
@@ -56,6 +57,7 @@ import {
 
 const vm = createHeadlessVM({ projectJson, assets, options })
 vm.greenFlag()
+vm.setTime(Date.now())
 vm.stepFrame()
 const effects = vm.takeEffects()
 const snapshot = vm.snapshot()

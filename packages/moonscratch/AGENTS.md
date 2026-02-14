@@ -77,6 +77,7 @@ You can browse and install extra skills here:
 - `bun run test` to run tests. `vite-plus/test` API is same as `vitest`.
 - `bun run build` to build the project.
 - `bun typecheck` to typecheck the code using `tsgo`.
+- If you add or modify tests, run `bun run test` before reporting completion.
 - Required before finishing any change in `packages/moonscratch`:
   - `bun typecheck`
   - `moon check`

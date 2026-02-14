@@ -162,8 +162,8 @@ test "green flag + broadcast updates variable" {
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
-  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
-  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+  ignore(@moonscratch.vm_step_frame(vm))
+  ignore(@moonscratch.vm_step_frame(vm))
 
   let snapshot = @moonscratch.vm_snapshot_json(vm)
   let root = unwrap_result(try? @json.parse(snapshot), "snapshot parse failed")
@@ -194,7 +194,7 @@ test "ask waits for answer and resumes via post_io" {
   )
   @moonscratch.vm_green_flag(vm)
 
-  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+  ignore(@moonscratch.vm_step_frame(vm))
   let effects_before = unwrap_result(
     try? @json.parse(@moonscratch.vm_take_effects_json(vm)),
     "effects parse failed",
@@ -204,7 +204,7 @@ test "ask waits for answer and resumes via post_io" {
   ])
 
   @moonscratch.vm_post_io_json(vm, "answer", "\"moonscratch\"")
-  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+  ignore(@moonscratch.vm_step_frame(vm))
 
   let snapshot = unwrap_result(
     try? @json.parse(@moonscratch.vm_snapshot_json(vm)),
@@ -678,7 +678,7 @@ test "control repeat_until, for_each and counter reporter" {
   @moonscratch.vm_green_flag(vm)
 
   for _ in 0..<32 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -715,7 +715,7 @@ test "control forever keeps repeating substack blocks" {
   @moonscratch.vm_green_flag(vm)
 
   for _ in 0..<20 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -750,7 +750,7 @@ test "control create clone starts control_start_as_clone hats" {
   @moonscratch.vm_green_flag(vm)
 
   for _ in 0..<16 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -784,7 +784,7 @@ test "data_itemnumoflist uses scratch-style equality" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<8 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -818,7 +818,7 @@ test "motion reporters and target-based motion commands" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<12 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -1233,7 +1233,7 @@ test "looks reporters and backdrop opcodes update state" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<20 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -1281,8 +1281,11 @@ test "event hats for key, click, backdrop, greaterthan and touchingobject" {
   @moonscratch.vm_post_io_json(vm, "sprite_clicked", "\"Sprite1\"")
   @moonscratch.vm_post_io_json(vm, "touching", "{\"Sprite1\":[\"_mouse_\"]}")
 
+  let mut now_ms = 0
   for _ in 0..<24 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    now_ms += 16
+    @moonscratch.vm_set_time(vm, now_ms)
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(

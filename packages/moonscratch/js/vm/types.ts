@@ -17,6 +17,7 @@ export interface VMOptions {
   seed: number
   penWidth: number
   penHeight: number
+  stepTimeoutTicks: number
 }
 
 export interface VMOptionsInput extends Partial<VMOptions> {
@@ -24,32 +25,32 @@ export interface VMOptionsInput extends Partial<VMOptions> {
   max_clones?: number
   pen_width?: number
   pen_height?: number
+  step_timeout_ticks?: number
+  stepTimeoutTicks?: number
 }
 
+export type FrameStopReason = 'finished' | 'timeout' | 'rerender'
+
 export interface FrameReport {
-  nowMs: number
   activeThreads: number
   ticks: number
   ops: number
   emittedEffects: number
-  frameCount: number
-  frameMs: number
-  elapsedMs: number
+  stopReason: FrameStopReason
+  shouldRender: boolean
 }
 
-export type RunEndedBy = 'idle' | 'frame_limit' | 'time_limit'
+export type RunEndedBy = 'idle' | 'frame_limit'
 
 export interface RunReport {
   frames: number
   ticks: number
   ops: number
-  elapsedMs: number
   activeThreads: number
   endedBy: RunEndedBy
 }
 
 export interface RunUntilIdleOptions {
-  frameMs?: number
   maxFrames?: number
 }
 

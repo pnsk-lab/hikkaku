@@ -39,11 +39,19 @@ fn parse_options_json(options_json : String?) -> VmOptions raise VmError {
         "pen_height",
         Double::from_int(options.pen_height),
       ).to_int()
+      options.step_timeout_ticks = object_get_number_or(
+        obj,
+        "step_timeout_ticks",
+        Double::from_int(options.step_timeout_ticks),
+      ).to_int()
       if options.pen_width <= 0 {
         options.pen_width = 480
       }
       if options.pen_height <= 0 {
         options.pen_height = 360
+      }
+      if options.step_timeout_ticks <= 0 {
+        options.step_timeout_ticks = 2048
       }
       options
     }

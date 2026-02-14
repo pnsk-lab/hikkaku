@@ -13,6 +13,7 @@ pub(all) struct VmOptions {
   mut seed : Int
   mut pen_width : Int
   mut pen_height : Int
+  mut step_timeout_ticks : Int
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -25,5 +26,6 @@ pub fn default_vm_options() -> VmOptions {
     seed: 0x1234_5678,
     pen_width: 480,
     pen_height: 360,
+    step_timeout_ticks: 2048,
   }
 }

@@ -14,7 +14,7 @@ options(
         "vm_start",
         "vm_green_flag",
         "vm_step_frame",
-        "vm_set_now_ms",
+        "vm_set_time",
         "vm_post_io_json",
         "vm_broadcast",
         "vm_stop_all",

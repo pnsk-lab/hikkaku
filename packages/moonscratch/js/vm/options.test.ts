@@ -20,10 +20,11 @@ describe('moonscratch/js/vm/options.ts', () => {
       seed: 42,
       penWidth: 480,
       pen_height: 360,
+      stepTimeoutTicks: 2048,
     })
 
     expect(json).toBe(
-      '{"turbo":true,"compatibility_30tps":true,"max_clones":123,"deterministic":true,"seed":42,"pen_width":480,"pen_height":360}',
+      '{"turbo":true,"compatibility_30tps":true,"max_clones":123,"deterministic":true,"seed":42,"pen_width":480,"pen_height":360,"step_timeout_ticks":2048}',
     )
   })
 })

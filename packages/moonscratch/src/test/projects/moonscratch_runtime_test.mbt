@@ -125,7 +125,7 @@ test "procedures call and argument reporters" {
   )
   @moonscratch.vm_green_flag(vm)
   for _ in 0..<20 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(
@@ -275,7 +275,7 @@ test "procedures call non-warp yields before procedure loop in same frame" {
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
-  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+  ignore(@moonscratch.vm_step_frame(vm))
   let snapshot = unwrap_result(
     try? @json.parse(@moonscratch.vm_snapshot_json(vm)),
     "snapshot parse failed",
@@ -403,7 +403,7 @@ test "procedures call warp mode executes body in same frame" {
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
-  ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+  ignore(@moonscratch.vm_step_frame(vm))
 
   let snapshot = unwrap_result(
     try? @json.parse(@moonscratch.vm_snapshot_json(vm)),
@@ -1032,8 +1032,11 @@ test "sensing and sound reporters work in headless runtime" {
   @moonscratch.vm_post_io_json(vm, "userid", "123")
   @moonscratch.vm_post_io_json(vm, "current_timestamp_ms", "946684800000")
 
+  let mut now_ms = 0
   for _ in 0..<90 {
-    ignore(@moonscratch.vm_step_frame(vm, 1, 16))
+    now_ms += 16
+    @moonscratch.vm_set_time(vm, now_ms)
+    ignore(@moonscratch.vm_step_frame(vm))
   }
 
   let snapshot = unwrap_result(

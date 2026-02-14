@@ -16,25 +16,20 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
       initialNowMs: 0,
     })
     vm.greenFlag()
+    vm.setTime(17)
 
-    const first = vm.stepFrame(1, 16.9)
+    const first = vm.stepFrame()
     const second = vm.stepFrame()
 
     expect(first).toEqual({
-      nowMs: 17,
       activeThreads: 0,
       ticks: 1,
       ops: 1,
       emittedEffects: 0,
-      frameCount: 1,
-      frameMs: 17,
-      elapsedMs: 17,
+      stopReason: 'finished',
+      shouldRender: true,
     })
-    expect(second.frameMs).toBe(33)
-    expect(second.nowMs).toBe(50)
-    expect(() => vm.stepFrame(1, Number.POSITIVE_INFINITY)).toThrow(
-      'frameMs must be a finite number',
-    )
+    expect(second.stopReason).toBe('finished')
     expect(getStageVariables(vm).var_score).toBe(42)
   })
 
