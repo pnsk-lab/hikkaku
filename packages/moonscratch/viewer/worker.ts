@@ -1,61 +1,43 @@
-import { createHeadlessVM } from "../js";
+import { createHeadlessVM, renderWithWebGL } from "../js";
 
-const FRAME_FORCE_TIMEOUT_MS = 1000 / 1000;
-
-type WorkerRequest = {
-  projectJson: string;
-};
+const FRAME_FORCE_TIMEOUT = 1000 / 30; // 30 FPS
 
 globalThis.onmessage = async (event) => {
-  const payload = event.data as WorkerRequest;
   const vm = createHeadlessVM({
-    projectJson: payload.projectJson,
+    projectJson: event.data.projectJson,
     options: {
-      stepTimeoutTicks: 10,
+      stepTimeoutTicks: 100,
     },
   });
   vm.start();
   vm.greenFlag();
 
-  let running = true;
   while (true) {
     const frameStart = performance.now();
-    let shouldRender = false;
     while (true) {
-      const frameInfo = vm.stepFrame();
+      const frameInfo = vm.stepFrame()
       if (frameInfo.stopReason === 'finished') {
-        shouldRender = true;
-        running = false;
         break;
+      } else if (frameInfo.stopReason === 'rerender') {
+        break;
+      } else if (frameInfo.stopReason === 'timeout') {
+        // no-op
+      } else if (frameInfo.stopReason === 'warp-exit') {
+        // no-op
+        break
       }
-      if (
-        frameInfo.stopReason === 'rerender' ||
-        frameInfo.stopReason === 'warp-exit'
-      ) {
-        shouldRender = true;
-        break;
-      }
-      if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_MS) {
-        shouldRender = true;
-        break;
+      if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT) {
+        break
       }
     }
 
-    if (!shouldRender) {
-      continue;
-    }
-
-    const frame = vm.renderFrame();
+    // 描画する
+    const frame = vm.renderFrame()
     postMessage({
       type: 'frame',
       frame,
-    });
+    })
 
-    if (!running) {
-      postMessage({ type: 'finished' });
-      break;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
   }
 };
