@@ -7,6 +7,6 @@ describe('moonscratch/js/vm/bindings.ts', () => {
     expect(typeof moonscratch.vm_new_from_json).toBe('function')
     expect(typeof moonscratch.vm_step_frame).toBe('function')
     expect(typeof moonscratch.vm_set_now_ms).toBe('function')
-    expect(typeof moonscratch.vm_render_svg).toBe('function')
+    expect(typeof moonscratch.vm_render_frame).toBe('function')
   })
 })

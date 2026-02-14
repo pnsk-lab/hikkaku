@@ -53,6 +53,15 @@ export interface RunUntilIdleOptions {
   maxFrames?: number
 }
 
+export type {
+  RenderFrame,
+  RenderFrameLike,
+  RenderImageData,
+  RenderWithSharpOptions,
+  RenderWithWebGLOptions,
+  WebGLRenderResult,
+} from '../render/types.ts'
+
 export interface VMSnapshotTarget {
   id: string
   name: string

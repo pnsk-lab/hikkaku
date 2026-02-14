@@ -117,13 +117,21 @@ await vm.handleEffects({
 ## Snapshot and rendering
 
 ```ts
+import { createHeadlessVM, renderWithSVG, renderWithSharp, renderWithWebGL } from 'moonscratch';
+
 const snapshot = vm.snapshot();
 const json = vm.snapshotJson();
-const svg = vm.renderSvg();
+const frame = vm.renderFrame();
+const svg = renderWithSVG(frame);
+const png = await renderWithSharp(frame);
+const webgl = renderWithWebGL(frame);
 
 // Types:
 // snapshot: VMSnapshot
+// frame: RenderFrame
 // svg: SVG string
+// png: Buffer
+// webgl: { canvas, toImageData(), toImageElement() }
 ```
 
 ## Assets

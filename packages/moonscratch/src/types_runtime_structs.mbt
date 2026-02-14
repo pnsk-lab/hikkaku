@@ -71,6 +71,13 @@ pub(all) struct TargetState {
 }
 
 ///|
+pub(all) struct RenderFrame {
+  width : Int
+  height : Int
+  pixels : Array[Byte]
+}
+
+///|
 pub(all) struct Thread {
   id : Int
   target_index : Int

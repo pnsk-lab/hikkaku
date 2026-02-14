@@ -1,4 +1,5 @@
 import { createHeadlessVM } from '.'
+import { renderWithSharp } from '.'
 
 const vm = createHeadlessVM({
   projectJson: await Bun.file(
@@ -10,4 +11,5 @@ vm.greenFlag()
 for (let i = 0; i < 200; i += 1) {
   vm.stepFrame()
 }
-await Bun.write('a.svg', vm.renderSvg())
+
+await Bun.write('a.png', await renderWithSharp(vm.renderFrame()))

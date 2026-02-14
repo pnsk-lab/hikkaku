@@ -7,6 +7,8 @@ import {
   isTranslateRequestEffect,
 } from './effect-guards.ts'
 import { parseJson } from './json.ts'
+import { normalizeRenderFrame } from '../render/index.ts'
+import { renderFrameFromLegacySVG } from './legacy_render_frame.ts'
 import {
   cloneTranslateCache,
   normalizeDurationMs,
@@ -19,6 +21,8 @@ import {
 } from './normalize.ts'
 import type {
   EffectHandlers,
+  RenderFrame,
+  RenderFrameLike,
   FrameReport,
   JsonValue,
   RunReport,
@@ -27,6 +31,12 @@ import type {
   VMEffect,
   VMSnapshot,
 } from './types.ts'
+
+type BoundWasmVmHandle = unknown
+type BoundMoonscratch = {
+  vm_render_frame?: (vmHandle: BoundWasmVmHandle) => unknown
+  vm_render_svg?: (vmHandle: BoundWasmVmHandle) => string
+}
 
 export class HeadlessVM {
   private readonly vmHandle: unknown
@@ -190,8 +200,19 @@ export class HeadlessVM {
     return moonscratch.vm_snapshot_json(this.vmHandle)
   }
 
-  renderSvg(): string {
-    return moonscratch.vm_render_svg(this.vmHandle)
+  renderFrame(): RenderFrame {
+    const binding = moonscratch as unknown as BoundMoonscratch
+    if (typeof binding.vm_render_frame === 'function') {
+      return normalizeRenderFrame(
+        binding.vm_render_frame(this.vmHandle) as RenderFrameLike,
+      )
+    }
+    if (typeof binding.vm_render_svg === 'function') {
+      return renderFrameFromLegacySVG(binding.vm_render_svg(this.vmHandle))
+    }
+    throw new Error(
+      'vm_render_frame is unavailable in this build. Please rebuild moonscratch JS bindings.',
+    )
   }
 
   setViewerLanguage(language: string): void {

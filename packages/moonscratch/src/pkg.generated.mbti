@@ -14,7 +14,7 @@ pub fn vm_new_from_json(String, assets_json? : String, options_json? : String) -
 
 pub fn vm_post_io_json(Vm, String, String) -> Unit
 
-pub fn vm_render_svg(Vm) -> String
+pub fn vm_render_frame(Vm) -> RenderFrame
 
 pub fn vm_set_now_ms(Vm, Int) -> Unit
 
@@ -58,6 +58,12 @@ pub(all) struct CostumeImage {
   bitmap_resolution : Int
   rotation_center_x : Double
   rotation_center_y : Double
+  width : Int
+  height : Int
+  pixels : Array[Byte]
+}
+
+pub(all) struct RenderFrame {
   width : Int
   height : Int
   pixels : Array[Byte]
@@ -218,4 +224,3 @@ pub impl ToJson for VmOptions
 // Type aliases
 
 // Traits
-

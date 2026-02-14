@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vite-plus/test'
 
 import * as assetsIndex from './assets/index.ts'
+import * as renderIndex from './render/index.ts'
 import * as index from './index.ts'
 import * as vmIndex from './vm/index.ts'
 
@@ -16,5 +17,10 @@ describe('moonscratch/js/index.ts', () => {
     expect(index.fromRgbaMatrix).toBe(assetsIndex.fromRgbaMatrix)
     expect(index.fromImageBytes).toBe(assetsIndex.fromImageBytes)
     expect(index.fromImageFile).toBe(assetsIndex.fromImageFile)
+
+    expect(index.renderWithSVG).toBe(renderIndex.renderWithSVG)
+    expect(index.renderWithSharp).toBe(renderIndex.renderWithSharp)
+    expect(index.renderWithWebGL).toBe(renderIndex.renderWithWebGL)
+    expect(index.normalizeRenderFrame).toBe(renderIndex.normalizeRenderFrame)
   })
 })

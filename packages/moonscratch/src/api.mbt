@@ -62,6 +62,6 @@ pub fn vm_snapshot_json(vm : Vm) -> String {
 }
 
 ///|
-pub fn vm_render_svg(vm : Vm) -> String {
-  render_scene_to_svg(vm)
+pub fn vm_render_frame(vm : Vm) -> RenderFrame {
+  render_scene_to_frame(vm)
 }

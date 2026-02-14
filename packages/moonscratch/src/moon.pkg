@@ -20,7 +20,7 @@ options(
         "vm_stop_all",
         "vm_take_effects_json",
         "vm_snapshot_json",
-        "vm_render_svg",
+        "vm_render_frame",
       ],
       "format": "esm",
     },

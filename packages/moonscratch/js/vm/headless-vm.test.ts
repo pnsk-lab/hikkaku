@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
 
 import { createHeadlessVM } from './factory.ts'
+import { renderWithSVG } from '../render/index.ts'
 import {
   EXAMPLE_PROJECT,
   getStageVariables,
@@ -37,13 +38,17 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
     expect(getStageVariables(vm).var_score).toBe(42)
   })
 
-  test('renders current scene as svg', () => {
+  test('renders current scene with renderFrame and renderWithSVG', () => {
     const vm = createHeadlessVM({ projectJson: EXAMPLE_PROJECT })
-    const svg = vm.renderSvg()
+    const frame = vm.renderFrame()
+    const svg = renderWithSVG(frame)
 
+    expect(frame.width).toBeGreaterThan(0)
+    expect(frame.height).toBeGreaterThan(0)
+    expect(frame.pixels.length).toBe(frame.width * frame.height * 4)
     expect(svg).toContain('<svg')
     expect(svg).toContain('shape-rendering="crispEdges"')
-    expect(svg).toContain('rgb(255,255,255)')
+    expect(svg).toContain('fill="rgb(255,255,255)"')
     expect(svg).toContain('</svg>')
   })
 
