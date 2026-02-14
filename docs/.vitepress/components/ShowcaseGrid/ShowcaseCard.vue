@@ -30,7 +30,6 @@
 
 <script setup lang="ts">
 import { withBase } from 'vitepress'
-import ShowcaseLinks from './ShowcaseLinks.vue'
 import type { ShowcaseEntry } from './types'
 
 const props = defineProps<{ entry: ShowcaseEntry }>()

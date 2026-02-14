@@ -110,11 +110,11 @@ import {
 } from 'vue'
 import 'monaco-editor/min/vs/editor/editor.main.css'
 import type * as ESBuild from 'esbuild-wasm'
-import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.main.js'
 import type { PackedBlockMap } from './blocklyXmlCompiler'
 
 type ESBuildModule = typeof import('esbuild-wasm')
-type MonacoModule = typeof import('monaco-editor/esm/vs/editor/editor.api')
+type MonacoModule = typeof import('monaco-editor/esm/vs/editor/editor.main.js')
 type RuntimeModuleSpecifier = 'hikkaku' | 'hikkaku/blocks' | 'hikkaku/assets'
 type RuntimeModuleMap = Record<RuntimeModuleSpecifier, Record<string, unknown>>
 type ScratchProjectLike = { toScratch: () => unknown }
@@ -133,10 +133,9 @@ type MonacoTypeLibStore = typeof globalThis & {
   [monacoTypeLibsRegisteredKey]?: boolean
 }
 
-const TS_MODULE_KIND_NODE_NEXT =
-  199 as unknown as Monaco.languages.typescript.ModuleKind
+const TS_MODULE_KIND_NODE_NEXT = 199 as unknown as Monaco.typescript.ModuleKind
 const TS_MODULE_RESOLUTION_BUNDLER =
-  100 as unknown as Monaco.languages.typescript.ModuleResolutionKind
+  100 as unknown as Monaco.typescript.ModuleResolutionKind
 
 const hikkakuTypeSourceModules = import.meta.glob(
   [
@@ -180,7 +179,7 @@ const registerTypeModuleMap = (
   virtualPrefix: string,
   monaco: MonacoModule,
 ) => {
-  const defaults = monaco.languages.typescript.typescriptDefaults
+  const defaults = monaco.typescript.typescriptDefaults
   for (const [path, source] of Object.entries(modules)) {
     const virtualPath = replacePrefix(path, sourcePrefix, virtualPrefix)
     if (!virtualPath) continue
@@ -583,19 +582,19 @@ onMounted(async () => {
 
   const [monaco, { default: EditorWorker }, { default: TsWorker }] =
     await Promise.all([
-      import('monaco-editor/esm/vs/editor/editor.api'),
-      import('monaco-editor/esm/vs/editor/editor.worker?worker'),
-      import('monaco-editor/esm/vs/language/typescript/ts.worker?worker'),
+      import('monaco-editor/esm/vs/editor/editor.main.js'),
+      import('monaco-editor/esm/vs/editor/editor.worker.js?worker'),
+      import('monaco-editor/esm/vs/language/typescript/ts.worker.js?worker'),
       import(
-        'monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController'
+        'monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController.js'
       ),
       import(
-        'monaco-editor/esm/vs/editor/contrib/hover/browser/hoverContribution'
+        'monaco-editor/esm/vs/editor/contrib/hover/browser/hoverContribution.js'
       ),
       import(
-        'monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution'
+        'monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution.js'
       ),
-      import('monaco-editor/esm/vs/language/typescript/monaco.contribution'),
+      import('monaco-editor/esm/vs/language/typescript/monaco.contribution.js'),
     ])
 
   const existingMonacoEnvironment =
@@ -627,8 +626,8 @@ onMounted(async () => {
     },
   }
 
-  monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-    target: monaco.languages.typescript.ScriptTarget.ES2020,
+  monaco.typescript.typescriptDefaults.setCompilerOptions({
+    target: monaco.typescript.ScriptTarget.ES2020,
     module: TS_MODULE_KIND_NODE_NEXT,
     moduleResolution: TS_MODULE_RESOLUTION_BUNDLER,
     strict: false,
@@ -647,8 +646,8 @@ onMounted(async () => {
       'sb3-types/*': ['node_modules/sb3-types/dist/*'],
     },
   })
-  monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true)
-  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+  monaco.typescript.typescriptDefaults.setEagerModelSync(true)
+  monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
     noSemanticValidation: false,
     noSyntaxValidation: false,
   })
@@ -682,7 +681,7 @@ onMounted(async () => {
   editorModelRef.value = editorModel
 
   try {
-    const getTsWorker = await monaco.languages.typescript.getTypeScriptWorker()
+    const getTsWorker = await monaco.typescript.getTypeScriptWorker()
     await getTsWorker(editorModel.uri)
   } catch (caught) {
     console.error('[playground] failed to initialize TypeScript worker', caught)
