@@ -335,7 +335,7 @@ const selectedTargetLabel = computed(
 
 const selectedTargetBlocks = computed<PackedBlockMap | null>(() => {
   const blocks = selectedTarget.value?.blocks
-  return isPackedBlockMap(blocks) ? blocks : null
+  return isPackedBlockMap(blocks) ? { ...blocks } : null
 })
 
 watch(
