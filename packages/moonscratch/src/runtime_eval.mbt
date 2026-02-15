@@ -105,6 +105,35 @@ fn value_from_input(
 }
 
 ///|
+fn number_from_input(
+  vm : Vm,
+  target_index : Int,
+  block : ScratchBlock,
+  input_name : String,
+  depth : Int,
+) -> Double {
+  match block_input_payload(block, input_name) {
+    Some(Array(primitive)) =>
+      if primitive.length() >= 2 {
+        let code = json_to_number_value(primitive[0]).to_int()
+        if code >= 4 && code <= 8 {
+          json_to_number_value(primitive[1])
+        } else {
+          json_to_number_value(decode_primitive(vm, target_index, primitive))
+        }
+      } else {
+        0.0
+      }
+    Some(String(block_id)) =>
+      json_to_number_value(
+        eval_reporter_block_depth(vm, target_index, block_id, depth + 1),
+      )
+    Some(value) => json_to_number_value(value)
+    None => 0.0
+  }
+}
+
+///|
 fn mathop(name : String, value : Double) -> Double {
   match name.to_lower() {
     "abs" => value.abs()

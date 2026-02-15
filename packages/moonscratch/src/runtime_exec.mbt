@@ -103,6 +103,100 @@ fn input_or_field_string(
 }
 
 ///|
+fn block_constant_number_input(
+  block : ScratchBlock,
+  input_name : String,
+) -> Double? {
+  match block_input_payload(block, input_name) {
+    Some(Array(primitive)) =>
+      if primitive.length() >= 2 {
+        let code = json_to_number_value(primitive[0]).to_int()
+        if code >= 4 && code <= 8 {
+          Some(json_to_number_value(primitive[1]))
+        } else {
+          None
+        }
+      } else {
+        None
+      }
+    _ => None
+  }
+}
+
+///|
+fn try_fast_repeat_motion_step(
+  vm : Vm,
+  target_index : Int,
+  times : Int,
+  substack : String?,
+) -> Bool {
+  if times <= 0 {
+    return true
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return false
+  }
+  let target = vm.targets[target_index]
+  if target.pen_down {
+    if target.pen_transparency > 0.0 || target.pen_size != 1.0 {
+      return false
+    }
+    if target.x.floor() != target.x || target.y.floor() != target.y {
+      return false
+    }
+  }
+  match substack {
+    Some(block_id) =>
+      match vm.targets[target_index].blocks.get(block_id) {
+        Some(body) =>
+          if body.next is None {
+            match body.opcode {
+              "motion_changexby" =>
+                match block_constant_number_input(body, "DX") {
+                  Some(dx) => {
+                    if target.pen_down && dx.abs() != 1.0 {
+                      return false
+                    }
+                    let total = dx * Double::from_int(times)
+                    move_target_with_pen(
+                      vm,
+                      target_index,
+                      vm.targets[target_index].x + total,
+                      vm.targets[target_index].y,
+                    )
+                    true
+                  }
+                  None => false
+                }
+              "motion_changeyby" =>
+                match block_constant_number_input(body, "DY") {
+                  Some(dy) => {
+                    if target.pen_down && dy.abs() != 1.0 {
+                      return false
+                    }
+                    let total = dy * Double::from_int(times)
+                    move_target_with_pen(
+                      vm,
+                      target_index,
+                      vm.targets[target_index].x,
+                      vm.targets[target_index].y + total,
+                    )
+                    true
+                  }
+                  None => false
+                }
+              _ => false
+            }
+          } else {
+            false
+          }
+        None => false
+      }
+    None => false
+  }
+}
+
+///|
 fn text2speech_voice_ids() -> Array[String] {
   ["ALTO", "TENOR", "SQUEAK", "GIANT", "KITTEN"]
 }
@@ -1835,9 +1929,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       }
     }
     "motion_changexby" => {
-      let value = json_to_number_value(
-        value_from_input(vm, target_index, block, "DX", 0),
-      )
+      let value = number_from_input(vm, target_index, block, "DX", 0)
       move_target_with_pen(
         vm,
         target_index,
@@ -1846,9 +1938,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       )
     }
     "motion_changeyby" => {
-      let value = json_to_number_value(
-        value_from_input(vm, target_index, block, "DY", 0),
-      )
+      let value = number_from_input(vm, target_index, block, "DY", 0)
       move_target_with_pen(
         vm,
         target_index,
@@ -1860,7 +1950,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       move_target_with_pen(
         vm,
         target_index,
-        json_to_number_value(value_from_input(vm, target_index, block, "X", 0)),
+        number_from_input(vm, target_index, block, "X", 0),
         vm.targets[target_index].y,
       )
     "motion_sety" =>
@@ -1868,14 +1958,14 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         vm,
         target_index,
         vm.targets[target_index].x,
-        json_to_number_value(value_from_input(vm, target_index, block, "Y", 0)),
+        number_from_input(vm, target_index, block, "Y", 0),
       )
     "motion_gotoxy" =>
       move_target_with_pen(
         vm,
         target_index,
-        json_to_number_value(value_from_input(vm, target_index, block, "X", 0)),
-        json_to_number_value(value_from_input(vm, target_index, block, "Y", 0)),
+        number_from_input(vm, target_index, block, "X", 0),
+        number_from_input(vm, target_index, block, "Y", 0),
       )
     "motion_goto" => {
       let menu_value = json_to_string_value(
@@ -2088,18 +2178,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         target_index < vm.targets.length() &&
         !vm.targets[target_index].is_stage &&
         !vm.targets[target_index].deleted {
-        for py in 0..<vm.pen_height {
-          for px in 0..<vm.pen_width {
-            let (stage_x, stage_y) = render_pixel_to_stage(vm, px, py)
-            match
-              render_sample_sprite_at(
-                vm, target_index, stage_x, stage_y, true, false,
-              ) {
-              Some(color) => render_blend_pen_pixel(vm, px, py, color)
-              None => ()
-            }
-          }
-        }
+        render_stamp_sprite_to_pen(vm, target_index)
         request_redraw(vm)
       }
     "pen_penDown" => {
@@ -2444,8 +2523,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         .to_int()
       if times > 0 {
         let substack = block_input_block_id(block, "SUBSTACK")
-        thread.stack.push(repeat_frame(times, substack, block.next))
-        next_pc = substack
+        if try_fast_repeat_motion_step(vm, target_index, times, substack) {
+          next_pc = block.next
+        } else {
+          thread.stack.push(repeat_frame(times, substack, block.next))
+          next_pc = substack
+        }
       }
     }
     "control_repeat_until" => {

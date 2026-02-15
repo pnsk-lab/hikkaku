@@ -258,22 +258,86 @@ fn render_read_pen_pixel(vm : Vm, px : Int, py : Int) -> (Int, Int, Int, Int)? {
 }
 
 ///|
-fn render_write_pen_pixel(
+fn render_blend_pen_pixel_base(
   vm : Vm,
-  px : Int,
-  py : Int,
-  rgba : (Int, Int, Int, Int),
+  base : Int,
+  src : (Int, Int, Int, Int),
 ) -> Unit {
+  let (sr, sg, sb, sa) = src
+  if sa <= 0 {
+    return
+  }
+  if sa >= 255 {
+    vm.pen_pixels[base] = sr.to_byte()
+    vm.pen_pixels[base + 1] = sg.to_byte()
+    vm.pen_pixels[base + 2] = sb.to_byte()
+    vm.pen_pixels[base + 3] = sa.to_byte()
+    return
+  }
+  let da = vm.pen_pixels[base + 3].to_int()
+  if da <= 0 {
+    vm.pen_pixels[base] = sr.to_byte()
+    vm.pen_pixels[base + 1] = sg.to_byte()
+    vm.pen_pixels[base + 2] = sb.to_byte()
+    vm.pen_pixels[base + 3] = sa.to_byte()
+    return
+  }
+  let blended = render_blend_rgba(
+    (
+      vm.pen_pixels[base].to_int(),
+      vm.pen_pixels[base + 1].to_int(),
+      vm.pen_pixels[base + 2].to_int(),
+      da,
+    ),
+    src,
+  )
+  vm.pen_pixels[base] = blended.0.to_byte()
+  vm.pen_pixels[base + 1] = blended.1.to_byte()
+  vm.pen_pixels[base + 2] = blended.2.to_byte()
+  vm.pen_pixels[base + 3] = blended.3.to_byte()
+}
+
+///|
+fn render_draw_thin_opaque_pen_line(
+  vm : Vm,
+  x0 : Double,
+  y0 : Double,
+  x1 : Double,
+  y1 : Double,
+  rgb : (Int, Int, Int),
+) -> Unit {
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if width <= 0 || height <= 0 {
+    return
+  }
   ensure_pen_pixels(vm)
-  match render_pen_pixel_base(vm, px, py) {
-    Some(base) => {
-      let (r, g, b, a) = rgba
-      vm.pen_pixels[base] = render_clamp_int(r, 0, 255).to_byte()
-      vm.pen_pixels[base + 1] = render_clamp_int(g, 0, 255).to_byte()
-      vm.pen_pixels[base + 2] = render_clamp_int(b, 0, 255).to_byte()
-      vm.pen_pixels[base + 3] = render_clamp_int(a, 0, 255).to_byte()
+  let (r, g, b) = rgb
+  let dx = x1 - x0
+  let dy = y1 - y0
+  let steps = render_max_double(dx.abs(), dy.abs()).ceil().to_int()
+  let draw = fn(px : Int, py : Int) {
+    if px < 0 || py < 0 || px >= width || py >= height {
+      return
     }
-    None => ()
+    let base = (py * width + px) * 4
+    vm.pen_pixels[base] = r.to_byte()
+    vm.pen_pixels[base + 1] = g.to_byte()
+    vm.pen_pixels[base + 2] = b.to_byte()
+    vm.pen_pixels[base + 3] = b'\xff'
+  }
+  if steps <= 0 {
+    draw(x0.floor().to_int(), y0.floor().to_int())
+    return
+  }
+  let step_x = dx / Double::from_int(steps)
+  let step_y = dy / Double::from_int(steps)
+  let mut cx = x0
+  let mut cy = y0
+  for _ in 0..<=steps {
+    draw(cx.floor().to_int(), cy.floor().to_int())
+    cx += step_x
+    cy += step_y
   }
 }
 
@@ -284,9 +348,10 @@ fn render_blend_pen_pixel(
   py : Int,
   src : (Int, Int, Int, Int),
 ) -> Unit {
-  match render_read_pen_pixel(vm, px, py) {
-    Some(dst) => render_write_pen_pixel(vm, px, py, render_blend_rgba(dst, src))
-    None => render_write_pen_pixel(vm, px, py, src)
+  ensure_pen_pixels(vm)
+  match render_pen_pixel_base(vm, px, py) {
+    Some(base) => render_blend_pen_pixel_base(vm, base, src)
+    None => ()
   }
 }
 
@@ -383,6 +448,23 @@ fn render_draw_pen_line(
   let offset = render_pen_line_offset(target)
   let (x0, y0) = render_stage_to_pixel_double(vm, old_x, old_y)
   let (x1, y1) = render_stage_to_pixel_double(vm, new_x, new_y)
+  if diameter <= 1.0 &&
+    a >= 255 &&
+    (old_x == new_x || old_y == new_y) &&
+    old_x.floor() == old_x &&
+    old_y.floor() == old_y &&
+    new_x.floor() == new_x &&
+    new_y.floor() == new_y {
+    render_draw_thin_opaque_pen_line(
+      vm,
+      x0 + offset,
+      y0 + offset,
+      x1 + offset,
+      y1 + offset,
+      (r, g, b),
+    )
+    return
+  }
   render_draw_pen_capsule(
     vm,
     x0 + offset,
@@ -411,6 +493,20 @@ fn render_draw_pen_point(vm : Vm, target_index : Int) -> Unit {
   let diameter = render_pen_line_diameter(vm, target)
   let offset = render_pen_line_offset(target)
   let (x, y) = render_stage_to_pixel_double(vm, target.x, target.y)
+  if diameter <= 1.0 &&
+    a >= 255 &&
+    target.x.floor() == target.x &&
+    target.y.floor() == target.y {
+    render_draw_thin_opaque_pen_line(
+      vm,
+      x + offset,
+      y + offset,
+      x + offset,
+      y + offset,
+      (r, g, b),
+    )
+    return
+  }
   render_draw_pen_capsule(
     vm,
     x + offset,
@@ -765,6 +861,228 @@ fn render_sample_sprite_at(
       }
     }
     None => None
+  }
+}
+
+///|
+fn render_stamp_sprite_to_pen(vm : Vm, target_index : Int) -> Unit {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return
+  }
+  let target = vm.targets[target_index]
+  if target.deleted || target.is_stage {
+    return
+  }
+  let scale = target.size / 100.0
+  if scale <= 0.0 {
+    return
+  }
+  let costume = match render_current_costume(target) {
+    Some(value) => value
+    None => return
+  }
+  if costume.width <= 0 || costume.height <= 0 || costume.bitmap_resolution <= 0 {
+    return
+  }
+
+  let pen_width = vm.pen_width
+  let pen_height = vm.pen_height
+  if pen_width <= 0 || pen_height <= 0 {
+    return
+  }
+
+  ensure_pen_pixels(vm)
+
+  let uniforms = render_effect_uniforms(target)
+  let has_point_effects = uniforms.enable_mosaic ||
+    uniforms.enable_pixelate ||
+    uniforms.enable_whirl ||
+    uniforms.enable_fisheye
+  let has_color_effects = uniforms.enable_color ||
+    uniforms.enable_brightness ||
+    uniforms.enable_ghost
+
+  let radians = (90.0 - target.direction) * @math.PI / 180.0
+  let cos_radians = @math.cos(radians)
+  let sin_radians = @math.sin(radians)
+  let inv_scale = 1.0 / scale
+
+  let pen_width_double = Double::from_int(pen_width)
+  let pen_height_double = Double::from_int(pen_height)
+  let stage_x_step = 480.0 / pen_width_double
+  let stage_y_step = -360.0 / pen_height_double
+  let stage_x_base = stage_x_step * 0.5 - 240.0 - target.x
+  let stage_y_base = 180.0 + stage_y_step * 0.5 - target.y
+
+  let local_x_step_px = stage_x_step * cos_radians * inv_scale
+  let local_x_step_py = stage_y_step * sin_radians * inv_scale
+  let local_x_base = (stage_x_base * cos_radians + stage_y_base * sin_radians) *
+    inv_scale
+
+  let local_y_step_px = -stage_x_step * sin_radians * inv_scale
+  let local_y_step_py = stage_y_step * cos_radians * inv_scale
+  let local_y_base = (-stage_x_base * sin_radians + stage_y_base * cos_radians) *
+    inv_scale
+
+  let bitmap_resolution = Double::from_int(costume.bitmap_resolution)
+  let tex_x_step_px = local_x_step_px * bitmap_resolution
+  let tex_x_step_py = local_x_step_py * bitmap_resolution
+  let tex_x_base = local_x_base * bitmap_resolution + costume.rotation_center_x
+
+  let tex_y_step_px = -local_y_step_px * bitmap_resolution
+  let tex_y_step_py = -local_y_step_py * bitmap_resolution
+  let tex_y_base = costume.rotation_center_y - local_y_base * bitmap_resolution
+
+  let costume_width_double = Double::from_int(costume.width)
+  let costume_height_double = Double::from_int(costume.height)
+  let mut start_px = 0
+  let mut end_px = pen_width - 1
+  let mut start_py = 0
+  let mut end_py = pen_height - 1
+  if !has_point_effects {
+    let local_x0 = -costume.rotation_center_x / bitmap_resolution
+    let local_x1 = (Double::from_int(costume.width) - costume.rotation_center_x) /
+      bitmap_resolution
+    let local_y0 = costume.rotation_center_y / bitmap_resolution
+    let local_y1 = (costume.rotation_center_y - Double::from_int(costume.height)) /
+      bitmap_resolution
+
+    let corner0_x = target.x +
+      scale * (local_x0 * cos_radians - local_y0 * sin_radians)
+    let corner0_y = target.y +
+      scale * (local_x0 * sin_radians + local_y0 * cos_radians)
+    let corner1_x = target.x +
+      scale * (local_x1 * cos_radians - local_y0 * sin_radians)
+    let corner1_y = target.y +
+      scale * (local_x1 * sin_radians + local_y0 * cos_radians)
+    let corner2_x = target.x +
+      scale * (local_x0 * cos_radians - local_y1 * sin_radians)
+    let corner2_y = target.y +
+      scale * (local_x0 * sin_radians + local_y1 * cos_radians)
+    let corner3_x = target.x +
+      scale * (local_x1 * cos_radians - local_y1 * sin_radians)
+    let corner3_y = target.y +
+      scale * (local_x1 * sin_radians + local_y1 * cos_radians)
+
+    let mut min_stage_x = corner0_x
+    let mut max_stage_x = corner0_x
+    let mut min_stage_y = corner0_y
+    let mut max_stage_y = corner0_y
+
+    if corner1_x < min_stage_x {
+      min_stage_x = corner1_x
+    } else if corner1_x > max_stage_x {
+      max_stage_x = corner1_x
+    }
+    if corner2_x < min_stage_x {
+      min_stage_x = corner2_x
+    } else if corner2_x > max_stage_x {
+      max_stage_x = corner2_x
+    }
+    if corner3_x < min_stage_x {
+      min_stage_x = corner3_x
+    } else if corner3_x > max_stage_x {
+      max_stage_x = corner3_x
+    }
+    if corner1_y < min_stage_y {
+      min_stage_y = corner1_y
+    } else if corner1_y > max_stage_y {
+      max_stage_y = corner1_y
+    }
+    if corner2_y < min_stage_y {
+      min_stage_y = corner2_y
+    } else if corner2_y > max_stage_y {
+      max_stage_y = corner2_y
+    }
+    if corner3_y < min_stage_y {
+      min_stage_y = corner3_y
+    } else if corner3_y > max_stage_y {
+      max_stage_y = corner3_y
+    }
+
+    start_px = render_clamp_int(
+      (((min_stage_x + 240.0) / 480.0) * pen_width_double - 1.0).floor().to_int(),
+      0,
+      pen_width - 1,
+    )
+    end_px = render_clamp_int(
+      (((max_stage_x + 240.0) / 480.0) * pen_width_double + 1.0).ceil().to_int(),
+      0,
+      pen_width - 1,
+    )
+    start_py = render_clamp_int(
+      (((180.0 - max_stage_y) / 360.0) * pen_height_double - 1.0)
+      .floor()
+      .to_int(),
+      0,
+      pen_height - 1,
+    )
+    end_py = render_clamp_int(
+      (((180.0 - min_stage_y) / 360.0) * pen_height_double + 1.0).ceil().to_int(),
+      0,
+      pen_height - 1,
+    )
+    if start_px > end_px || start_py > end_py {
+      return
+    }
+  }
+
+  let start_px_double = Double::from_int(start_px)
+  for py in start_py..<=end_py {
+    let py_double = Double::from_int(py)
+    let mut tex_x = tex_x_base + tex_x_step_py * py_double +
+      tex_x_step_px * start_px_double
+    let mut tex_y = tex_y_base + tex_y_step_py * py_double +
+      tex_y_step_px * start_px_double
+    let mut pen_base = (py * pen_width + start_px) * 4
+    for _ in start_px..<=end_px {
+      if has_point_effects {
+        let mut u = tex_x / costume_width_double
+        let mut v = tex_y / costume_height_double
+        let transformed = render_apply_point_effects(
+          u,
+          v,
+          costume.width,
+          costume.height,
+          uniforms,
+        )
+        u = transformed.0
+        v = transformed.1
+        match render_sample_costume_rgba_uv(costume, u, v) {
+          Some(raw) => {
+            let src = if has_color_effects {
+              render_apply_color_effects(raw, uniforms, true)
+            } else {
+              raw
+            }
+            render_blend_pen_pixel_base(vm, pen_base, src)
+          }
+          None => ()
+        }
+      } else if tex_x >= 0.0 &&
+        tex_y >= 0.0 &&
+        tex_x < costume_width_double &&
+        tex_y < costume_height_double {
+        let tx = tex_x.floor().to_int()
+        let ty = tex_y.floor().to_int()
+        let sample_base = (ty * costume.width + tx) * 4
+        let raw = (
+          costume.pixels[sample_base].to_int(),
+          costume.pixels[sample_base + 1].to_int(),
+          costume.pixels[sample_base + 2].to_int(),
+          costume.pixels[sample_base + 3].to_int(),
+        )
+        let src = if has_color_effects {
+          render_apply_color_effects(raw, uniforms, true)
+        } else {
+          raw
+        }
+        render_blend_pen_pixel_base(vm, pen_base, src)
+      }
+      tex_x += tex_x_step_px
+      tex_y += tex_y_step_px
+      pen_base += 4
+    }
   }
 }
 
