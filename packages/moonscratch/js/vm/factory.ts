@@ -10,8 +10,8 @@ import { toOptionsJson } from './options.ts'
 import { resolveMissingScratchAssets } from './scratch-assets.ts'
 import type {
   CreateHeadlessVMOptions,
-  CreatePrecompiledProjectOptions,
   CreateHeadlessVMWithScratchAssetsOptions,
+  CreatePrecompiledProjectOptions,
   JsonValue,
   PrecompiledProject,
 } from './types.ts'
@@ -77,10 +77,7 @@ export const createHeadlessVM = ({
     )
   }
   const vm = unwrapResult(
-    binding.vm_new_from_compiled(
-      precompiled.raw,
-      toOptionsJson(options),
-    ),
+    binding.vm_new_from_compiled(precompiled.raw, toOptionsJson(options)),
     'vm_new_from_compiled failed',
   )
 

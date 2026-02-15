@@ -14,14 +14,18 @@ describe('warp-exit', () => {
   it('should emit warp-exit before finished', () => {
     const project = new Project()
     project.stage.run(() => {
-      const fn = defineProcedure([procedureLabel('myfn')], () => {
-        // produce more blocks
-        for (let i = 0; i < 1000; i++) {
-          repeat(100, () => {
-            say('Hello')
-          })
-        }
-      }, true)
+      const fn = defineProcedure(
+        [procedureLabel('myfn')],
+        () => {
+          // produce more blocks
+          for (let i = 0; i < 1000; i++) {
+            repeat(100, () => {
+              say('Hello')
+            })
+          }
+        },
+        true,
+      )
       whenFlagClicked(() => {
         repeat(3, () => {
           callProcedure(fn, [])

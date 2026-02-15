@@ -29,8 +29,8 @@ project.stage.run(() => {
 
 const precompiled = createPrecompiledProject({
   projectJson: await Bun.file(
-    new URL("../../../examples/tesseract/dist/project.json", import.meta.url),
-  ).json(),//project.toScratch(),
+    new URL('../../../examples/tesseract/dist/project.json', import.meta.url),
+  ).json(), //project.toScratch(),
 })
 
 const vm = createHeadlessVM({

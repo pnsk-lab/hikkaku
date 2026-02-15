@@ -107,7 +107,7 @@ globalThis.onmessage = (event) => {
     vm = createHeadlessVM({
       precompiled,
       options: {
-        stepTimeoutTicks: TICKS_TIMEOUT
+        stepTimeoutTicks: TICKS_TIMEOUT,
       },
     })
     vm.start()
