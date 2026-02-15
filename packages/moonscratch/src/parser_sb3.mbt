@@ -21,6 +21,85 @@ fn json_to_string_option(json : Json) -> String? {
 }
 
 ///|
+fn input_payload(raw : Json) -> Json? {
+  match raw {
+    Array(parts) =>
+      if parts.length() >= 3 {
+        match parts[1] {
+          Null => Some(parts[2])
+          _ => Some(parts[1])
+        }
+      } else if parts.length() >= 2 {
+        Some(parts[1])
+      } else {
+        None
+      }
+    _ => Some(raw)
+  }
+}
+
+///|
+fn payload_const_number(payload : Json) -> Double? {
+  match payload {
+    Array(primitive) =>
+      if primitive.length() >= 2 {
+        let code = json_to_number_value(primitive[0]).to_int()
+        if code >= 4 && code <= 8 {
+          Some(json_to_number_value(primitive[1]))
+        } else {
+          None
+        }
+      } else {
+        None
+      }
+    _ => None
+  }
+}
+
+///|
+fn extract_const_number_inputs(
+  inputs : Map[String, Json],
+) -> Map[String, Double] {
+  let out = {}
+  inputs.each((name, raw_input) => {
+    match input_payload(raw_input) {
+      Some(payload) =>
+        match payload_const_number(payload) {
+          Some(value) => out[name] = value
+          None => ()
+        }
+      None => ()
+    }
+  })
+  out
+}
+
+///|
+fn extract_input_block_ids(inputs : Map[String, Json]) -> Map[String, String] {
+  let out = {}
+  inputs.each((name, raw_input) => {
+    match input_payload(raw_input) {
+      Some(String(id)) => out[name] = id
+      _ => ()
+    }
+  })
+  out
+}
+
+///|
+fn opcode_tag_for(opcode : String) -> OpcodeTag {
+  match opcode {
+    "motion_changexby" => OpcodeTag::MotionChangeXBy
+    "motion_changeyby" => OpcodeTag::MotionChangeYBy
+    "motion_sety" => OpcodeTag::MotionSetY
+    "pen_penDown" => OpcodeTag::PenPenDown
+    "pen_penUp" => OpcodeTag::PenPenUp
+    "control_repeat" => OpcodeTag::ControlRepeat
+    _ => OpcodeTag::Unknown
+  }
+}
+
+///|
 fn parse_scratch_block(id : String, json : Json) -> ScratchBlock raise VmError {
   let obj = expect_object(json, "block \{id}")
   let opcode = object_get_string_or(obj, "opcode", "")
@@ -36,10 +115,24 @@ fn parse_scratch_block(id : String, json : Json) -> ScratchBlock raise VmError {
     None => None
   }
   let inputs = object_get_object_or_empty(obj, "inputs")
+  let const_number_inputs = extract_const_number_inputs(inputs)
+  let input_block_ids = extract_input_block_ids(inputs)
   let fields = object_get_object_or_empty(obj, "fields")
   let mutation = object_get_object_or_empty(obj, "mutation")
   let top_level = object_get_bool_or(obj, "topLevel", false)
-  { id, opcode, next, parent, inputs, fields, mutation, top_level }
+  {
+    id,
+    opcode,
+    opcode_tag: opcode_tag_for(opcode),
+    next,
+    parent,
+    inputs,
+    const_number_inputs,
+    input_block_ids,
+    fields,
+    mutation,
+    top_level,
+  }
 }
 
 ///|
@@ -247,6 +340,85 @@ fn parse_target(
   let (variables, variable_names) = parse_variables(raw_variables)
   let (lists, list_names) = parse_lists(raw_lists)
   let (blocks, hats) = parse_blocks(raw_blocks)
+  let green_flag_starts = []
+  let stage_clicked_starts = []
+  let sprite_clicked_starts = []
+  let clone_start_starts = []
+  let key_pressed_hats = []
+  let broadcast_hats = []
+  let backdrop_hats = []
+  let predicate_hats = []
+
+  for hat_id in hats {
+    match blocks.get(hat_id) {
+      Some(hat) =>
+        match hat.next {
+          Some(start_block) =>
+            match hat.opcode {
+              "event_whenflagclicked" => green_flag_starts.push(start_block)
+              "event_whenstageclicked" => stage_clicked_starts.push(start_block)
+              "event_whenthisspriteclicked" =>
+                sprite_clicked_starts.push(start_block)
+              "control_start_as_clone" => clone_start_starts.push(start_block)
+              "event_whenkeypressed" => {
+                let option = match field_value(hat, "KEY_OPTION") {
+                  Some((name, _)) => {
+                    let normalized = lower_trim(name)
+                    if normalized == "" {
+                      "any"
+                    } else {
+                      normalized
+                    }
+                  }
+                  None => "any"
+                }
+                key_pressed_hats.push({ key_option: option, start_block })
+              }
+              "event_whenbroadcastreceived" => {
+                let message = match field_value(hat, "BROADCAST_OPTION") {
+                  Some((name, _)) => name
+                  None => ""
+                }
+                broadcast_hats.push({ message, start_block })
+              }
+              "event_whenbackdropswitchesto" => {
+                let backdrop_name = match field_value(hat, "BACKDROP") {
+                  Some((name, _)) => name
+                  None => ""
+                }
+                backdrop_hats.push({ backdrop_name, start_block })
+              }
+              "event_whengreaterthan" => {
+                let menu = match field_value(hat, "WHENGREATERTHANMENU") {
+                  Some((name, _)) => lower_trim(name)
+                  None => ""
+                }
+                predicate_hats.push({
+                  kind: PredicateHatKind::WhenGreaterThan,
+                  hat_id,
+                  menu,
+                  start_block,
+                })
+              }
+              "event_whentouchingobject" => {
+                let menu = match field_value(hat, "TOUCHINGOBJECTMENU") {
+                  Some((name, _)) => name
+                  None => ""
+                }
+                predicate_hats.push({
+                  kind: PredicateHatKind::WhenTouchingObject,
+                  hat_id,
+                  menu,
+                  start_block,
+                })
+              }
+              _ => ()
+            }
+          None => ()
+        }
+      None => ()
+    }
+  }
 
   {
     id: target_id,
@@ -285,6 +457,14 @@ fn parse_target(
     list_names,
     blocks,
     top_level_hats: hats,
+    green_flag_starts,
+    stage_clicked_starts,
+    sprite_clicked_starts,
+    clone_start_starts,
+    key_pressed_hats,
+    broadcast_hats,
+    backdrop_hats,
+    predicate_hats,
   }
 }
 
@@ -331,4 +511,13 @@ fn parse_project_targets(
   }
 
   (targets, stage_index)
+}
+
+///|
+fn compile_project(bundle : ProjectBundle) -> PrecompiledProject raise VmError {
+  let (targets, stage_index) = parse_project_targets(
+    bundle.project_json,
+    bundle.assets,
+  )
+  { targets, stage_index, assets: bundle.assets }
 }

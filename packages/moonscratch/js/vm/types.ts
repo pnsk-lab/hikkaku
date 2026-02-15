@@ -224,9 +224,19 @@ export interface EffectHandlers {
   effect?: (effect: VMEffect) => MaybePromise<void>
 }
 
-export interface CreateHeadlessVMOptions {
+export interface PrecompiledProject {
+  raw: unknown
+}
+
+export interface CreatePrecompiledProjectOptions {
   projectJson: string | ProjectJson
   assets?: string | Record<string, JsonValue>
+}
+
+export interface CreateHeadlessVMOptions {
+  projectJson?: string | ProjectJson
+  assets?: string | Record<string, JsonValue>
+  precompiled?: PrecompiledProject
   options?: string | VMOptionsInput
   initialNowMs?: number
   viewerLanguage?: string
@@ -257,7 +267,8 @@ export interface ResolveMissingScratchAssetsOptions {
 }
 
 export interface CreateHeadlessVMWithScratchAssetsOptions
-  extends CreateHeadlessVMOptions {
+  extends Omit<CreateHeadlessVMOptions, 'projectJson' | 'precompiled'> {
+  projectJson: string | ProjectJson
   scratchCdnBaseUrl?: string
   fetchAsset?: FetchAsset
   decodeImageBytes?: DecodeImageBytes

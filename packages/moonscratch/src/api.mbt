@@ -1,6 +1,7 @@
 ///|
 pub fn vm_new(bundle : ProjectBundle, options : VmOptions) -> Vm raise VmError {
-  vm_new_internal(bundle, options)
+  let precompiled = compile_project(bundle)
+  vm_new_internal(precompiled, options)
 }
 
 ///|
@@ -9,9 +10,32 @@ pub fn vm_new_from_json(
   assets_json? : String,
   options_json? : String,
 ) -> Vm raise VmError {
+  let precompiled = match assets_json {
+    Some(assets) => vm_compile_from_json(project_json, assets_json=assets)
+    None => vm_compile_from_json(project_json)
+  }
+  match options_json {
+    Some(options_json) => vm_new_from_compiled(precompiled, options_json~)
+    None => vm_new_from_compiled(precompiled)
+  }
+}
+
+///|
+pub fn vm_compile_from_json(
+  project_json : String,
+  assets_json? : String,
+) -> PrecompiledProject raise VmError {
   let bundle = parse_bundle(project_json, assets_json)
+  compile_project(bundle)
+}
+
+///|
+pub fn vm_new_from_compiled(
+  precompiled : PrecompiledProject,
+  options_json? : String,
+) -> Vm raise VmError {
   let options = parse_options_json(options_json)
-  vm_new_internal(bundle, options)
+  vm_new_internal(precompiled, options)
 }
 
 ///|

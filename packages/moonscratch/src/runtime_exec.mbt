@@ -107,20 +107,7 @@ fn block_constant_number_input(
   block : ScratchBlock,
   input_name : String,
 ) -> Double? {
-  match block_input_payload(block, input_name) {
-    Some(Array(primitive)) =>
-      if primitive.length() >= 2 {
-        let code = json_to_number_value(primitive[0]).to_int()
-        if code >= 4 && code <= 8 {
-          Some(json_to_number_value(primitive[1]))
-        } else {
-          None
-        }
-      } else {
-        None
-      }
-    _ => None
-  }
+  block.const_number_inputs.get(input_name)
 }
 
 ///|
@@ -530,14 +517,6 @@ fn block_broadcast_name(
 }
 
 ///|
-fn hat_broadcast_name(block : ScratchBlock) -> String {
-  match field_value(block, "BROADCAST_OPTION") {
-    Some((name, _)) => name
-    None => ""
-  }
-}
-
-///|
 fn block_clone_option(
   vm : Vm,
   target_index : Int,
@@ -597,20 +576,9 @@ fn spawn_clone_start_hats(vm : Vm, target_index : Int) -> Int {
   }
 
   let mut count = 0
-  for hat_id in target.top_level_hats {
-    match target.blocks.get(hat_id) {
-      Some(hat) =>
-        if hat.opcode == "control_start_as_clone" {
-          match hat.next {
-            Some(start) => {
-              spawn_thread(vm, target_index, start, None)
-              count += 1
-            }
-            None => ()
-          }
-        }
-      None => ()
-    }
+  for start in target.clone_start_starts {
+    spawn_thread(vm, target_index, start, None)
+    count += 1
   }
   count
 }
@@ -889,25 +857,10 @@ fn spawn_hats_for_backdrop(
     if target.deleted {
       continue
     }
-    for hat_id in target.top_level_hats {
-      match target.blocks.get(hat_id) {
-        Some(hat) =>
-          if hat.opcode == "event_whenbackdropswitchesto" {
-            let expected = match field_value(hat, "BACKDROP") {
-              Some((name, _)) => name
-              None => ""
-            }
-            if expected == backdrop_name {
-              match hat.next {
-                Some(start) => {
-                  spawn_thread(vm, target_index, start, parent_waiter)
-                  count += 1
-                }
-                None => ()
-              }
-            }
-          }
-        None => ()
+    for hat in target.backdrop_hats {
+      if hat.backdrop_name == backdrop_name {
+        spawn_thread(vm, target_index, hat.start_block, parent_waiter)
+        count += 1
       }
     }
   }
@@ -1356,25 +1309,10 @@ fn spawn_hats_for_key(vm : Vm, key : String) -> Int {
     if target.deleted {
       continue
     }
-    for hat_id in target.top_level_hats {
-      match target.blocks.get(hat_id) {
-        Some(hat) =>
-          if hat.opcode == "event_whenkeypressed" {
-            let option = match field_value(hat, "KEY_OPTION") {
-              Some((name, _)) => lower_trim(name)
-              None => "any"
-            }
-            if option == "any" || option == key {
-              match hat.next {
-                Some(start) => {
-                  spawn_thread(vm, target_index, start, None)
-                  count += 1
-                }
-                None => ()
-              }
-            }
-          }
-        None => ()
+    for hat in target.key_pressed_hats {
+      if hat.key_option == "any" || hat.key_option == key {
+        spawn_thread(vm, target_index, hat.start_block, None)
+        count += 1
       }
     }
   }
@@ -1393,20 +1331,9 @@ fn spawn_stage_clicked_hats(vm : Vm) -> Int {
   }
 
   let mut count = 0
-  for hat_id in stage.top_level_hats {
-    match stage.blocks.get(hat_id) {
-      Some(hat) =>
-        if hat.opcode == "event_whenstageclicked" {
-          match hat.next {
-            Some(start) => {
-              spawn_thread(vm, target_index, start, None)
-              count += 1
-            }
-            None => ()
-          }
-        }
-      None => ()
-    }
+  for start in stage.stage_clicked_starts {
+    spawn_thread(vm, target_index, start, None)
+    count += 1
   }
   count
 }
@@ -1418,20 +1345,9 @@ fn spawn_sprite_clicked_hats(vm : Vm, sprite_name : String) -> Int {
     if target.deleted || target.is_stage || target.name != sprite_name {
       continue
     }
-    for hat_id in target.top_level_hats {
-      match target.blocks.get(hat_id) {
-        Some(hat) =>
-          if hat.opcode == "event_whenthisspriteclicked" {
-            match hat.next {
-              Some(start) => {
-                spawn_thread(vm, target_index, start, None)
-                count += 1
-              }
-              None => ()
-            }
-          }
-        None => ()
-      }
+    for start in target.sprite_clicked_starts {
+      spawn_thread(vm, target_index, start, None)
+      count += 1
     }
   }
   count
@@ -1497,35 +1413,29 @@ fn hat_predicate_value(
   vm : Vm,
   target_index : Int,
   target : TargetState,
-  hat : ScratchBlock,
+  predicate : PredicateHatStart,
 ) -> Bool {
-  if hat.opcode == "event_whengreaterthan" {
-    let threshold = json_to_number_value(
-      value_from_input(vm, target_index, hat, "VALUE", 0),
-    )
-    let menu = match field_value(hat, "WHENGREATERTHANMENU") {
-      Some((name, _)) => lower_trim(name)
-      None => ""
-    }
-    let current = if menu == "timer" {
-      Double::from_int(vm.now_ms - vm.timer_start_ms) / 1000.0
-    } else if menu == "loudness" {
-      read_loudness(vm)
-    } else {
-      0.0
-    }
-    return current > threshold
+  match target.blocks.get(predicate.hat_id) {
+    Some(hat) =>
+      match predicate.kind {
+        PredicateHatKind::WhenGreaterThan => {
+          let threshold = json_to_number_value(
+            value_from_input(vm, target_index, hat, "VALUE", 0),
+          )
+          let current = if predicate.menu == "timer" {
+            Double::from_int(vm.now_ms - vm.timer_start_ms) / 1000.0
+          } else if predicate.menu == "loudness" {
+            read_loudness(vm)
+          } else {
+            0.0
+          }
+          current > threshold
+        }
+        PredicateHatKind::WhenTouchingObject =>
+          read_touching_from_io(vm, target.name, predicate.menu)
+      }
+    None => false
   }
-
-  if hat.opcode == "event_whentouchingobject" {
-    let option = match field_value(hat, "TOUCHINGOBJECTMENU") {
-      Some((name, _)) => name
-      None => ""
-    }
-    return read_touching_from_io(vm, target.name, option)
-  }
-
-  false
 }
 
 ///|
@@ -1535,27 +1445,15 @@ fn spawn_predicate_hats(vm : Vm) -> Int {
     if target.deleted {
       continue
     }
-    for hat_id in target.top_level_hats {
-      match target.blocks.get(hat_id) {
-        Some(hat) =>
-          if hat.opcode == "event_whengreaterthan" ||
-            hat.opcode == "event_whentouchingobject" {
-            let key = predicate_state_key(target_index, hat.id)
-            let previous = vm.hat_predicates.get_or_default(key, false)
-            let current = hat_predicate_value(vm, target_index, target, hat)
-            if current && !previous {
-              match hat.next {
-                Some(start) => {
-                  spawn_thread(vm, target_index, start, None)
-                  count += 1
-                }
-                None => ()
-              }
-            }
-            vm.hat_predicates[key] = current
-          }
-        None => ()
+    for predicate in target.predicate_hats {
+      let key = predicate_state_key(target_index, predicate.hat_id)
+      let previous = vm.hat_predicates.get_or_default(key, false)
+      let current = hat_predicate_value(vm, target_index, target, predicate)
+      if current && !previous {
+        spawn_thread(vm, target_index, predicate.start_block, None)
+        count += 1
       }
+      vm.hat_predicates[key] = current
     }
   }
   count
@@ -1572,20 +1470,10 @@ fn spawn_hats_for_message(
     if target.deleted {
       continue
     }
-    for hat_id in target.top_level_hats {
-      match target.blocks.get(hat_id) {
-        Some(hat) =>
-          if hat.opcode == "event_whenbroadcastreceived" &&
-            hat_broadcast_name(hat) == message {
-            match hat.next {
-              Some(start) => {
-                spawn_thread(vm, target_index, start, parent_waiter)
-                count += 1
-              }
-              None => ()
-            }
-          }
-        None => ()
+    for hat in target.broadcast_hats {
+      if hat.message == message {
+        spawn_thread(vm, target_index, hat.start_block, parent_waiter)
+        count += 1
       }
     }
   }
@@ -1599,20 +1487,9 @@ fn spawn_green_flag_hats(vm : Vm) -> Int {
     if target.deleted {
       continue
     }
-    for hat_id in target.top_level_hats {
-      match target.blocks.get(hat_id) {
-        Some(hat) =>
-          if hat.opcode == "event_whenflagclicked" {
-            match hat.next {
-              Some(start) => {
-                spawn_thread(vm, target_index, start, None)
-                count += 1
-              }
-              None => ()
-            }
-          }
-        None => ()
-      }
+    for start in target.green_flag_starts {
+      spawn_thread(vm, target_index, start, None)
+      count += 1
     }
   }
   count
@@ -1869,10 +1746,86 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       return unwind_control(vm, thread)
     }
   }
+  let block_hot_key = "\{target_index}:\{block.id}"
+  let block_hot_count = vm.hot_op_counts.get_or_default(block_hot_key, 0) + 1
+  vm.hot_op_counts[block_hot_key] = block_hot_count
 
   let mut next_pc = block.next
+  let mut handled_hot_opcode = false
 
   vm.current_thread_id = Some(thread.id)
+  match block.opcode_tag {
+    OpcodeTag::MotionChangeXBy => {
+      let value = number_from_input(vm, target_index, block, "DX", 0)
+      move_target_with_pen(
+        vm,
+        target_index,
+        vm.targets[target_index].x + value,
+        vm.targets[target_index].y,
+      )
+      handled_hot_opcode = true
+    }
+    OpcodeTag::MotionChangeYBy => {
+      let value = number_from_input(vm, target_index, block, "DY", 0)
+      move_target_with_pen(
+        vm,
+        target_index,
+        vm.targets[target_index].x,
+        vm.targets[target_index].y + value,
+      )
+      handled_hot_opcode = true
+    }
+    OpcodeTag::MotionSetY => {
+      move_target_with_pen(
+        vm,
+        target_index,
+        vm.targets[target_index].x,
+        number_from_input(vm, target_index, block, "Y", 0),
+      )
+      handled_hot_opcode = true
+    }
+    OpcodeTag::PenPenDown => {
+      vm.targets[target_index].pen_down = true
+      render_draw_pen_point(vm, target_index)
+      request_redraw(vm)
+      handled_hot_opcode = true
+    }
+    OpcodeTag::PenPenUp => {
+      vm.targets[target_index].pen_down = false
+      handled_hot_opcode = true
+    }
+    OpcodeTag::ControlRepeat => {
+      let times = json_to_number_value(
+          value_from_input(vm, target_index, block, "TIMES", 0),
+        )
+        .floor()
+        .to_int()
+      if times > 0 {
+        let substack = block_input_block_id(block, "SUBSTACK")
+        let use_fast_path = block_hot_count >= 8
+        if use_fast_path &&
+          try_fast_repeat_motion_step(vm, target_index, times, substack) {
+          next_pc = block.next
+        } else {
+          thread.stack.push(repeat_frame(times, substack, block.next))
+          next_pc = substack
+        }
+      }
+      handled_hot_opcode = true
+    }
+    OpcodeTag::Unknown => ()
+  }
+  if handled_hot_opcode {
+    vm.current_thread_id = None
+    if thread.done {
+      return thread
+    }
+    thread.pc = next_pc
+    if thread.pc is None {
+      return unwind_control(vm, thread)
+    }
+    return thread
+  }
   match block.opcode {
     "motion_movesteps" => {
       let steps = json_to_number_value(
@@ -2523,7 +2476,9 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         .to_int()
       if times > 0 {
         let substack = block_input_block_id(block, "SUBSTACK")
-        if try_fast_repeat_motion_step(vm, target_index, times, substack) {
+        let use_fast_path = block_hot_count >= 8
+        if use_fast_path &&
+          try_fast_repeat_motion_step(vm, target_index, times, substack) {
           next_pc = block.next
         } else {
           thread.stack.push(repeat_frame(times, substack, block.next))
@@ -2788,6 +2743,7 @@ fn green_flag_runtime(vm : Vm) -> Unit {
     }
   }
   vm.hat_predicates.clear()
+  vm.hot_op_counts.clear()
   vm.pending_translate_requests.clear()
   vm.io_prev_state = copy_json_map(vm.io_state)
   vm.answer = ""

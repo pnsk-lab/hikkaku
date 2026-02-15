@@ -24,6 +24,10 @@ fn block_input_payload(block : ScratchBlock, input_name : String) -> Json? {
 
 ///|
 fn block_input_block_id(block : ScratchBlock, input_name : String) -> String? {
+  match block.input_block_ids.get(input_name) {
+    Some(id) => return Some(id)
+    None => ()
+  }
   match block_input_payload(block, input_name) {
     Some(String(id)) => Some(id)
     _ => None
@@ -112,6 +116,10 @@ fn number_from_input(
   input_name : String,
   depth : Int,
 ) -> Double {
+  match block.const_number_inputs.get(input_name) {
+    Some(value) => return value
+    None => ()
+  }
   match block_input_payload(block, input_name) {
     Some(Array(primitive)) =>
       if primitive.length() >= 2 {
@@ -181,7 +189,7 @@ fn scratch_compare_as_string(left : Json, right : Json) -> Int {
 ///|
 fn scratch_compare(left : Json, right : Json) -> Int {
   match (as_number_or_none(left), as_number_or_none(right)) {
-    (Some(left_number), Some(right_number)) => {
+    (Some(left_number), Some(right_number)) =>
       if left_number != left_number || right_number != right_number {
         scratch_compare_as_string(left, right)
       } else if left_number < right_number {
@@ -191,7 +199,6 @@ fn scratch_compare(left : Json, right : Json) -> Int {
       } else {
         0
       }
-    }
     _ => scratch_compare_as_string(left, right)
   }
 }

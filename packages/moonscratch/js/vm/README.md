@@ -11,6 +11,7 @@ Exports are available from `moonscratch` (the package entrypoint) and from
 import {
   createHeadlessVM,
   createHeadlessVMWithScratchAssets,
+  createPrecompiledProject,
   HeadlessVM,
 } from 'moonscratch';
 ```
@@ -56,6 +57,10 @@ vm.greenFlag(); // press green flag
 vm.setTime(Date.now()); // update runtime clock explicitly
 const frame = vm.stepFrame(); // run until rerender/finished/timeout event
 console.log(frame.activeThreads);
+
+// Optional: precompile once and reuse for many VM instances.
+const precompiled = createPrecompiledProject({ projectJson });
+const vm2 = createHeadlessVM({ precompiled });
 ```
 
 - `stepFrame()` advances until one of three events happens.

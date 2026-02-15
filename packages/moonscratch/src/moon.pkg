@@ -9,6 +9,8 @@ options(
   link: {
     "js": {
       "exports": [
+        "vm_compile_from_json",
+        "vm_new_from_compiled",
         "vm_new_from_json",
         "vm_new",
         "vm_start",

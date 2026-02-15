@@ -1,4 +1,11 @@
 ///|
+pub(all) struct PrecompiledProject {
+  targets : Array[TargetState]
+  stage_index : Int
+  assets : Map[String, Json]
+}
+
+///|
 pub(all) struct Vm {
   targets : Array[TargetState]
   stage_index : Int
@@ -19,6 +26,7 @@ pub(all) struct Vm {
   mut waiting_children : Map[Int, Int]
   mut rng_state : Int
   mut control_counter : Int
+  mut hot_op_counts : Map[String, Int]
   mut next_clone_id : Int
   mut hat_predicates : Map[String, Bool]
   mut timer_start_ms : Int

@@ -212,7 +212,12 @@ fn ensure_pen_pixels(vm : Vm) -> Unit {
   }
 }
 
-fn render_stage_to_pixel_double(vm : Vm, x : Double, y : Double) -> (Double, Double) {
+///|
+fn render_stage_to_pixel_double(
+  vm : Vm,
+  x : Double,
+  y : Double,
+) -> (Double, Double) {
   (
     (x + 240.0) / 480.0 * Double::from_int(vm.pen_width),
     (180.0 - y) / 360.0 * Double::from_int(vm.pen_height),
@@ -342,6 +347,67 @@ fn render_draw_thin_opaque_pen_line(
 }
 
 ///|
+fn render_draw_thin_opaque_pen_axis(
+  vm : Vm,
+  x0 : Double,
+  y0 : Double,
+  x1 : Double,
+  y1 : Double,
+  rgb : (Int, Int, Int),
+) -> Bool {
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if width <= 0 || height <= 0 {
+    return true
+  }
+  let (r, g, b) = rgb
+  if x0 == x1 {
+    let px = x0.floor().to_int()
+    if px < 0 || px >= width {
+      return true
+    }
+    let min_py = render_min_double(y0, y1).floor().to_int()
+    let max_py = render_max_double(y0, y1).floor().to_int()
+    if max_py < 0 || min_py >= height {
+      return true
+    }
+    let start_py = render_clamp_int(min_py, 0, height - 1)
+    let end_py = render_clamp_int(max_py, 0, height - 1)
+    for py in start_py..<=end_py {
+      let base = (py * width + px) * 4
+      vm.pen_pixels[base] = r.to_byte()
+      vm.pen_pixels[base + 1] = g.to_byte()
+      vm.pen_pixels[base + 2] = b.to_byte()
+      vm.pen_pixels[base + 3] = b'\xff'
+    }
+    return true
+  }
+  if y0 == y1 {
+    let py = y0.floor().to_int()
+    if py < 0 || py >= height {
+      return true
+    }
+    let min_px = render_min_double(x0, x1).floor().to_int()
+    let max_px = render_max_double(x0, x1).floor().to_int()
+    if max_px < 0 || min_px >= width {
+      return true
+    }
+    let start_px = render_clamp_int(min_px, 0, width - 1)
+    let end_px = render_clamp_int(max_px, 0, width - 1)
+    let row_base = py * width * 4
+    for px in start_px..<=end_px {
+      let base = row_base + px * 4
+      vm.pen_pixels[base] = r.to_byte()
+      vm.pen_pixels[base + 1] = g.to_byte()
+      vm.pen_pixels[base + 2] = b.to_byte()
+      vm.pen_pixels[base + 3] = b'\xff'
+    }
+    return true
+  }
+  false
+}
+
+///|
 fn render_blend_pen_pixel(
   vm : Vm,
   px : Int,
@@ -455,6 +521,16 @@ fn render_draw_pen_line(
     old_y.floor() == old_y &&
     new_x.floor() == new_x &&
     new_y.floor() == new_y {
+    if render_draw_thin_opaque_pen_axis(
+        vm,
+        x0 + offset,
+        y0 + offset,
+        x1 + offset,
+        y1 + offset,
+        (r, g, b),
+      ) {
+      return
+    }
     render_draw_thin_opaque_pen_line(
       vm,
       x0 + offset,
@@ -944,7 +1020,9 @@ fn render_stamp_sprite_to_pen(vm : Vm, target_index : Int) -> Unit {
     let local_x1 = (Double::from_int(costume.width) - costume.rotation_center_x) /
       bitmap_resolution
     let local_y0 = costume.rotation_center_y / bitmap_resolution
-    let local_y1 = (costume.rotation_center_y - Double::from_int(costume.height)) /
+    let local_y1 = (
+        costume.rotation_center_y - Double::from_int(costume.height)
+      ) /
       bitmap_resolution
 
     let corner0_x = target.x +
@@ -1001,24 +1079,22 @@ fn render_stamp_sprite_to_pen(vm : Vm, target_index : Int) -> Unit {
     }
 
     start_px = render_clamp_int(
-      (((min_stage_x + 240.0) / 480.0) * pen_width_double - 1.0).floor().to_int(),
+      ((min_stage_x + 240.0) / 480.0 * pen_width_double - 1.0).floor().to_int(),
       0,
       pen_width - 1,
     )
     end_px = render_clamp_int(
-      (((max_stage_x + 240.0) / 480.0) * pen_width_double + 1.0).ceil().to_int(),
+      ((max_stage_x + 240.0) / 480.0 * pen_width_double + 1.0).ceil().to_int(),
       0,
       pen_width - 1,
     )
     start_py = render_clamp_int(
-      (((180.0 - max_stage_y) / 360.0) * pen_height_double - 1.0)
-      .floor()
-      .to_int(),
+      ((180.0 - max_stage_y) / 360.0 * pen_height_double - 1.0).floor().to_int(),
       0,
       pen_height - 1,
     )
     end_py = render_clamp_int(
-      (((180.0 - min_stage_y) / 360.0) * pen_height_double + 1.0).ceil().to_int(),
+      ((180.0 - min_stage_y) / 360.0 * pen_height_double + 1.0).ceil().to_int(),
       0,
       pen_height - 1,
     )
@@ -1030,9 +1106,11 @@ fn render_stamp_sprite_to_pen(vm : Vm, target_index : Int) -> Unit {
   let start_px_double = Double::from_int(start_px)
   for py in start_py..<=end_py {
     let py_double = Double::from_int(py)
-    let mut tex_x = tex_x_base + tex_x_step_py * py_double +
+    let mut tex_x = tex_x_base +
+      tex_x_step_py * py_double +
       tex_x_step_px * start_px_double
-    let mut tex_y = tex_y_base + tex_y_step_py * py_double +
+    let mut tex_y = tex_y_base +
+      tex_y_step_py * py_double +
       tex_y_step_px * start_px_double
     let mut pen_base = (py * pen_width + start_px) * 4
     for _ in start_px..<=end_px {

@@ -1,19 +1,13 @@
 ///|
-fn vm_new_internal(
-  bundle : ProjectBundle,
-  options : VmOptions,
-) -> Vm raise VmError {
-  let (targets, stage_index) = parse_project_targets(
-    bundle.project_json,
-    bundle.assets,
-  )
+fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm {
+  let targets = instantiate_targets(precompiled.targets)
   let pen_width = if options.pen_width > 0 { options.pen_width } else { 480 }
   let pen_height = if options.pen_height > 0 { options.pen_height } else { 360 }
   let pen_pixels = []
   {
     targets,
-    stage_index,
-    assets: bundle.assets,
+    stage_index: precompiled.stage_index,
+    assets: precompiled.assets,
     options,
     pen_width,
     pen_height,
@@ -30,6 +24,7 @@ fn vm_new_internal(
     waiting_children: {},
     rng_state: options.seed,
     control_counter: 0,
+    hot_op_counts: {},
     next_clone_id: 1,
     hat_predicates: {},
     timer_start_ms: 0,
@@ -255,34 +250,18 @@ fn copy_block_map(
 }
 
 ///|
-fn active_clone_count(vm : Vm) -> Int {
-  let mut count = 0
-  for target in vm.targets {
-    if !target.is_stage && !target.is_original && !target.deleted {
-      count += 1
-    }
-  }
-  count
-}
-
-///|
-fn find_reusable_clone_slot(vm : Vm) -> Int? {
-  for i, target in vm.targets {
-    if !target.is_stage && !target.is_original && target.deleted {
-      return Some(i)
-    }
-  }
-  None
-}
-
-///|
-fn clone_target_state(source : TargetState, clone_id : Int) -> TargetState {
+fn copy_target_state_with_meta(
+  source : TargetState,
+  id : String,
+  is_original : Bool,
+  deleted : Bool,
+) -> TargetState {
   {
-    id: "\{source.id}#clone_\{clone_id}",
+    id,
     name: source.name,
     is_stage: source.is_stage,
-    is_original: false,
-    deleted: false,
+    is_original,
+    deleted,
     x: source.x,
     y: source.y,
     direction: source.direction,
@@ -314,7 +293,64 @@ fn clone_target_state(source : TargetState, clone_id : Int) -> TargetState {
     list_names: copy_string_map(source.list_names),
     blocks: copy_block_map(source.blocks),
     top_level_hats: source.top_level_hats.copy(),
+    green_flag_starts: source.green_flag_starts.copy(),
+    stage_clicked_starts: source.stage_clicked_starts.copy(),
+    sprite_clicked_starts: source.sprite_clicked_starts.copy(),
+    clone_start_starts: source.clone_start_starts.copy(),
+    key_pressed_hats: source.key_pressed_hats.copy(),
+    broadcast_hats: source.broadcast_hats.copy(),
+    backdrop_hats: source.backdrop_hats.copy(),
+    predicate_hats: source.predicate_hats.copy(),
   }
+}
+
+///|
+fn instantiate_targets(
+  source_targets : Array[TargetState],
+) -> Array[TargetState] {
+  let targets = []
+  for source in source_targets {
+    targets.push(
+      copy_target_state_with_meta(
+        source,
+        source.id,
+        source.is_original,
+        source.deleted,
+      ),
+    )
+  }
+  targets
+}
+
+///|
+fn active_clone_count(vm : Vm) -> Int {
+  let mut count = 0
+  for target in vm.targets {
+    if !target.is_stage && !target.is_original && !target.deleted {
+      count += 1
+    }
+  }
+  count
+}
+
+///|
+fn find_reusable_clone_slot(vm : Vm) -> Int? {
+  for i, target in vm.targets {
+    if !target.is_stage && !target.is_original && target.deleted {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn clone_target_state(source : TargetState, clone_id : Int) -> TargetState {
+  copy_target_state_with_meta(
+    source,
+    "\{source.id}#clone_\{clone_id}",
+    false,
+    false,
+  )
 }
 
 ///|

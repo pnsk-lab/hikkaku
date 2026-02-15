@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from 'vite-plus/test'
 import {
   createHeadlessVM,
   createHeadlessVMWithScratchAssets,
+  createPrecompiledProject,
   createVM,
   createVMWithScratchAssets,
 } from './factory.ts'
@@ -22,6 +23,46 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(() => createHeadlessVM({ projectJson: '  ' })).toThrow(
       'projectJson must be a non-empty JSON string or object',
     )
+  })
+
+  test('requires projectJson when precompiled is not provided', () => {
+    expect(() => createHeadlessVM({})).toThrow(
+      'projectJson is required when precompiled is not provided',
+    )
+  })
+
+  test('creates VM from precompiled project', () => {
+    const precompiled = createPrecompiledProject({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    const vm = createHeadlessVM({
+      precompiled,
+      initialNowMs: 0,
+      viewerLanguage: 'ja',
+    })
+
+    vm.greenFlag()
+    stepMany(vm, 6)
+
+    const effects = vm.takeEffects()
+    expect(effects.some((effect) => effect.type === 'text_to_speech')).toBe(
+      true,
+    )
+  })
+
+  test('reuses precompiled project across multiple VM instances', () => {
+    const precompiled = createPrecompiledProject({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    const first = createHeadlessVM({ precompiled, initialNowMs: 0 })
+    const second = createHeadlessVM({ precompiled, initialNowMs: 0 })
+
+    first.greenFlag()
+    second.greenFlag()
+    stepMany(first, 6)
+    stepMany(second, 6)
+
+    expect(getStageVariables(first)).toEqual(getStageVariables(second))
   })
 
   test('normalizes viewer language and translate cache in constructor options', () => {
