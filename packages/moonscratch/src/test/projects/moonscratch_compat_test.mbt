@@ -115,7 +115,7 @@ let music_project =
 ///|
 test "music extension opcodes update tempo and emit note/drum effects" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(music_project),
+    try? vm_new_precompiled_from_json(music_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -300,7 +300,7 @@ let text2speech_translate_project =
 ///|
 test "text2speech and translate extension opcodes use JS-provided API data" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(text2speech_translate_project),
+    try? vm_new_precompiled_from_json(text2speech_translate_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -539,7 +539,7 @@ let pen_touching_assets =
 ///|
 test "pen opcodes draw into headless buffer and touching color reporters read it" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(
+    try? vm_new_precompiled_from_json(
       pen_touching_project,
       assets_json=pen_touching_assets,
     ),
@@ -599,7 +599,7 @@ test "pen opcodes draw into headless buffer and touching color reporters read it
 ///|
 test "render_frame outputs composited scene colors" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(
+    try? vm_new_precompiled_from_json(
       pen_touching_project,
       assets_json=pen_touching_assets,
     ),

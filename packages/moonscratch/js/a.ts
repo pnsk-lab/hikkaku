@@ -7,7 +7,7 @@ import {
   whenFlagClicked,
 } from '../../hikkaku/src/blocks'
 import { Project } from '../../hikkaku/src/index'
-import { createHeadlessVM } from '.'
+import { createHeadlessVM, createPrecompiledProject } from '.'
 
 const project = new Project()
 project.stage.run(() => {
@@ -27,12 +27,16 @@ project.stage.run(() => {
   })
 })
 
-const vm = createHeadlessVM({
-  projectJson: /*await Bun.file(
+const precompiled = createPrecompiledProject({
+  projectJson: await Bun.file(
     new URL("../../../examples/tesseract/dist/project.json", import.meta.url),
-  ).json(),*/ project.toScratch(),
+  ).json(),//project.toScratch(),
+})
+
+const vm = createHeadlessVM({
+  precompiled,
   options: {
-    stepTimeoutTicks: 10,
+    stepTimeoutTicks: 100,
   },
 })
 
@@ -41,7 +45,8 @@ vm.greenFlag()
 while (true) {
   const report = vm.stepFrame()
   console.log('Stopped:', report.stopReason)
-  if (report.stopReason === 'finished') {
+  if (report.stopReason === 'finished' || report.stopReason === 'warp-exit') {
+    console.log(report.stopReason)
     break
   }
 }

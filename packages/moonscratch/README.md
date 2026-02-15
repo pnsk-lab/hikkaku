@@ -17,16 +17,21 @@ Headless Scratch runtime in MoonBit.
 ```mbt check
 ///|
 test {
-  let vm_result = try? @moonscratch.vm_new_from_json(
+  let precompiled_result = try? @moonscratch.vm_compile_from_json(
     "{\"targets\":[{\"isStage\":true,\"name\":\"Stage\",\"variables\":{},\"lists\":{},\"blocks\":{}}]}",
   )
+  let precompiled = match precompiled_result {
+    Ok(value) => value
+    Err(_) => fail("failed to precompile project")
+  }
+  let vm_result = try? @moonscratch.vm_new_from_compiled(precompiled)
   let vm = match vm_result {
-    Ok(vm) => vm
+    Ok(value) => value
     Err(_) => fail("failed to create vm")
   }
   @moonscratch.vm_start(vm)
   @moonscratch.vm_set_time(vm, 33)
-  let report = @moonscratch.vm_step_frame(vm, 1)
+  let report = @moonscratch.vm_step_frame(vm)
   let snapshot_json = @moonscratch.vm_snapshot_json(vm)
   inspect(report.active_threads >= 0, content="true")
   inspect(snapshot_json.contains("targets"), content="true")
@@ -52,10 +57,12 @@ Wrapper file: `js/headless-vm.mjs`
 ```js
 import {
   createHeadlessVM,
+  createPrecompiledProject,
   createHeadlessVMWithScratchAssets,
 } from './js/headless-vm.mjs'
 
-const vm = createHeadlessVM({ projectJson, assets, options })
+const precompiled = createPrecompiledProject({ projectJson, assets })
+const vm = createHeadlessVM({ precompiled, options })
 vm.greenFlag()
 vm.setTime(Date.now())
 vm.stepFrame()

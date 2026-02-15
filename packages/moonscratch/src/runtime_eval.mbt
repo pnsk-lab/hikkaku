@@ -99,7 +99,6 @@ fn value_from_input(
   input_name : String,
   depth : Int,
 ) -> Json {
-  vm.profiler_value_input_calls += 1
   match block.input_block_ids.get(input_name) {
     Some(block_id) =>
       return eval_reporter_block_depth(vm, target_index, block_id, depth + 1)
@@ -115,12 +114,9 @@ fn value_from_input(
 }
 
 ///|
-fn numeric_program_cache_key(target_index : Int, block_id : String) -> String {
-  "\{target_index}:\{block_id}"
-}
-
-///|
 fn compile_numeric_operand_ops(
+  vm : Vm,
+  target_index : Int,
   target : TargetState,
   block : ScratchBlock,
   input_name : String,
@@ -137,6 +133,8 @@ fn compile_numeric_operand_ops(
       match block.input_block_ids.get(input_name) {
         Some(child_id) =>
           compile_numeric_reporter_ops(
+            vm,
+            target_index,
             target,
             child_id,
             ops,
@@ -150,6 +148,8 @@ fn compile_numeric_operand_ops(
 
 ///|
 fn compile_numeric_reporter_ops(
+  vm : Vm,
+  target_index : Int,
   target : TargetState,
   block_id : String,
   ops : Array[NumericReporterOp],
@@ -198,16 +198,33 @@ fn compile_numeric_reporter_ops(
             Some(value) => value
             None => ""
           }
-          ops.push(NumericReporterOp::LoadVariable(encoded_id, name))
+          let resolved = match id {
+            Some(variable_id) =>
+              resolve_variable_ref_by_id(vm, target_index, variable_id)
+            None => resolve_variable_ref(vm, target_index, None, Some(name))
+          }
+          match resolved {
+            Some((owner_index, variable_id, variable_slot)) => {
+              let owner_kind = if owner_index == vm.stage_index { 1 } else { 0 }
+              ops.push(
+                NumericReporterOp::LoadVariableByRef(
+                  owner_kind, variable_id, variable_slot,
+                ),
+              )
+            }
+            None => ops.push(NumericReporterOp::LoadVariable(encoded_id, name))
+          }
           true
         }
         None => false
       }
     "operator_add" =>
       if compile_numeric_operand_ops(
-          target, block, "NUM1", ops, visiting, depth,
+          vm, target_index, target, block, "NUM1", ops, visiting, depth,
         ) &&
-        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM2", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::Add)
         true
       } else {
@@ -215,9 +232,11 @@ fn compile_numeric_reporter_ops(
       }
     "operator_subtract" =>
       if compile_numeric_operand_ops(
-          target, block, "NUM1", ops, visiting, depth,
+          vm, target_index, target, block, "NUM1", ops, visiting, depth,
         ) &&
-        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM2", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::Subtract)
         true
       } else {
@@ -225,9 +244,11 @@ fn compile_numeric_reporter_ops(
       }
     "operator_multiply" =>
       if compile_numeric_operand_ops(
-          target, block, "NUM1", ops, visiting, depth,
+          vm, target_index, target, block, "NUM1", ops, visiting, depth,
         ) &&
-        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM2", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::Multiply)
         true
       } else {
@@ -235,9 +256,11 @@ fn compile_numeric_reporter_ops(
       }
     "operator_divide" =>
       if compile_numeric_operand_ops(
-          target, block, "NUM1", ops, visiting, depth,
+          vm, target_index, target, block, "NUM1", ops, visiting, depth,
         ) &&
-        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM2", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::Divide)
         true
       } else {
@@ -245,16 +268,20 @@ fn compile_numeric_reporter_ops(
       }
     "operator_mod" =>
       if compile_numeric_operand_ops(
-          target, block, "NUM1", ops, visiting, depth,
+          vm, target_index, target, block, "NUM1", ops, visiting, depth,
         ) &&
-        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM2", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::Mod)
         true
       } else {
         false
       }
     "operator_round" =>
-      if compile_numeric_operand_ops(target, block, "NUM", ops, visiting, depth) {
+      if compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::Round)
         true
       } else {
@@ -265,7 +292,9 @@ fn compile_numeric_reporter_ops(
         Some((name, _)) => name
         None => ""
       }
-      if compile_numeric_operand_ops(target, block, "NUM", ops, visiting, depth) {
+      if compile_numeric_operand_ops(
+          vm, target_index, target, block, "NUM", ops, visiting, depth,
+        ) {
         ops.push(NumericReporterOp::MathOp(op))
         true
       } else {
@@ -320,12 +349,16 @@ fn compile_numeric_reporter_ops(
 
 ///|
 fn compile_numeric_reporter_program(
+  vm : Vm,
+  target_index : Int,
   target : TargetState,
   block_id : String,
 ) -> NumericReporterProgram? {
   let ops = []
   let visiting = {}
-  if compile_numeric_reporter_ops(target, block_id, ops, visiting, 0) {
+  if compile_numeric_reporter_ops(
+      vm, target_index, target, block_id, ops, visiting, 0,
+    ) {
     Some({ ops, })
   } else {
     None
@@ -347,6 +380,18 @@ fn eval_numeric_reporter_program(
         stack.push(
           json_to_number_value(
             read_variable(vm, target_index, variable_id, Some(name)),
+          ),
+        )
+      }
+      NumericReporterOp::LoadVariableByRef(owner_kind, variable_id, slot) => {
+        let owner_index = if owner_kind == 1 {
+          vm.stage_index
+        } else {
+          target_index
+        }
+        stack.push(
+          json_to_number_value(
+            read_variable_by_ref(vm, owner_index, variable_id, slot),
           ),
         )
       }
@@ -433,21 +478,670 @@ fn get_compiled_numeric_reporter_program(
   if target_index < 0 || target_index >= vm.targets.length() {
     return None
   }
-  let key = numeric_program_cache_key(target_index, block_id)
-  match vm.numeric_program_cache.get(key) {
+  let target = vm.targets[target_index]
+  match target.numeric_program_cache.get(block_id) {
     Some(program) => Some(program)
     None =>
-      if vm.numeric_program_compile_failed.contains(key) {
+      if target.numeric_program_compile_failed.contains(block_id) {
         None
       } else {
-        let target = vm.targets[target_index]
-        match compile_numeric_reporter_program(target, block_id) {
+        match
+          compile_numeric_reporter_program(vm, target_index, target, block_id) {
           Some(program) => {
-            vm.numeric_program_cache[key] = program
+            vm.targets[target_index].numeric_program_cache[block_id] = program
             Some(program)
           }
           None => {
-            vm.numeric_program_compile_failed[key] = true
+            vm.targets[target_index].numeric_program_compile_failed[block_id] = true
+            None
+          }
+        }
+      }
+  }
+}
+
+///|
+fn is_strict_numeric_reporter_for_compare(
+  target : TargetState,
+  block_id : String,
+  depth : Int,
+) -> Bool {
+  if depth > 64 {
+    return false
+  }
+  let block = match target.blocks.get(block_id) {
+    Some(value) => value
+    None => return false
+  }
+  match block.opcode {
+    "math_number"
+    | "math_integer"
+    | "math_whole_number"
+    | "math_positive_number"
+    | "math_angle"
+    | "operator_add"
+    | "operator_subtract"
+    | "operator_multiply"
+    | "operator_divide"
+    | "operator_mod"
+    | "operator_round"
+    | "operator_mathop"
+    | "operator_random"
+    | "motion_xposition"
+    | "motion_yposition"
+    | "motion_direction"
+    | "looks_size"
+    | "sound_volume"
+    | "sensing_timer"
+    | "sensing_mousex"
+    | "sensing_mousey"
+    | "sensing_current"
+    | "sensing_dayssince2000"
+    | "sensing_loudness"
+    | "music_getTempo"
+    | "control_get_counter" => true
+    _ => false
+  }
+}
+
+///|
+fn is_strict_numeric_input_for_compare(
+  target : TargetState,
+  block : ScratchBlock,
+  input_name : String,
+) -> Bool {
+  if block.const_number_inputs.contains(input_name) {
+    return true
+  }
+  match block.input_block_ids.get(input_name) {
+    Some(block_id) =>
+      is_strict_numeric_reporter_for_compare(target, block_id, 0)
+    None => false
+  }
+}
+
+///|
+fn compile_compare_input_guard(
+  vm : Vm,
+  target_index : Int,
+  target : TargetState,
+  block : ScratchBlock,
+  input_name : String,
+) -> CompareNumericGuard? {
+  match block.input_block_ids.get(input_name) {
+    Some(block_id) =>
+      match target.blocks.get(block_id) {
+        Some(input_block) =>
+          if input_block.opcode == "data_variable" {
+            match field_value(input_block, "VARIABLE") {
+              Some((name, id)) => {
+                let resolved = match id {
+                  Some(variable_id) =>
+                    resolve_variable_ref_by_id(vm, target_index, variable_id)
+                  None =>
+                    resolve_variable_ref(vm, target_index, None, Some(name))
+                }
+                match resolved {
+                  Some((owner_index, variable_id, slot)) =>
+                    Some({
+                      owner_kind: if owner_index == vm.stage_index {
+                        1
+                      } else {
+                        0
+                      },
+                      variable_id,
+                      slot,
+                    })
+                  None => None
+                }
+              }
+              None => None
+            }
+          } else {
+            None
+          }
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
+fn compile_numeric_input_program_for_bool(
+  vm : Vm,
+  target_index : Int,
+  target : TargetState,
+  block : ScratchBlock,
+  input_name : String,
+  numeric_programs : Array[NumericReporterProgram],
+) -> Int? {
+  match block.const_number_inputs.get(input_name) {
+    Some(value) => {
+      numeric_programs.push({ ops: [NumericReporterOp::PushConst(value)] })
+      Some(numeric_programs.length() - 1)
+    }
+    None =>
+      match block.input_block_ids.get(input_name) {
+        Some(block_id) =>
+          match
+            compile_numeric_reporter_program(vm, target_index, target, block_id) {
+            Some(program) => {
+              numeric_programs.push(program)
+              Some(numeric_programs.length() - 1)
+            }
+            None => None
+          }
+        None => None
+      }
+  }
+}
+
+///|
+fn compile_bool_reporter_ops(
+  vm : Vm,
+  target_index : Int,
+  target : TargetState,
+  block_id : String,
+  numeric_programs : Array[NumericReporterProgram],
+  ops : Array[BoolReporterOp],
+  visiting : Map[String, Bool],
+  depth : Int,
+) -> Bool {
+  if depth > 64 || visiting.contains(block_id) {
+    return false
+  }
+  visiting[block_id] = true
+  let block = match target.blocks.get(block_id) {
+    Some(value) => value
+    None => {
+      visiting.remove(block_id)
+      return false
+    }
+  }
+  let compiled = match block.opcode {
+    "operator_and" =>
+      match
+        (
+          block.input_block_ids.get("OPERAND1"),
+          block.input_block_ids.get("OPERAND2"),
+        ) {
+        (Some(left_id), Some(right_id)) =>
+          if compile_bool_reporter_ops(
+              vm,
+              target_index,
+              target,
+              left_id,
+              numeric_programs,
+              ops,
+              visiting,
+              depth + 1,
+            ) &&
+            compile_bool_reporter_ops(
+              vm,
+              target_index,
+              target,
+              right_id,
+              numeric_programs,
+              ops,
+              visiting,
+              depth + 1,
+            ) {
+            ops.push(BoolReporterOp::And)
+            true
+          } else {
+            false
+          }
+        _ => false
+      }
+    "operator_or" =>
+      match
+        (
+          block.input_block_ids.get("OPERAND1"),
+          block.input_block_ids.get("OPERAND2"),
+        ) {
+        (Some(left_id), Some(right_id)) =>
+          if compile_bool_reporter_ops(
+              vm,
+              target_index,
+              target,
+              left_id,
+              numeric_programs,
+              ops,
+              visiting,
+              depth + 1,
+            ) &&
+            compile_bool_reporter_ops(
+              vm,
+              target_index,
+              target,
+              right_id,
+              numeric_programs,
+              ops,
+              visiting,
+              depth + 1,
+            ) {
+            ops.push(BoolReporterOp::Or)
+            true
+          } else {
+            false
+          }
+        _ => false
+      }
+    "operator_not" =>
+      match block.input_block_ids.get("OPERAND") {
+        Some(input_id) =>
+          if compile_bool_reporter_ops(
+              vm,
+              target_index,
+              target,
+              input_id,
+              numeric_programs,
+              ops,
+              visiting,
+              depth + 1,
+            ) {
+            ops.push(BoolReporterOp::Not)
+            true
+          } else {
+            false
+          }
+        None => false
+      }
+    "operator_lt" =>
+      match
+        (
+          compile_numeric_input_program_for_bool(
+            vm, target_index, target, block, "OPERAND1", numeric_programs,
+          ),
+          compile_numeric_input_program_for_bool(
+            vm, target_index, target, block, "OPERAND2", numeric_programs,
+          ),
+        ) {
+        (Some(left_index), Some(right_index)) => {
+          let strict_left = is_strict_numeric_input_for_compare(
+            target, block, "OPERAND1",
+          )
+          let strict_right = is_strict_numeric_input_for_compare(
+            target, block, "OPERAND2",
+          )
+          ops.push(
+            BoolReporterOp::CompareLt(
+              left_index,
+              right_index,
+              strict_left && strict_right,
+              if strict_left {
+                None
+              } else {
+                compile_compare_input_guard(
+                  vm, target_index, target, block, "OPERAND1",
+                )
+              },
+              if strict_right {
+                None
+              } else {
+                compile_compare_input_guard(
+                  vm, target_index, target, block, "OPERAND2",
+                )
+              },
+            ),
+          )
+          true
+        }
+        _ => false
+      }
+    "operator_gt" =>
+      match
+        (
+          compile_numeric_input_program_for_bool(
+            vm, target_index, target, block, "OPERAND1", numeric_programs,
+          ),
+          compile_numeric_input_program_for_bool(
+            vm, target_index, target, block, "OPERAND2", numeric_programs,
+          ),
+        ) {
+        (Some(left_index), Some(right_index)) => {
+          let strict_left = is_strict_numeric_input_for_compare(
+            target, block, "OPERAND1",
+          )
+          let strict_right = is_strict_numeric_input_for_compare(
+            target, block, "OPERAND2",
+          )
+          ops.push(
+            BoolReporterOp::CompareGt(
+              left_index,
+              right_index,
+              strict_left && strict_right,
+              if strict_left {
+                None
+              } else {
+                compile_compare_input_guard(
+                  vm, target_index, target, block, "OPERAND1",
+                )
+              },
+              if strict_right {
+                None
+              } else {
+                compile_compare_input_guard(
+                  vm, target_index, target, block, "OPERAND2",
+                )
+              },
+            ),
+          )
+          true
+        }
+        _ => false
+      }
+    "operator_equals" =>
+      match
+        (
+          compile_numeric_input_program_for_bool(
+            vm, target_index, target, block, "OPERAND1", numeric_programs,
+          ),
+          compile_numeric_input_program_for_bool(
+            vm, target_index, target, block, "OPERAND2", numeric_programs,
+          ),
+        ) {
+        (Some(left_index), Some(right_index)) => {
+          let strict_left = is_strict_numeric_input_for_compare(
+            target, block, "OPERAND1",
+          )
+          let strict_right = is_strict_numeric_input_for_compare(
+            target, block, "OPERAND2",
+          )
+          ops.push(
+            BoolReporterOp::CompareEq(
+              left_index,
+              right_index,
+              strict_left && strict_right,
+              if strict_left {
+                None
+              } else {
+                compile_compare_input_guard(
+                  vm, target_index, target, block, "OPERAND1",
+                )
+              },
+              if strict_right {
+                None
+              } else {
+                compile_compare_input_guard(
+                  vm, target_index, target, block, "OPERAND2",
+                )
+              },
+            ),
+          )
+          true
+        }
+        _ => false
+      }
+    _ => false
+  }
+  visiting.remove(block_id)
+  compiled
+}
+
+///|
+fn compile_bool_reporter_program(
+  vm : Vm,
+  target_index : Int,
+  target : TargetState,
+  block_id : String,
+) -> BoolReporterProgram? {
+  let numeric_programs = []
+  let ops = []
+  let visiting = {}
+  if compile_bool_reporter_ops(
+      vm, target_index, target, block_id, numeric_programs, ops, visiting, 0,
+    ) {
+    Some({ numeric_programs, ops })
+  } else {
+    None
+  }
+}
+
+///|
+fn compare_guard_is_numeric(
+  vm : Vm,
+  target_index : Int,
+  numeric_guard : CompareNumericGuard,
+) -> Bool {
+  let owner_index = if numeric_guard.owner_kind == 1 {
+    vm.stage_index
+  } else {
+    target_index
+  }
+  if owner_index < 0 || owner_index >= vm.targets.length() {
+    return false
+  }
+  match numeric_guard.slot {
+    Some(slot) =>
+      if slot >= 0 &&
+        slot < vm.targets[owner_index].variable_numeric_flags.length() {
+        vm.targets[owner_index].variable_numeric_flags[slot]
+      } else {
+        match
+          as_number_or_none(
+            read_variable_by_ref(
+              vm,
+              owner_index,
+              numeric_guard.variable_id,
+              numeric_guard.slot,
+            ),
+          ) {
+          Some(value) => value == value
+          None => false
+        }
+      }
+    None =>
+      match
+        as_number_or_none(
+          read_variable_by_ref(
+            vm,
+            owner_index,
+            numeric_guard.variable_id,
+            numeric_guard.slot,
+          ),
+        ) {
+        Some(value) => value == value
+        None => false
+      }
+  }
+}
+
+///|
+fn eval_bool_reporter_program(
+  vm : Vm,
+  target_index : Int,
+  program : BoolReporterProgram,
+) -> Bool? {
+  let stack = []
+  for op in program.ops {
+    match op {
+      BoolReporterOp::CompareLt(
+        left_index,
+        right_index,
+        strict,
+        left_guard,
+        right_guard
+      ) => {
+        if !strict {
+          match (left_guard, right_guard) {
+            (Some(left_guard), Some(right_guard)) =>
+              if !compare_guard_is_numeric(vm, target_index, left_guard) ||
+                !compare_guard_is_numeric(vm, target_index, right_guard) {
+                return None
+              }
+            _ => return None
+          }
+        }
+        if left_index >= 0 &&
+          right_index >= 0 &&
+          left_index < program.numeric_programs.length() &&
+          right_index < program.numeric_programs.length() {
+          match
+            (
+              eval_numeric_reporter_program(
+                vm,
+                target_index,
+                program.numeric_programs[left_index],
+              ),
+              eval_numeric_reporter_program(
+                vm,
+                target_index,
+                program.numeric_programs[right_index],
+              ),
+            ) {
+            (Some(left), Some(right)) =>
+              if left == left && right == right {
+                stack.push(left < right)
+              } else {
+                return None
+              }
+            _ => return None
+          }
+        } else {
+          return None
+        }
+      }
+      BoolReporterOp::CompareGt(
+        left_index,
+        right_index,
+        strict,
+        left_guard,
+        right_guard
+      ) => {
+        if !strict {
+          match (left_guard, right_guard) {
+            (Some(left_guard), Some(right_guard)) =>
+              if !compare_guard_is_numeric(vm, target_index, left_guard) ||
+                !compare_guard_is_numeric(vm, target_index, right_guard) {
+                return None
+              }
+            _ => return None
+          }
+        }
+        if left_index >= 0 &&
+          right_index >= 0 &&
+          left_index < program.numeric_programs.length() &&
+          right_index < program.numeric_programs.length() {
+          match
+            (
+              eval_numeric_reporter_program(
+                vm,
+                target_index,
+                program.numeric_programs[left_index],
+              ),
+              eval_numeric_reporter_program(
+                vm,
+                target_index,
+                program.numeric_programs[right_index],
+              ),
+            ) {
+            (Some(left), Some(right)) =>
+              if left == left && right == right {
+                stack.push(left > right)
+              } else {
+                return None
+              }
+            _ => return None
+          }
+        } else {
+          return None
+        }
+      }
+      BoolReporterOp::CompareEq(
+        left_index,
+        right_index,
+        strict,
+        left_guard,
+        right_guard
+      ) => {
+        if !strict {
+          match (left_guard, right_guard) {
+            (Some(left_guard), Some(right_guard)) =>
+              if !compare_guard_is_numeric(vm, target_index, left_guard) ||
+                !compare_guard_is_numeric(vm, target_index, right_guard) {
+                return None
+              }
+            _ => return None
+          }
+        }
+        if left_index >= 0 &&
+          right_index >= 0 &&
+          left_index < program.numeric_programs.length() &&
+          right_index < program.numeric_programs.length() {
+          match
+            (
+              eval_numeric_reporter_program(
+                vm,
+                target_index,
+                program.numeric_programs[left_index],
+              ),
+              eval_numeric_reporter_program(
+                vm,
+                target_index,
+                program.numeric_programs[right_index],
+              ),
+            ) {
+            (Some(left), Some(right)) =>
+              if left == left && right == right {
+                stack.push(left == right)
+              } else {
+                return None
+              }
+            _ => return None
+          }
+        } else {
+          return None
+        }
+      }
+      BoolReporterOp::And =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) => stack.push(left && right)
+          _ => return None
+        }
+      BoolReporterOp::Or =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) => stack.push(left || right)
+          _ => return None
+        }
+      BoolReporterOp::Not =>
+        match stack.pop() {
+          Some(value) => stack.push(!value)
+          None => return None
+        }
+    }
+  }
+  if stack.length() == 1 {
+    Some(stack[0])
+  } else {
+    None
+  }
+}
+
+///|
+fn get_compiled_bool_reporter_program(
+  vm : Vm,
+  target_index : Int,
+  block_id : String,
+) -> BoolReporterProgram? {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return None
+  }
+  let target = vm.targets[target_index]
+  match target.bool_program_cache.get(block_id) {
+    Some(program) => Some(program)
+    None =>
+      if target.bool_program_compile_failed.contains(block_id) {
+        None
+      } else {
+        match
+          compile_bool_reporter_program(vm, target_index, target, block_id) {
+          Some(program) => {
+            vm.targets[target_index].bool_program_cache[block_id] = program
+            Some(program)
+          }
+          None => {
+            vm.targets[target_index].bool_program_compile_failed[block_id] = true
             None
           }
         }
@@ -463,7 +1157,6 @@ fn number_from_input(
   input_name : String,
   depth : Int,
 ) -> Double {
-  vm.profiler_number_input_calls += 1
   match block.const_number_inputs.get(input_name) {
     Some(value) => return value
     None => ()
@@ -1366,6 +2059,247 @@ fn viewer_language(vm : Vm) -> String {
 }
 
 ///|
+fn try_number_reporter_for_compare(
+  vm : Vm,
+  target_index : Int,
+  block_id : String,
+  depth : Int,
+) -> Double? {
+  if depth > 40 {
+    return None
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return None
+  }
+  let target = vm.targets[target_index]
+  let block = match target.blocks.get(block_id) {
+    Some(value) => value
+    None => return None
+  }
+  let numeric = match block.opcode {
+    "data_variable" =>
+      match field_value(block, "VARIABLE") {
+        Some((name, id)) =>
+          match id {
+            Some(variable_id) =>
+              match resolve_variable_ref_by_id(vm, target_index, variable_id) {
+                Some((owner_index, resolved_id, resolved_slot)) =>
+                  as_number_or_none(
+                    read_variable_by_ref(
+                      vm, owner_index, resolved_id, resolved_slot,
+                    ),
+                  )
+                None => None
+              }
+            None =>
+              as_number_or_none(
+                read_variable(vm, target_index, None, Some(name)),
+              )
+          }
+        None => None
+      }
+    "argument_reporter_string_number" | "argument_reporter_boolean" => {
+      let arg_name = block_input_or_field_string(
+        vm, target_index, block, "VALUE", "VALUE", depth,
+      )
+      if arg_name == "" {
+        Some(0.0)
+      } else {
+        match current_procedure_param(vm, arg_name) {
+          Some(value) => as_number_or_none(value)
+          None => Some(0.0)
+        }
+      }
+    }
+    "math_number"
+    | "math_integer"
+    | "math_whole_number"
+    | "math_positive_number"
+    | "math_angle"
+    | "operator_add"
+    | "operator_subtract"
+    | "operator_multiply"
+    | "operator_divide"
+    | "operator_mod"
+    | "operator_round"
+    | "operator_mathop"
+    | "operator_random"
+    | "motion_xposition"
+    | "motion_yposition"
+    | "motion_direction"
+    | "looks_size"
+    | "sound_volume"
+    | "sensing_timer"
+    | "sensing_mousex"
+    | "sensing_mousey"
+    | "sensing_current"
+    | "sensing_dayssince2000"
+    | "sensing_loudness"
+    | "music_getTempo"
+    | "control_get_counter" =>
+      eval_reporter_number_block_depth(vm, target_index, block_id, depth + 1)
+    _ => None
+  }
+  match numeric {
+    Some(number) => if number == number { Some(number) } else { None }
+    None => None
+  }
+}
+
+///|
+fn try_number_input_for_compare(
+  vm : Vm,
+  target_index : Int,
+  block : ScratchBlock,
+  input_name : String,
+  depth : Int,
+) -> Double? {
+  match block.const_number_inputs.get(input_name) {
+    Some(value) => Some(value)
+    None =>
+      match block.input_block_ids.get(input_name) {
+        Some(block_id) =>
+          try_number_reporter_for_compare(vm, target_index, block_id, depth + 1)
+        None => None
+      }
+  }
+}
+
+///|
+fn try_compare_numeric_inputs(
+  vm : Vm,
+  target_index : Int,
+  block : ScratchBlock,
+  left_input : String,
+  right_input : String,
+  depth : Int,
+) -> (Double, Double)? {
+  match
+    (
+      try_number_input_for_compare(vm, target_index, block, left_input, depth),
+      try_number_input_for_compare(vm, target_index, block, right_input, depth),
+    ) {
+    (Some(left), Some(right)) => Some((left, right))
+    _ => None
+  }
+}
+
+///|
+fn eval_reporter_bool_block_depth(
+  vm : Vm,
+  target_index : Int,
+  block_id : String,
+  depth : Int,
+) -> Bool? {
+  if depth > 40 {
+    return None
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return None
+  }
+  let target = vm.targets[target_index]
+  let block = match target.blocks.get(block_id) {
+    Some(value) => value
+    None => return None
+  }
+  match block.opcode {
+    "operator_lt" =>
+      match
+        try_compare_numeric_inputs(
+          vm, target_index, block, "OPERAND1", "OPERAND2", depth,
+        ) {
+        Some((left, right)) => Some(left < right)
+        None => None
+      }
+    "operator_gt" =>
+      match
+        try_compare_numeric_inputs(
+          vm, target_index, block, "OPERAND1", "OPERAND2", depth,
+        ) {
+        Some((left, right)) => Some(left > right)
+        None => None
+      }
+    "operator_equals" =>
+      match
+        try_compare_numeric_inputs(
+          vm, target_index, block, "OPERAND1", "OPERAND2", depth,
+        ) {
+        Some((left, right)) => Some(left == right)
+        None => None
+      }
+    "operator_and" =>
+      Some(
+        bool_from_input(vm, target_index, block, "OPERAND1", depth) &&
+        bool_from_input(vm, target_index, block, "OPERAND2", depth),
+      )
+    "operator_or" =>
+      Some(
+        bool_from_input(vm, target_index, block, "OPERAND1", depth) ||
+        bool_from_input(vm, target_index, block, "OPERAND2", depth),
+      )
+    "operator_not" =>
+      Some(!bool_from_input(vm, target_index, block, "OPERAND", depth))
+    _ => None
+  }
+}
+
+///|
+fn bool_from_input(
+  vm : Vm,
+  target_index : Int,
+  block : ScratchBlock,
+  input_name : String,
+  depth : Int,
+) -> Bool {
+  match block.input_block_ids.get(input_name) {
+    Some(block_id) =>
+      match get_compiled_bool_reporter_program(vm, target_index, block_id) {
+        Some(program) =>
+          match eval_bool_reporter_program(vm, target_index, program) {
+            Some(value) => value
+            None =>
+              match
+                eval_reporter_bool_block_depth(
+                  vm,
+                  target_index,
+                  block_id,
+                  depth + 1,
+                ) {
+                Some(value) => value
+                None =>
+                  json_to_bool_value(
+                    eval_reporter_block_depth(
+                      vm,
+                      target_index,
+                      block_id,
+                      depth + 1,
+                    ),
+                  )
+              }
+          }
+        None =>
+          match
+            eval_reporter_bool_block_depth(
+              vm,
+              target_index,
+              block_id,
+              depth + 1,
+            ) {
+            Some(value) => value
+            None =>
+              json_to_bool_value(
+                eval_reporter_block_depth(vm, target_index, block_id, depth + 1),
+              )
+          }
+      }
+    None =>
+      json_to_bool_value(
+        value_from_input(vm, target_index, block, input_name, depth),
+      )
+  }
+}
+
+///|
 fn eval_reporter_block_depth(
   vm : Vm,
   target_index : Int,
@@ -1483,45 +2417,66 @@ fn eval_reporter_block_depth(
       let sampled = low + (high - low) * next_random_unit(vm)
       json_number(sampled)
     }
-    "operator_lt" => {
-      let left = value_from_input(vm, target_index, block, "OPERAND1", depth)
-      let right = value_from_input(vm, target_index, block, "OPERAND2", depth)
-      json_bool(scratch_compare(left, right) < 0)
-    }
-    "operator_gt" => {
-      let left = value_from_input(vm, target_index, block, "OPERAND1", depth)
-      let right = value_from_input(vm, target_index, block, "OPERAND2", depth)
-      json_bool(scratch_compare(left, right) > 0)
-    }
-    "operator_equals" => {
-      let left = value_from_input(vm, target_index, block, "OPERAND1", depth)
-      let right = value_from_input(vm, target_index, block, "OPERAND2", depth)
-      json_bool(scratch_equals(left, right))
-    }
-    "operator_and" => {
-      let left = json_to_bool_value(
-        value_from_input(vm, target_index, block, "OPERAND1", depth),
+    "operator_lt" =>
+      match
+        try_compare_numeric_inputs(
+          vm, target_index, block, "OPERAND1", "OPERAND2", depth,
+        ) {
+        Some((left, right)) => json_bool(left < right)
+        None => {
+          let left = value_from_input(
+            vm, target_index, block, "OPERAND1", depth,
+          )
+          let right = value_from_input(
+            vm, target_index, block, "OPERAND2", depth,
+          )
+          json_bool(scratch_compare(left, right) < 0)
+        }
+      }
+    "operator_gt" =>
+      match
+        try_compare_numeric_inputs(
+          vm, target_index, block, "OPERAND1", "OPERAND2", depth,
+        ) {
+        Some((left, right)) => json_bool(left > right)
+        None => {
+          let left = value_from_input(
+            vm, target_index, block, "OPERAND1", depth,
+          )
+          let right = value_from_input(
+            vm, target_index, block, "OPERAND2", depth,
+          )
+          json_bool(scratch_compare(left, right) > 0)
+        }
+      }
+    "operator_equals" =>
+      match
+        try_compare_numeric_inputs(
+          vm, target_index, block, "OPERAND1", "OPERAND2", depth,
+        ) {
+        Some((left, right)) => json_bool(left == right)
+        None => {
+          let left = value_from_input(
+            vm, target_index, block, "OPERAND1", depth,
+          )
+          let right = value_from_input(
+            vm, target_index, block, "OPERAND2", depth,
+          )
+          json_bool(scratch_equals(left, right))
+        }
+      }
+    "operator_and" =>
+      json_bool(
+        bool_from_input(vm, target_index, block, "OPERAND1", depth) &&
+        bool_from_input(vm, target_index, block, "OPERAND2", depth),
       )
-      let right = json_to_bool_value(
-        value_from_input(vm, target_index, block, "OPERAND2", depth),
+    "operator_or" =>
+      json_bool(
+        bool_from_input(vm, target_index, block, "OPERAND1", depth) ||
+        bool_from_input(vm, target_index, block, "OPERAND2", depth),
       )
-      json_bool(left && right)
-    }
-    "operator_or" => {
-      let left = json_to_bool_value(
-        value_from_input(vm, target_index, block, "OPERAND1", depth),
-      )
-      let right = json_to_bool_value(
-        value_from_input(vm, target_index, block, "OPERAND2", depth),
-      )
-      json_bool(left || right)
-    }
-    "operator_not" => {
-      let value = json_to_bool_value(
-        value_from_input(vm, target_index, block, "OPERAND", depth),
-      )
-      json_bool(!value)
-    }
+    "operator_not" =>
+      json_bool(!bool_from_input(vm, target_index, block, "OPERAND", depth))
     "operator_join" => {
       let left = json_to_string_value(
         value_from_input(vm, target_index, block, "STRING1", depth),

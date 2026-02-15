@@ -156,9 +156,27 @@ fn[T, E] unwrap_result(result : Result[T, E], message : String) -> T raise {
 }
 
 ///|
+fn vm_new_precompiled_from_json(
+  project_json : String,
+  assets_json? : String,
+  options_json? : String,
+) -> @moonscratch.Vm raise @moonscratch.VmError {
+  let precompiled = match assets_json {
+    Some(assets_json) =>
+      @moonscratch.vm_compile_from_json(project_json, assets_json~)
+    None => @moonscratch.vm_compile_from_json(project_json)
+  }
+  match options_json {
+    Some(options_json) =>
+      @moonscratch.vm_new_from_compiled(precompiled, options_json~)
+    None => @moonscratch.vm_new_from_compiled(precompiled)
+  }
+}
+
+///|
 test "green flag + broadcast updates variable" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(broadcast_project),
+    try? vm_new_precompiled_from_json(broadcast_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -189,7 +207,7 @@ test "green flag + broadcast updates variable" {
 ///|
 test "ask waits for answer and resumes via post_io" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(ask_project),
+    try? vm_new_precompiled_from_json(ask_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -672,7 +690,7 @@ let forever_motion_project =
 ///|
 test "control repeat_until, for_each and counter reporter" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(control_project),
+    try? vm_new_precompiled_from_json(control_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -709,7 +727,7 @@ test "control repeat_until, for_each and counter reporter" {
 ///|
 test "control forever keeps repeating substack blocks" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(forever_motion_project),
+    try? vm_new_precompiled_from_json(forever_motion_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -744,7 +762,7 @@ test "control forever keeps repeating substack blocks" {
 ///|
 test "control create clone starts control_start_as_clone hats" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(clone_project),
+    try? vm_new_precompiled_from_json(clone_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -779,7 +797,7 @@ test "control create clone starts control_start_as_clone hats" {
 ///|
 test "data_itemnumoflist uses scratch-style equality" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(list_itemnum_project),
+    try? vm_new_precompiled_from_json(list_itemnum_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -813,7 +831,7 @@ test "data_itemnumoflist uses scratch-style equality" {
 ///|
 test "motion reporters and target-based motion commands" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(motion_project),
+    try? vm_new_precompiled_from_json(motion_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -1228,7 +1246,7 @@ let event_project =
 ///|
 test "looks reporters and backdrop opcodes update state" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(looks_project),
+    try? vm_new_precompiled_from_json(looks_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -1271,7 +1289,7 @@ test "looks reporters and backdrop opcodes update state" {
 ///|
 test "event hats for key, click, backdrop, greaterthan and touchingobject" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(event_project),
+    try? vm_new_precompiled_from_json(event_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)

@@ -32,6 +32,10 @@ type ViewerWorkerResponse =
       type: 'finished'
     }
   | {
+      type: 'warp-exit'
+      isInWarp: boolean
+    }
+  | {
       type: 'error'
       message: string
     }
@@ -290,6 +294,10 @@ const startPlayback = async (projectId: string) => {
       }
       if (payload.type === 'finished') {
         status.textContent = `${selected.label} の再生が完了`
+        return
+      }
+      if (payload.type === 'warp-exit') {
+        status.textContent = `${selected.label}: warp-exit (isInWarp=${payload.isInWarp})`
         return
       }
       if (payload.type === 'error') {

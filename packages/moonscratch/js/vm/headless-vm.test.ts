@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
 import { renderWithSVG } from '../render/index.ts'
-import { createHeadlessVM } from './factory.ts'
+import { createHeadlessVM, createPrecompiledProject } from './factory.ts'
 import {
   EXAMPLE_PROJECT,
   getStageVariables,
@@ -8,11 +8,22 @@ import {
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
 } from './test-projects.ts'
+import type { CreateHeadlessVMOptions, ProjectJson } from './types.ts'
 
 describe('moonscratch/js/vm/headless-vm.ts', () => {
+  const createVm = (
+    projectJson: ProjectJson,
+    overrides: Omit<CreateHeadlessVMOptions, 'precompiled'> = {},
+  ) => {
+    const precompiled = createPrecompiledProject({ projectJson })
+    return createHeadlessVM({
+      precompiled,
+      ...overrides,
+    })
+  }
+
   test('runs project and normalizes frame values', () => {
-    const vm = createHeadlessVM({
-      projectJson: EXAMPLE_PROJECT,
+    const vm = createVm(EXAMPLE_PROJECT, {
       initialNowMs: 0,
     })
     vm.greenFlag()
@@ -35,7 +46,7 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
   })
 
   test('renders current scene with renderFrame and renderWithSVG', () => {
-    const vm = createHeadlessVM({ projectJson: EXAMPLE_PROJECT })
+    const vm = createVm(EXAMPLE_PROJECT)
     const frame = vm.renderFrame()
     const svg = renderWithSVG(frame)
 
@@ -49,8 +60,7 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
   })
 
   test('detects click and key hats from input state', () => {
-    const vm = createHeadlessVM({
-      projectJson: INPUT_EVENT_PROJECT,
+    const vm = createVm(INPUT_EVENT_PROJECT, {
       initialNowMs: 0,
     })
     vm.greenFlag()
@@ -72,8 +82,7 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
   })
 
   test('handleEffects dispatches handlers and caches translated text for next run', async () => {
-    const vm = createHeadlessVM({
-      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    const vm = createVm(TEXT_TO_SPEECH_TRANSLATE_PROJECT, {
       viewerLanguage: 'ja',
     })
     const translate = vi.fn(async () => 'こんにちは')

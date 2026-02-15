@@ -120,7 +120,7 @@ let procedures_project =
 ///|
 test "procedures call and argument reporters" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(procedures_project),
+    try? vm_new_precompiled_from_json(procedures_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -271,7 +271,7 @@ let procedures_project_nonwarp =
 ///|
 test "procedures call non-warp yields before procedure loop in same frame" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(procedures_project_nonwarp),
+    try? vm_new_precompiled_from_json(procedures_project_nonwarp),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -399,7 +399,7 @@ let procedures_project_warp =
 ///|
 test "procedures call warp mode executes body in same frame" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(procedures_project_warp),
+    try? vm_new_precompiled_from_json(procedures_project_warp),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)
@@ -1018,7 +1018,7 @@ let sensing_sound_project =
 ///|
 test "sensing and sound reporters work in headless runtime" {
   let vm = unwrap_result(
-    try? @moonscratch.vm_new_from_json(sensing_sound_project),
+    try? vm_new_precompiled_from_json(sensing_sound_project),
     "vm init failed",
   )
   @moonscratch.vm_green_flag(vm)

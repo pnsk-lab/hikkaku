@@ -15,6 +15,10 @@ pub(all) enum OpcodeTag {
   PenPenDown
   PenPenUp
   ControlRepeat
+  ControlRepeatUntil
+  ControlIf
+  DataSetVariableTo
+  DataChangeVariableBy
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -33,9 +37,25 @@ pub(all) struct ScratchBlock {
 } derive(Show, Eq, ToJson)
 
 ///|
+pub(all) struct BlockFieldRef {
+  name : String
+  id : String?
+} derive(Show, Eq, ToJson)
+
+///|
+pub(all) struct BlockFastMeta {
+  next_pc : Int?
+  substack_pc : Int?
+  substack2_pc : Int?
+  variable : BlockFieldRef?
+  list : BlockFieldRef?
+} derive(Show, Eq, ToJson)
+
+///|
 pub(all) enum NumericReporterOp {
   PushConst(Double)
   LoadVariable(String, String)
+  LoadVariableByRef(Int, String, Int?)
   Add
   Subtract
   Multiply
@@ -58,6 +78,29 @@ pub(all) enum NumericReporterOp {
 ///|
 pub(all) struct NumericReporterProgram {
   ops : Array[NumericReporterOp]
+} derive(Show, Eq)
+
+///|
+pub(all) struct CompareNumericGuard {
+  owner_kind : Int
+  variable_id : String
+  slot : Int?
+} derive(Show, Eq)
+
+///|
+pub(all) enum BoolReporterOp {
+  CompareLt(Int, Int, Bool, CompareNumericGuard?, CompareNumericGuard?)
+  CompareGt(Int, Int, Bool, CompareNumericGuard?, CompareNumericGuard?)
+  CompareEq(Int, Int, Bool, CompareNumericGuard?, CompareNumericGuard?)
+  And
+  Or
+  Not
+} derive(Show, Eq)
+
+///|
+pub(all) struct BoolReporterProgram {
+  numeric_programs : Array[NumericReporterProgram]
+  ops : Array[BoolReporterOp]
 } derive(Show, Eq)
 
 ///|
@@ -151,6 +194,7 @@ pub(all) struct TargetState {
   variable_slot_by_name : Map[String, Int]
   variable_id_by_slot : Array[String]
   mut variable_values : Array[Json]
+  mut variable_numeric_flags : Array[Bool]
   lists : Map[String, Array[Json]]
   list_names : Map[String, String]
   list_slot_by_id : Map[String, Int]
@@ -162,6 +206,11 @@ pub(all) struct TargetState {
   procedures : Map[String, ProcedureSpec]
   block_pc_by_id : Map[String, Int]
   blocks_by_pc : Array[ScratchBlock]
+  block_fast_meta_by_pc : Array[BlockFastMeta]
+  mut numeric_program_cache : Map[String, NumericReporterProgram]
+  mut numeric_program_compile_failed : Map[String, Bool]
+  mut bool_program_cache : Map[String, BoolReporterProgram]
+  mut bool_program_compile_failed : Map[String, Bool]
   top_level_hats : Array[String]
   green_flag_starts : Array[String]
   stage_clicked_starts : Array[String]

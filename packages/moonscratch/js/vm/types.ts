@@ -234,9 +234,7 @@ export interface CreatePrecompiledProjectOptions {
 }
 
 export interface CreateHeadlessVMOptions {
-  projectJson?: string | ProjectJson
-  assets?: string | Record<string, JsonValue>
-  precompiled?: PrecompiledProject
+  precompiled: PrecompiledProject
   options?: string | VMOptionsInput
   initialNowMs?: number
   viewerLanguage?: string
@@ -267,8 +265,9 @@ export interface ResolveMissingScratchAssetsOptions {
 }
 
 export interface CreateHeadlessVMWithScratchAssetsOptions
-  extends Omit<CreateHeadlessVMOptions, 'projectJson' | 'precompiled'> {
+  extends Omit<CreateHeadlessVMOptions, 'precompiled'> {
   projectJson: string | ProjectJson
+  assets?: string | Record<string, JsonValue>
   scratchCdnBaseUrl?: string
   fetchAsset?: FetchAsset
   decodeImageBytes?: DecodeImageBytes

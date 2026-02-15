@@ -43,13 +43,6 @@ pub(all) struct Vm {
   mut mathop_cos_cache_valid : Bool
   mut mathop_cos_cache_input : Double
   mut mathop_cos_cache_output : Double
-  mut numeric_program_cache : Map[String, NumericReporterProgram]
-  mut numeric_program_compile_failed : Map[String, Bool]
-  mut profiler_execute_calls : Int
-  mut profiler_number_input_calls : Int
-  mut profiler_value_input_calls : Int
-  mut profiler_variable_reads : Int
-  mut profiler_variable_writes : Int
 }
 
 ///|

@@ -41,13 +41,6 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
     mathop_cos_cache_valid: false,
     mathop_cos_cache_input: 0.0,
     mathop_cos_cache_output: 0.0,
-    numeric_program_cache: {},
-    numeric_program_compile_failed: {},
-    profiler_execute_calls: 0,
-    profiler_number_input_calls: 0,
-    profiler_value_input_calls: 0,
-    profiler_variable_reads: 0,
-    profiler_variable_writes: 0,
   }
 }
 
@@ -92,23 +85,7 @@ fn resolve_variable_ref(
   let stage = vm.targets[vm.stage_index]
 
   match variable_id {
-    Some(id) => {
-      match target.variable_slot_by_id.get(id) {
-        Some(slot) => return Some((target_index, id, Some(slot)))
-        None => ()
-      }
-      if target.variables.contains(id) {
-        return Some((target_index, id, None))
-      }
-      match stage.variable_slot_by_id.get(id) {
-        Some(slot) => return Some((vm.stage_index, id, Some(slot)))
-        None => ()
-      }
-      if stage.variables.contains(id) {
-        return Some((vm.stage_index, id, None))
-      }
-      None
-    }
+    Some(id) => resolve_variable_ref_by_id(vm, target_index, id)
     None =>
       match variable_name {
         Some(name) =>
@@ -127,6 +104,32 @@ fn resolve_variable_ref(
         None => None
       }
   }
+}
+
+///|
+fn resolve_variable_ref_by_id(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String,
+) -> (Int, String, Int?)? {
+  let target = vm.targets[target_index]
+  let stage = vm.targets[vm.stage_index]
+
+  match target.variable_slot_by_id.get(variable_id) {
+    Some(slot) => return Some((target_index, variable_id, Some(slot)))
+    None => ()
+  }
+  if target.variables.contains(variable_id) {
+    return Some((target_index, variable_id, None))
+  }
+  match stage.variable_slot_by_id.get(variable_id) {
+    Some(slot) => return Some((vm.stage_index, variable_id, Some(slot)))
+    None => ()
+  }
+  if stage.variables.contains(variable_id) {
+    return Some((vm.stage_index, variable_id, None))
+  }
+  None
 }
 
 ///|
@@ -150,7 +153,6 @@ fn read_variable_by_ref(
   variable_id : String,
   slot : Int?,
 ) -> Json {
-  vm.profiler_variable_reads += 1
   match slot {
     Some(slot) =>
       if slot >= 0 && slot < vm.targets[owner_index].variable_values.length() {
@@ -177,12 +179,14 @@ fn write_variable_by_ref(
   slot : Int?,
   value : Json,
 ) -> Unit {
-  vm.profiler_variable_writes += 1
   vm.targets[owner_index].variables[variable_id] = value
   match slot {
     Some(slot) =>
       if slot >= 0 && slot < vm.targets[owner_index].variable_values.length() {
         vm.targets[owner_index].variable_values[slot] = value
+        vm.targets[owner_index].variable_numeric_flags[slot] = json_is_numeric_comparable(
+          value,
+        )
       }
     None => ()
   }
@@ -211,6 +215,9 @@ fn write_variable(
           vm.targets[stage_index].variable_slot_by_name[name] = new_slot
           vm.targets[stage_index].variable_id_by_slot.push(new_id)
           vm.targets[stage_index].variable_values.push(value)
+          vm.targets[stage_index].variable_numeric_flags.push(
+            json_is_numeric_comparable(value),
+          )
         }
         None => ()
       }
@@ -460,6 +467,7 @@ fn copy_target_state_with_meta(
     variable_slot_by_name: copy_int_map(source.variable_slot_by_name),
     variable_id_by_slot: source.variable_id_by_slot.copy(),
     variable_values: copy_json_array(source.variable_values),
+    variable_numeric_flags: source.variable_numeric_flags.copy(),
     lists: copy_list_map(source.lists),
     list_names: copy_string_map(source.list_names),
     list_slot_by_id: copy_int_map(source.list_slot_by_id),
@@ -471,6 +479,11 @@ fn copy_target_state_with_meta(
     procedures: copy_procedure_map(source.procedures),
     block_pc_by_id: copy_int_map(source.block_pc_by_id),
     blocks_by_pc: source.blocks_by_pc.copy(),
+    block_fast_meta_by_pc: source.block_fast_meta_by_pc.copy(),
+    numeric_program_cache: {},
+    numeric_program_compile_failed: {},
+    bool_program_cache: {},
+    bool_program_compile_failed: {},
     top_level_hats: source.top_level_hats.copy(),
     green_flag_starts: source.green_flag_starts.copy(),
     stage_clicked_starts: source.stage_clicked_starts.copy(),

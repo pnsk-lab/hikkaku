@@ -71,31 +71,18 @@ describe("calc", () => {
   });
 
   const projectJson = project.toScratch();
+  const precompiled = createPrecompiledProject({ projectJson });
   const vm = createHeadlessVM({
-    projectJson,
+    precompiled,
     initialNowMs: 0,
     options: {
       stepTimeoutTicks: 1000000,
       turbo: true,
     },
   });
-  const precompiledVm = (() => {
-    const precompiled = createPrecompiledProject({ projectJson });
-    return createHeadlessVM({
-      precompiled,
-      initialNowMs: 0,
-      options: {
-        stepTimeoutTicks: 1000000,
-        turbo: true,
-      },
-    });
-  })();
 
-  bench("moonscratch run-only", () => {
+  bench("moonscratch", () => {
     runUntilFinished(vm);
-  }, benchOptions);
-  bench("moonscratch precompiled run-only", () => {
-    runUntilFinished(precompiledVm);
   }, benchOptions);
 });
 
@@ -144,30 +131,17 @@ describe("calc primes", () => {
   });
 
   const projectJson = project.toScratch();
+  const precompiled = createPrecompiledProject({ projectJson });
   const vm = createHeadlessVM({
-    projectJson,
+    precompiled,
     initialNowMs: 0,
     options: {
       stepTimeoutTicks: 1000000,
       turbo: true,
     },
   });
-  const precompiledVm = (() => {
-    const precompiled = createPrecompiledProject({ projectJson });
-    return createHeadlessVM({
-      precompiled,
-      initialNowMs: 0,
-      options: {
-        stepTimeoutTicks: 1000000,
-        turbo: true,
-      },
-    });
-  })();
 
-  bench("moonscratch run-only", () => {
+  bench("moonscratch", () => {
     runUntilFinished(vm);
-  }, benchOptions);
-  bench("moonscratch precompiled run-only", () => {
-    runUntilFinished(precompiledVm);
   }, benchOptions);
 });

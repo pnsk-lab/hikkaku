@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 
-import { createHeadlessVM } from './factory.ts'
+import { createHeadlessVM, createPrecompiledProject } from './factory.ts'
 import type { ProjectJson } from './types.ts'
 
 const NON_WARP_REDRAW_PROJECT: ProjectJson = {
@@ -139,10 +139,193 @@ const WARP_REDRAW_PROJECT: ProjectJson = {
   ],
 }
 
+const WARP_EXIT_PROJECT: ProjectJson = {
+  targets: [
+    {
+      isStage: true,
+      name: 'Stage',
+      variables: {
+        stage_value: ['stage value', 0],
+      },
+      lists: {},
+      blocks: {},
+    },
+    {
+      isStage: false,
+      name: 'Sprite1',
+      variables: {},
+      lists: {},
+      blocks: {
+        hat_flag: {
+          opcode: 'event_whenflagclicked',
+          next: 'call_proc',
+          parent: null,
+          inputs: {},
+          fields: {},
+          topLevel: true,
+        },
+        call_proc: {
+          opcode: 'procedures_call',
+          next: null,
+          parent: 'hat_flag',
+          inputs: {},
+          fields: {},
+          mutation: {
+            proccode: 'set value',
+            argumentids: '[]',
+            argumentnames: '[]',
+            argumentdefaults: '[]',
+            warp: true,
+          },
+          topLevel: false,
+        },
+        proc_def: {
+          opcode: 'procedures_definition',
+          next: 'set_value',
+          parent: null,
+          inputs: {
+            custom_block: [1, 'proc_proto'],
+          },
+          fields: {},
+          topLevel: true,
+        },
+        proc_proto: {
+          opcode: 'procedures_prototype',
+          next: null,
+          parent: 'proc_def',
+          inputs: {},
+          fields: {},
+          mutation: {
+            proccode: 'set value',
+            argumentids: '[]',
+            argumentnames: '[]',
+            argumentdefaults: '[]',
+            warp: true,
+          },
+          topLevel: false,
+        },
+        set_value: {
+          opcode: 'data_setvariableto',
+          next: null,
+          parent: 'proc_def',
+          inputs: {
+            VALUE: [1, [4, 7]],
+          },
+          fields: {
+            VARIABLE: ['stage value', 'stage_value'],
+          },
+          topLevel: false,
+        },
+      },
+    },
+  ],
+}
+
+const WARP_FOREVER_PROJECT: ProjectJson = {
+  targets: [
+    {
+      isStage: true,
+      name: 'Stage',
+      variables: {},
+      lists: {},
+      blocks: {},
+    },
+    {
+      isStage: false,
+      name: 'Sprite1',
+      variables: {},
+      lists: {},
+      blocks: {
+        hat_flag: {
+          opcode: 'event_whenflagclicked',
+          next: 'forever_proc',
+          parent: null,
+          inputs: {},
+          fields: {},
+          topLevel: true,
+        },
+        forever_proc: {
+          opcode: 'control_forever',
+          next: null,
+          parent: 'hat_flag',
+          inputs: {
+            SUBSTACK: [2, 'call_proc'],
+          },
+          fields: {},
+          topLevel: false,
+        },
+        call_proc: {
+          opcode: 'procedures_call',
+          next: null,
+          parent: 'forever_proc',
+          inputs: {},
+          fields: {},
+          mutation: {
+            proccode: 'tick',
+            argumentids: '[]',
+            argumentnames: '[]',
+            argumentdefaults: '[]',
+            warp: true,
+          },
+          topLevel: false,
+        },
+        proc_def: {
+          opcode: 'procedures_definition',
+          next: 'say_tick',
+          parent: null,
+          inputs: {
+            custom_block: [1, 'proc_proto'],
+          },
+          fields: {},
+          topLevel: true,
+        },
+        proc_proto: {
+          opcode: 'procedures_prototype',
+          next: null,
+          parent: 'proc_def',
+          inputs: {},
+          fields: {},
+          mutation: {
+            proccode: 'tick',
+            argumentids: '[]',
+            argumentnames: '[]',
+            argumentdefaults: '[]',
+            warp: true,
+          },
+          topLevel: false,
+        },
+        say_tick: {
+          opcode: 'looks_say',
+          next: null,
+          parent: 'proc_def',
+          inputs: {
+            MESSAGE: [1, [10, 'tick']],
+          },
+          fields: {},
+          topLevel: false,
+        },
+      },
+    },
+  ],
+}
+
 describe('moonscratch/js/vm scheduler render contracts', () => {
+  const nonWarpPrecompiled = createPrecompiledProject({
+    projectJson: NON_WARP_REDRAW_PROJECT,
+  })
+  const warpPrecompiled = createPrecompiledProject({
+    projectJson: WARP_REDRAW_PROJECT,
+  })
+  const warpExitPrecompiled = createPrecompiledProject({
+    projectJson: WARP_EXIT_PROJECT,
+  })
+  const warpForeverPrecompiled = createPrecompiledProject({
+    projectJson: WARP_FOREVER_PROJECT,
+  })
+
   test('non-warp redraw stops frame with rerender reason and asks renderer update', () => {
     const vm = createHeadlessVM({
-      projectJson: NON_WARP_REDRAW_PROJECT,
+      precompiled: nonWarpPrecompiled,
       initialNowMs: 0,
     })
     vm.greenFlag()
@@ -157,7 +340,7 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
 
   test('warp redraw does not request render while warp is still active', () => {
     const vm = createHeadlessVM({
-      projectJson: WARP_REDRAW_PROJECT,
+      precompiled: warpPrecompiled,
       initialNowMs: 0,
       options: {
         stepTimeoutTicks: 1,
@@ -170,6 +353,43 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
 
     expect(frame.stopReason).toBe('timeout')
     expect(frame.shouldRender).toBe(false)
+    expect(frame.activeThreads).toBeGreaterThan(0)
+  })
+
+  test('returns warp-exit before finished when warp context ends in same frame', () => {
+    const vm = createHeadlessVM({
+      precompiled: warpExitPrecompiled,
+      initialNowMs: 0,
+      options: {
+        stepTimeoutTicks: 10000,
+        turbo: true,
+      },
+    })
+    vm.greenFlag()
+
+    const first = vm.stepFrame()
+    const second = vm.stepFrame()
+
+    expect(first.stopReason).toBe('warp-exit')
+    expect(first.shouldRender).toBe(true)
+    expect(first.activeThreads).toBe(0)
+    expect(second.stopReason).toBe('finished')
+  })
+
+  test('emits warp-exit when forever script repeatedly re-enters warp procedure', () => {
+    const vm = createHeadlessVM({
+      precompiled: warpForeverPrecompiled,
+      initialNowMs: 0,
+      options: {
+        stepTimeoutTicks: 100,
+      },
+    })
+    vm.greenFlag()
+
+    const frame = vm.stepFrame()
+
+    expect(frame.stopReason).toBe('warp-exit')
+    expect(frame.shouldRender).toBe(true)
     expect(frame.activeThreads).toBeGreaterThan(0)
   })
 })

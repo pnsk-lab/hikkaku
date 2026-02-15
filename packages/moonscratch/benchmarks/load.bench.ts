@@ -21,14 +21,8 @@ describe("load", () => {
     }
   });
   const projectJson = project.toScratch();
+  const precompiled = createPrecompiledProject({ projectJson });
   bench("moonscratch", () => {
-    createHeadlessVM({
-      projectJson,
-      initialNowMs: 0,
-    });
-  }, benchOptions);
-  bench("moonscratch precompiled", () => {
-    const precompiled = createPrecompiledProject({ projectJson });
     createHeadlessVM({
       precompiled,
       initialNowMs: 0,

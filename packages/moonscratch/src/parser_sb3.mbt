@@ -95,6 +95,10 @@ fn opcode_tag_for(opcode : String) -> OpcodeTag {
     "pen_penDown" => OpcodeTag::PenPenDown
     "pen_penUp" => OpcodeTag::PenPenUp
     "control_repeat" => OpcodeTag::ControlRepeat
+    "control_repeat_until" => OpcodeTag::ControlRepeatUntil
+    "control_if" => OpcodeTag::ControlIf
+    "data_setvariableto" => OpcodeTag::DataSetVariableTo
+    "data_changevariableby" => OpcodeTag::DataChangeVariableBy
     _ => OpcodeTag::Unknown
   }
 }
@@ -213,6 +217,14 @@ fn parse_lists(
 }
 
 ///|
+fn json_is_numeric_comparable(value : Json) -> Bool {
+  match as_number_or_none(value) {
+    Some(number) => number == number
+    None => false
+  }
+}
+
+///|
 fn parse_blocks(
   raw : Map[String, Json],
 ) -> (Map[String, ScratchBlock], Array[String]) raise VmError {
@@ -239,6 +251,49 @@ fn build_block_pc_index(
     blocks_by_pc.push(block)
   })
   (block_pc_by_id, blocks_by_pc)
+}
+
+///|
+fn block_field_ref(block : ScratchBlock, field_name : String) -> BlockFieldRef? {
+  match field_value(block, field_name) {
+    Some((name, id)) => Some({ name, id })
+    None => None
+  }
+}
+
+///|
+fn resolve_block_pc(
+  block_pc_by_id : Map[String, Int],
+  block_id : String?,
+) -> Int? {
+  match block_id {
+    Some(id) => block_pc_by_id.get(id)
+    None => None
+  }
+}
+
+///|
+fn build_block_fast_meta_by_pc(
+  blocks_by_pc : Array[ScratchBlock],
+  block_pc_by_id : Map[String, Int],
+) -> Array[BlockFastMeta] {
+  let out = []
+  for block in blocks_by_pc {
+    out.push({
+      next_pc: resolve_block_pc(block_pc_by_id, block.next),
+      substack_pc: resolve_block_pc(
+        block_pc_by_id,
+        block_input_block_id(block, "SUBSTACK"),
+      ),
+      substack2_pc: resolve_block_pc(
+        block_pc_by_id,
+        block_input_block_id(block, "SUBSTACK2"),
+      ),
+      variable: block_field_ref(block, "VARIABLE"),
+      list: block_field_ref(block, "LIST"),
+    })
+  }
+  out
 }
 
 ///|
@@ -618,6 +673,7 @@ fn parse_target(
     variable_id_by_slot,
     variable_values,
   ) = parse_variables(raw_variables)
+  let variable_numeric_flags = variable_values.map(json_is_numeric_comparable)
   let (
     lists,
     list_names,
@@ -630,6 +686,9 @@ fn parse_target(
   let const_number_block_values = build_const_number_block_values(blocks)
   let procedures = build_procedure_specs(blocks)
   let (block_pc_by_id, blocks_by_pc) = build_block_pc_index(blocks)
+  let block_fast_meta_by_pc = build_block_fast_meta_by_pc(
+    blocks_by_pc, block_pc_by_id,
+  )
   let green_flag_starts = []
   let stage_clicked_starts = []
   let sprite_clicked_starts = []
@@ -747,6 +806,7 @@ fn parse_target(
     variable_slot_by_name,
     variable_id_by_slot,
     variable_values,
+    variable_numeric_flags,
     lists,
     list_names,
     list_slot_by_id,
@@ -758,6 +818,11 @@ fn parse_target(
     procedures,
     block_pc_by_id,
     blocks_by_pc,
+    block_fast_meta_by_pc,
+    numeric_program_cache: {},
+    numeric_program_compile_failed: {},
+    bool_program_cache: {},
+    bool_program_compile_failed: {},
     top_level_hats: hats,
     green_flag_starts,
     stage_clicked_starts,

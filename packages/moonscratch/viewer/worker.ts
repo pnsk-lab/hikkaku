@@ -1,7 +1,12 @@
-import { createHeadlessVM, type VMInputEvent } from '../js'
+import {
+  createHeadlessVM,
+  createPrecompiledProject,
+  type VMInputEvent,
+} from '../js'
 
 const FRAME_FORCE_TIMEOUT_OUT_OF_WARP = 1000 / 30 // 30 FPS
-const FRAME_FORCE_TIMEOUT_IN_WARP = FRAME_FORCE_TIMEOUT_OUT_OF_WARP * 10 // 10倍長くする
+const FRAME_FORCE_TIMEOUT_IN_WARP = 1000 / 5 // 5 FPS
+const TICKS_TIMEOUT = 1
 
 type ViewerWorkerRequest =
   | {
@@ -45,9 +50,10 @@ const playbackLoop = async (token: number): Promise<void> => {
         // no-op
         //console.log('Frame timeout')
       } else if (frameInfo.stopReason === 'warp-exit') {
-        // no-op
-        // console.log('Warp exit')
+        //postMessage({ type: 'warp-exit', isInWarp: frameInfo.isInWarp })
+        //console.log('warp-exit')
       }
+      //console.log(frameInfo.isInWarp)
       if (frameInfo.isInWarp) {
         if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_IN_WARP) {
           //console.log('Forcing frame end due to warp timeout')
@@ -95,10 +101,13 @@ globalThis.onmessage = (event) => {
   runToken += 1
   const token = runToken
   try {
-    vm = createHeadlessVM({
+    const precompiled = createPrecompiledProject({
       projectJson: data.projectJson,
+    })
+    vm = createHeadlessVM({
+      precompiled,
       options: {
-        stepTimeoutTicks: 10,
+        stepTimeoutTicks: TICKS_TIMEOUT
       },
     })
     vm.start()

@@ -11,8 +11,6 @@ options(
       "exports": [
         "vm_compile_from_json",
         "vm_new_from_compiled",
-        "vm_new_from_json",
-        "vm_new",
         "vm_start",
         "vm_green_flag",
         "vm_step_frame",

@@ -64,24 +64,12 @@ export const createPrecompiledProject = ({
 }
 
 export const createHeadlessVM = ({
-  projectJson,
-  assets,
   precompiled,
   options,
   initialNowMs,
   viewerLanguage,
   translateCache,
 }: CreateHeadlessVMOptions): HeadlessVM => {
-  const resolvedPrecompiled = (() => {
-    if (precompiled !== undefined) {
-      return precompiled
-    }
-    if (projectJson === undefined) {
-      throw new Error('projectJson is required when precompiled is not provided')
-    }
-    return createPrecompiledProject({ projectJson, assets })
-  })()
-
   const binding = moonscratch as unknown as BoundMoonscratchFactory
   if (typeof binding.vm_new_from_compiled !== 'function') {
     throw new Error(
@@ -90,7 +78,7 @@ export const createHeadlessVM = ({
   }
   const vm = unwrapResult(
     binding.vm_new_from_compiled(
-      resolvedPrecompiled.raw,
+      precompiled.raw,
       toOptionsJson(options),
     ),
     'vm_new_from_compiled failed',
@@ -128,9 +116,13 @@ export const createHeadlessVMWithScratchAssets = async ({
     decodeImageBytes,
   })
 
-  return createHeadlessVM({
+  const precompiled = createPrecompiledProject({
     projectJson,
     assets: resolvedAssets,
+  })
+
+  return createHeadlessVM({
+    precompiled,
     options,
     initialNowMs,
     viewerLanguage,

@@ -41,8 +41,9 @@ const projectJson = {
   ],
 };
 
+const precompiled = createPrecompiledProject({ projectJson });
 const vm = createHeadlessVM({
-  projectJson,
+  precompiled,
   options: {
     turbo: true,
     deterministic: true,
@@ -58,8 +59,7 @@ vm.setTime(Date.now()); // update runtime clock explicitly
 const frame = vm.stepFrame(); // run until rerender/finished/timeout event
 console.log(frame.activeThreads);
 
-// Optional: precompile once and reuse for many VM instances.
-const precompiled = createPrecompiledProject({ projectJson });
+// Reuse the precompiled project for many VM instances.
 const vm2 = createHeadlessVM({ precompiled });
 ```
 

@@ -1936,8 +1936,19 @@ fn execute_list_replace(
 }
 
 ///|
+fn increment_block_hot_count(
+  vm : Vm,
+  target_index : Int,
+  block_id : String,
+) -> Int {
+  let block_hot_key = "\{target_index}:\{block_id}"
+  let block_hot_count = vm.hot_op_counts.get_or_default(block_hot_key, 0) + 1
+  vm.hot_op_counts[block_hot_key] = block_hot_count
+  block_hot_count
+}
+
+///|
 fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
-  vm.profiler_execute_calls += 1
   let mut thread = thread
   if thread.done {
     return thread
@@ -1987,11 +1998,8 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       return unwind_control(vm, thread)
     }
   }
-  let block_hot_key = "\{target_index}:\{block.id}"
-  let block_hot_count = vm.hot_op_counts.get_or_default(block_hot_key, 0) + 1
-  vm.hot_op_counts[block_hot_key] = block_hot_count
-
-  let mut next_pc = target_block_pc_from_id(target, block.next)
+  let block_meta = target.block_fast_meta_by_pc[block_pc]
+  let mut next_pc = block_meta.next_pc
   let mut handled_hot_opcode = false
 
   vm.current_thread_id = Some(thread.id)
@@ -2036,33 +2044,164 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       handled_hot_opcode = true
     }
     OpcodeTag::ControlRepeat => {
+      let block_hot_count = increment_block_hot_count(
+        vm,
+        target_index,
+        block.id,
+      )
       let times = json_to_number_value(
           value_from_input(vm, target_index, block, "TIMES", 0),
         )
         .floor()
         .to_int()
       if times > 0 {
-        let substack_id = block_input_block_id(block, "SUBSTACK")
-        let substack_pc = target_block_pc_from_id(target, substack_id)
+        let substack_pc = block_meta.substack_pc
         let use_fast_path = times >= 32 || block_hot_count >= 8
         if use_fast_path &&
           try_fast_repeat_numeric_variable_loop(
             vm, target_index, times, substack_pc,
           ) {
-          next_pc = target_block_pc_from_id(target, block.next)
+          next_pc = block_meta.next_pc
         } else if use_fast_path &&
           try_fast_repeat_motion_step(vm, target_index, times, substack_pc) {
-          next_pc = target_block_pc_from_id(target, block.next)
+          next_pc = block_meta.next_pc
         } else {
           thread.stack.push(
-            repeat_frame(
-              times,
-              substack_pc,
-              target_block_pc_from_id(target, block.next),
-            ),
+            repeat_frame(times, substack_pc, block_meta.next_pc),
           )
           next_pc = substack_pc
         }
+      }
+      handled_hot_opcode = true
+    }
+    OpcodeTag::ControlRepeatUntil => {
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
+      if !condition {
+        thread.stack.push(
+          repeat_frame(1, block_meta.substack_pc, Some(block_pc)),
+        )
+        next_pc = block_meta.substack_pc
+      }
+      handled_hot_opcode = true
+    }
+    OpcodeTag::ControlIf => {
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
+      if condition {
+        thread.stack.push(
+          repeat_frame(1, block_meta.substack_pc, block_meta.next_pc),
+        )
+        next_pc = block_meta.substack_pc
+      }
+      handled_hot_opcode = true
+    }
+    OpcodeTag::DataSetVariableTo => {
+      match block_meta.variable {
+        Some(variable_ref) => {
+          let resolved = match variable_ref.id {
+            Some(variable_id) =>
+              resolve_variable_ref_by_id(vm, target_index, variable_id)
+            None =>
+              resolve_variable_ref(
+                vm,
+                target_index,
+                None,
+                Some(variable_ref.name),
+              )
+          }
+          match
+            fast_numeric_value_for_setvariable(vm, target, target_index, block) {
+            Some(value) =>
+              match resolved {
+                Some((owner_index, variable_id, variable_slot)) =>
+                  write_variable_by_ref(
+                    vm,
+                    owner_index,
+                    variable_id,
+                    variable_slot,
+                    json_number(value),
+                  )
+                None =>
+                  write_variable(
+                    vm,
+                    target_index,
+                    variable_ref.id,
+                    Some(variable_ref.name),
+                    json_number(value),
+                  )
+              }
+            None => {
+              let value = value_from_input(vm, target_index, block, "VALUE", 0)
+              match resolved {
+                Some((owner_index, variable_id, variable_slot)) =>
+                  write_variable_by_ref(
+                    vm, owner_index, variable_id, variable_slot, value,
+                  )
+                None =>
+                  write_variable(
+                    vm,
+                    target_index,
+                    variable_ref.id,
+                    Some(variable_ref.name),
+                    value,
+                  )
+              }
+            }
+          }
+        }
+        None => ()
+      }
+      handled_hot_opcode = true
+    }
+    OpcodeTag::DataChangeVariableBy => {
+      match block_meta.variable {
+        Some(variable_ref) => {
+          let delta = number_from_input(vm, target_index, block, "VALUE", 0)
+          let resolved = match variable_ref.id {
+            Some(variable_id) =>
+              resolve_variable_ref_by_id(vm, target_index, variable_id)
+            None =>
+              resolve_variable_ref(
+                vm,
+                target_index,
+                None,
+                Some(variable_ref.name),
+              )
+          }
+          match resolved {
+            Some((owner_index, variable_id, variable_slot)) => {
+              let current = json_to_number_value(
+                read_variable_by_ref(
+                  vm, owner_index, variable_id, variable_slot,
+                ),
+              )
+              write_variable_by_ref(
+                vm,
+                owner_index,
+                variable_id,
+                variable_slot,
+                json_number(current + delta),
+              )
+            }
+            None => {
+              let current = json_to_number_value(
+                read_variable(
+                  vm,
+                  target_index,
+                  variable_ref.id,
+                  Some(variable_ref.name),
+                ),
+              )
+              write_variable(
+                vm,
+                target_index,
+                variable_ref.id,
+                Some(variable_ref.name),
+                json_number(current + delta),
+              )
+            }
+          }
+        }
+        None => ()
       }
       handled_hot_opcode = true
     }
@@ -2725,69 +2864,57 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       request_redraw(vm)
     }
     "control_wait_until" => {
-      let condition = json_to_bool_value(
-        value_from_input(vm, target_index, block, "CONDITION", 0),
-      )
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
       if !condition {
         next_pc = Some(block_pc)
       }
     }
     "control_repeat" => {
+      let block_hot_count = increment_block_hot_count(
+        vm,
+        target_index,
+        block.id,
+      )
       let times = json_to_number_value(
           value_from_input(vm, target_index, block, "TIMES", 0),
         )
         .floor()
         .to_int()
       if times > 0 {
-        let substack_pc = target_block_pc_from_id(
-          target,
-          block_input_block_id(block, "SUBSTACK"),
-        )
+        let substack_pc = block_meta.substack_pc
         let use_fast_path = times >= 32 || block_hot_count >= 8
         if use_fast_path &&
           try_fast_repeat_motion_step(vm, target_index, times, substack_pc) {
-          next_pc = target_block_pc_from_id(target, block.next)
+          next_pc = block_meta.next_pc
         } else {
           thread.stack.push(
-            repeat_frame(
-              times,
-              substack_pc,
-              target_block_pc_from_id(target, block.next),
-            ),
+            repeat_frame(times, substack_pc, block_meta.next_pc),
           )
           next_pc = substack_pc
         }
       }
     }
     "control_repeat_until" => {
-      let condition = json_to_bool_value(
-        value_from_input(vm, target_index, block, "CONDITION", 0),
-      )
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
       if !condition {
-        let substack_pc = target_block_pc_from_id(
-          target,
-          block_input_block_id(block, "SUBSTACK"),
+        thread.stack.push(
+          repeat_frame(1, block_meta.substack_pc, Some(block_pc)),
         )
-        thread.stack.push(repeat_frame(1, substack_pc, Some(block_pc)))
-        next_pc = substack_pc
+        next_pc = block_meta.substack_pc
       }
     }
     "control_while" => {
-      let condition = json_to_bool_value(
-        value_from_input(vm, target_index, block, "CONDITION", 0),
-      )
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
       if condition {
-        let substack_pc = target_block_pc_from_id(
-          target,
-          block_input_block_id(block, "SUBSTACK"),
+        thread.stack.push(
+          repeat_frame(1, block_meta.substack_pc, Some(block_pc)),
         )
-        thread.stack.push(repeat_frame(1, substack_pc, Some(block_pc)))
-        next_pc = substack_pc
+        next_pc = block_meta.substack_pc
       }
     }
     "control_for_each" =>
-      match field_value(block, "VARIABLE") {
-        Some((name, id)) => {
+      match block_meta.variable {
+        Some(variable_ref) => {
           let limit = json_to_number_value(
             value_from_input(vm, target_index, block, "VALUE", 0),
           )
@@ -2799,16 +2926,14 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
             write_variable(
               vm,
               target_index,
-              id,
-              Some(name),
+              variable_ref.id,
+              Some(variable_ref.name),
               json_number(Double::from_int(next_index)),
             )
-            let substack_pc = target_block_pc_from_id(
-              target,
-              block_input_block_id(block, "SUBSTACK"),
+            thread.stack.push(
+              repeat_frame(1, block_meta.substack_pc, Some(block_pc)),
             )
-            thread.stack.push(repeat_frame(1, substack_pc, Some(block_pc)))
-            next_pc = substack_pc
+            next_pc = block_meta.substack_pc
           } else {
             thread.loop_counters.remove(key)
           }
@@ -2816,62 +2941,33 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         None => ()
       }
     "control_forever" => {
-      let substack_pc = target_block_pc_from_id(
-        target,
-        block_input_block_id(block, "SUBSTACK"),
-      )
-      thread.stack.push(forever_frame(substack_pc, Some(block_pc)))
-      next_pc = substack_pc
+      thread.stack.push(forever_frame(block_meta.substack_pc, Some(block_pc)))
+      next_pc = block_meta.substack_pc
     }
     "control_if" => {
-      let condition = json_to_bool_value(
-        value_from_input(vm, target_index, block, "CONDITION", 0),
-      )
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
       if condition {
-        let substack_pc = target_block_pc_from_id(
-          target,
-          block_input_block_id(block, "SUBSTACK"),
-        )
         thread.stack.push(
-          repeat_frame(
-            1,
-            substack_pc,
-            target_block_pc_from_id(target, block.next),
-          ),
+          repeat_frame(1, block_meta.substack_pc, block_meta.next_pc),
         )
-        next_pc = substack_pc
+        next_pc = block_meta.substack_pc
       }
     }
     "control_if_else" => {
-      let condition = json_to_bool_value(
-        value_from_input(vm, target_index, block, "CONDITION", 0),
-      )
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
       let branch_pc = if condition {
-        target_block_pc_from_id(target, block_input_block_id(block, "SUBSTACK"))
+        block_meta.substack_pc
       } else {
-        target_block_pc_from_id(
-          target,
-          block_input_block_id(block, "SUBSTACK2"),
-        )
+        block_meta.substack2_pc
       }
-      thread.stack.push(
-        repeat_frame(1, branch_pc, target_block_pc_from_id(target, block.next)),
-      )
+      thread.stack.push(repeat_frame(1, branch_pc, block_meta.next_pc))
       next_pc = branch_pc
     }
     "control_all_at_once" => {
-      let substack_pc = target_block_pc_from_id(
-        target,
-        block_input_block_id(block, "SUBSTACK"),
-      )
       thread.stack.push(
-        repeat_frame(
-          1,
-          substack_pc,
-          target_block_pc_from_id(target, block.next),
-        ),
+        repeat_frame(1, block_meta.substack_pc, block_meta.next_pc),
       )
-      next_pc = substack_pc
+      next_pc = block_meta.substack_pc
     }
     "control_stop" => {
       let option = json_to_string_value(
@@ -3059,11 +3155,6 @@ fn green_flag_runtime(vm : Vm) -> Unit {
   vm.run_id += 1
   vm.redraw_requested = false
   vm.redraw_requested_while_warp = false
-  vm.profiler_execute_calls = 0
-  vm.profiler_number_input_calls = 0
-  vm.profiler_value_input_calls = 0
-  vm.profiler_variable_reads = 0
-  vm.profiler_variable_writes = 0
   vm.running = true
   let spawned = spawn_green_flag_hats(vm)
   if spawned == 0 {
@@ -3155,11 +3246,20 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
         let mut updated = execute_thread_once(vm, thread)
         let mut warp_steps = warp_window_extra_steps
         let mut non_warp_steps = non_warp_extra_steps
+        let mut thread_saw_warp_context = false
         while true {
           vm.threads[index] = updated
           let in_warp_window = is_warp_window_active(vm, updated)
           if in_warp_window {
+            thread_saw_warp_context = true
             warp_active_in_tick = true
+          } else if thread_saw_warp_context && !has_active_warp_thread(vm) {
+            stop_reason = "warp-exit"
+            should_render = true
+            vm.redraw_requested = false
+            vm.redraw_requested_while_warp = false
+            warp_exit_detected = true
+            break
           }
           let is_blocked = is_thread_blocked(vm, updated)
           if !is_blocked && !updated.done {
@@ -3179,6 +3279,9 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
             total_ops += 1
             progressed = true
           }
+          break
+        }
+        if warp_exit_detected {
           break
         }
 
@@ -3248,7 +3351,9 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
   cleanup_done_threads(vm)
   if vm.threads.length() <= 0 {
     vm.running = false
-    stop_reason = "finished"
+    if stop_reason != "warp-exit" {
+      stop_reason = "finished"
+    }
     should_render = true
     vm.redraw_requested = false
     vm.redraw_requested_while_warp = false

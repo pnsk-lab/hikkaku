@@ -13,7 +13,10 @@ fn main {
     #|  ]
     #|}
 
-  let vm_result = try? @moonscratch.vm_new_from_json(minimal_project)
+  let vm_result = try? ({
+    let precompiled = @moonscratch.vm_compile_from_json(minimal_project)
+    @moonscratch.vm_new_from_compiled(precompiled)
+  })
   match vm_result {
     Ok(vm) => {
       @moonscratch.vm_start(vm)

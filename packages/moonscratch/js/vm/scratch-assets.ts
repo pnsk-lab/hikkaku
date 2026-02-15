@@ -1,7 +1,6 @@
 import { fromImageBytes } from '../assets/create.ts'
 import { parseJson } from './json.ts'
 import type {
-  CreateHeadlessVMOptions,
   DecodeImageBytes,
   FetchAsset,
   JsonValue,
@@ -28,7 +27,7 @@ const hasOwn = (record: Record<string, JsonValue>, key: string): boolean =>
   Object.hasOwn(record, key)
 
 const normalizeAssets = (
-  assets: CreateHeadlessVMOptions['assets'],
+  assets: ResolveMissingScratchAssetsOptions['assets'],
 ): Record<string, JsonValue> => {
   if (assets === undefined) {
     return {}

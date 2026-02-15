@@ -19,18 +19,6 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(createVMWithScratchAssets).toBe(createHeadlessVMWithScratchAssets)
   })
 
-  test('rejects empty project JSON strings', () => {
-    expect(() => createHeadlessVM({ projectJson: '  ' })).toThrow(
-      'projectJson must be a non-empty JSON string or object',
-    )
-  })
-
-  test('requires projectJson when precompiled is not provided', () => {
-    expect(() => createHeadlessVM({})).toThrow(
-      'projectJson is required when precompiled is not provided',
-    )
-  })
-
   test('creates VM from precompiled project', () => {
     const precompiled = createPrecompiledProject({
       projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
@@ -66,8 +54,11 @@ describe('moonscratch/js/vm/factory.ts', () => {
   })
 
   test('normalizes viewer language and translate cache in constructor options', () => {
-    const vm = createHeadlessVM({
+    const precompiled = createPrecompiledProject({
       projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    const vm = createHeadlessVM({
+      precompiled,
       viewerLanguage: ' JA ',
       translateCache: { JA: { hello: 'こんにちは' } },
     })
