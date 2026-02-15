@@ -194,6 +194,7 @@ fn render_blend_rgba(
 ///|
 fn vm_clear_pen_pixels(vm : Vm) -> Unit {
   vm.pen_pixels.clear()
+  vm.pen_vectors.clear()
 }
 
 ///|
@@ -222,44 +223,6 @@ fn render_stage_to_pixel_double(
     (x + 240.0) / 480.0 * Double::from_int(vm.pen_width),
     (180.0 - y) / 360.0 * Double::from_int(vm.pen_height),
   )
-}
-
-///|
-fn render_pixel_to_stage(vm : Vm, px : Int, py : Int) -> (Double, Double) {
-  let x = (Double::from_int(px) + 0.5) / Double::from_int(vm.pen_width) * 480.0 -
-    240.0
-  let y = 180.0 -
-    (Double::from_int(py) + 0.5) / Double::from_int(vm.pen_height) * 360.0
-  (x, y)
-}
-
-///|
-fn render_pen_pixel_base(vm : Vm, px : Int, py : Int) -> Int? {
-  if px < 0 || py < 0 || px >= vm.pen_width || py >= vm.pen_height {
-    return None
-  }
-  let base = (py * vm.pen_width + px) * 4
-  if base + 3 >= vm.pen_pixels.length() {
-    None
-  } else {
-    Some(base)
-  }
-}
-
-///|
-fn render_read_pen_pixel(vm : Vm, px : Int, py : Int) -> (Int, Int, Int, Int)? {
-  match render_pen_pixel_base(vm, px, py) {
-    Some(base) =>
-      Some(
-        (
-          vm.pen_pixels[base].to_int(),
-          vm.pen_pixels[base + 1].to_int(),
-          vm.pen_pixels[base + 2].to_int(),
-          vm.pen_pixels[base + 3].to_int(),
-        ),
-      )
-    None => None
-  }
 }
 
 ///|
@@ -316,7 +279,6 @@ fn render_draw_thin_opaque_pen_line(
   if width <= 0 || height <= 0 {
     return
   }
-  ensure_pen_pixels(vm)
   let (r, g, b) = rgb
   let dx = x1 - x0
   let dy = y1 - y0
@@ -408,20 +370,6 @@ fn render_draw_thin_opaque_pen_axis(
 }
 
 ///|
-fn render_blend_pen_pixel(
-  vm : Vm,
-  px : Int,
-  py : Int,
-  src : (Int, Int, Int, Int),
-) -> Unit {
-  ensure_pen_pixels(vm)
-  match render_pen_pixel_base(vm, px, py) {
-    Some(base) => render_blend_pen_pixel_base(vm, base, src)
-    None => ()
-  }
-}
-
-///|
 fn render_pen_line_diameter(vm : Vm, target : TargetState) -> Double {
   let sx = Double::from_int(vm.pen_width) / 480.0
   let sy = Double::from_int(vm.pen_height) / 360.0
@@ -439,6 +387,119 @@ fn render_pen_line_offset(target : TargetState) -> Double {
 }
 
 ///|
+fn render_pen_strokes_are_collinear(
+  first : PenVectorStroke,
+  second : PenVectorStroke,
+) -> Bool {
+  let first_dx = first.x1 - first.x0
+  let first_dy = first.y1 - first.y0
+  let second_dx = second.x1 - second.x0
+  let second_dy = second.y1 - second.y0
+  if (first_dx == 0.0 && first_dy == 0.0) ||
+    (second_dx == 0.0 && second_dy == 0.0) {
+    return true
+  }
+  let cross = first_dx * second_dy - first_dy * second_dx
+  if cross.abs() > 0.0000001 {
+    return false
+  }
+  let dot = first_dx * second_dx + first_dy * second_dy
+  dot > 0.0
+}
+
+///|
+fn render_queue_pen_stroke(vm : Vm, stroke : PenVectorStroke) -> Unit {
+  let count = vm.pen_vectors.length()
+  if count > 0 {
+    let last_index = count - 1
+    let last = vm.pen_vectors[last_index]
+    if last.x1 == stroke.x0 &&
+      last.y1 == stroke.y0 &&
+      last.diameter == stroke.diameter &&
+      last.offset == stroke.offset &&
+      last.r == stroke.r &&
+      last.g == stroke.g &&
+      last.b == stroke.b &&
+      last.a == stroke.a &&
+      render_pen_strokes_are_collinear(last, stroke) {
+      vm.pen_vectors[last_index] = {
+        x0: last.x0,
+        y0: last.y0,
+        x1: stroke.x1,
+        y1: stroke.y1,
+        diameter: last.diameter,
+        offset: last.offset,
+        r: last.r,
+        g: last.g,
+        b: last.b,
+        a: last.a,
+      }
+      vm.redraw_requested = true
+      return
+    }
+  }
+  vm.pen_vectors.push(stroke)
+  vm.redraw_requested = true
+}
+
+///|
+fn render_rasterize_pen_stroke(vm : Vm, stroke : PenVectorStroke) -> Unit {
+  if stroke.a <= 0 {
+    return
+  }
+  let (x0, y0) = render_stage_to_pixel_double(vm, stroke.x0, stroke.y0)
+  let (x1, y1) = render_stage_to_pixel_double(vm, stroke.x1, stroke.y1)
+  if stroke.diameter <= 1.0 &&
+    stroke.a >= 255 &&
+    (stroke.x0 == stroke.x1 || stroke.y0 == stroke.y1) &&
+    stroke.x0.floor() == stroke.x0 &&
+    stroke.y0.floor() == stroke.y0 &&
+    stroke.x1.floor() == stroke.x1 &&
+    stroke.y1.floor() == stroke.y1 {
+    if render_draw_thin_opaque_pen_axis(
+        vm,
+        x0 + stroke.offset,
+        y0 + stroke.offset,
+        x1 + stroke.offset,
+        y1 + stroke.offset,
+        (stroke.r, stroke.g, stroke.b),
+      ) {
+      return
+    }
+    render_draw_thin_opaque_pen_line(
+      vm,
+      x0 + stroke.offset,
+      y0 + stroke.offset,
+      x1 + stroke.offset,
+      y1 + stroke.offset,
+      (stroke.r, stroke.g, stroke.b),
+    )
+    return
+  }
+  render_draw_pen_capsule(
+    vm,
+    x0 + stroke.offset,
+    y0 + stroke.offset,
+    x1 + stroke.offset,
+    y1 + stroke.offset,
+    stroke.diameter,
+    (stroke.r, stroke.g, stroke.b, stroke.a),
+  )
+}
+
+///|
+fn render_flush_pen_vectors(vm : Vm) -> Unit {
+  if vm.pen_vectors.is_empty() {
+    return
+  }
+  ensure_pen_pixels(vm)
+  for stroke in vm.pen_vectors {
+    render_rasterize_pen_stroke(vm, stroke)
+  }
+  vm.pen_vectors.clear()
+}
+
+///|
 fn render_draw_pen_capsule(
   vm : Vm,
   x0 : Double,
@@ -449,19 +510,30 @@ fn render_draw_pen_capsule(
   color : (Int, Int, Int, Int),
 ) -> Unit {
   let (r, g, b, a) = color
-  if a <= 0 || diameter <= 0.0 {
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if a <= 0 || diameter <= 0.0 || width <= 0 || height <= 0 {
     return
   }
+  ensure_pen_pixels(vm)
   let fade_radius = (diameter + 1.0) / 2.0
-  let min_x = (render_min_double(x0, x1) - fade_radius).floor().to_int()
-  let max_x = (render_max_double(x0, x1) + fade_radius).ceil().to_int()
-  let min_y = (render_min_double(y0, y1) - fade_radius).floor().to_int()
-  let max_y = (render_max_double(y0, y1) + fade_radius).ceil().to_int()
+  let min_x_raw = (render_min_double(x0, x1) - fade_radius).floor().to_int()
+  let max_x_raw = (render_max_double(x0, x1) + fade_radius).ceil().to_int()
+  let min_y_raw = (render_min_double(y0, y1) - fade_radius).floor().to_int()
+  let max_y_raw = (render_max_double(y0, y1) + fade_radius).ceil().to_int()
+  if max_x_raw < 0 || max_y_raw < 0 || min_x_raw >= width || min_y_raw >= height {
+    return
+  }
+  let min_x = render_clamp_int(min_x_raw, 0, width - 1)
+  let max_x = render_clamp_int(max_x_raw, 0, width - 1)
+  let min_y = render_clamp_int(min_y_raw, 0, height - 1)
+  let max_y = render_clamp_int(max_y_raw, 0, height - 1)
   let seg_dx = x1 - x0
   let seg_dy = y1 - y0
   let seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy
   for py in min_y..<=max_y {
     let sample_y = Double::from_int(py) + 0.5
+    let row_base = py * width * 4
     for px in min_x..<=max_x {
       let sample_x = Double::from_int(px) + 0.5
       let mut t = 0.0
@@ -482,7 +554,8 @@ fn render_draw_pen_capsule(
           255,
         )
         if alpha > 0 {
-          render_blend_pen_pixel(vm, px, py, (r, g, b, alpha))
+          let base = row_base + px * 4
+          render_blend_pen_pixel_base(vm, base, (r, g, b, alpha))
         }
       }
     }
@@ -512,44 +585,19 @@ fn render_draw_pen_line(
   let color = (r, g, b, a)
   let diameter = render_pen_line_diameter(vm, target)
   let offset = render_pen_line_offset(target)
-  let (x0, y0) = render_stage_to_pixel_double(vm, old_x, old_y)
-  let (x1, y1) = render_stage_to_pixel_double(vm, new_x, new_y)
-  if diameter <= 1.0 &&
-    a >= 255 &&
-    (old_x == new_x || old_y == new_y) &&
-    old_x.floor() == old_x &&
-    old_y.floor() == old_y &&
-    new_x.floor() == new_x &&
-    new_y.floor() == new_y {
-    if render_draw_thin_opaque_pen_axis(
-        vm,
-        x0 + offset,
-        y0 + offset,
-        x1 + offset,
-        y1 + offset,
-        (r, g, b),
-      ) {
-      return
-    }
-    render_draw_thin_opaque_pen_line(
-      vm,
-      x0 + offset,
-      y0 + offset,
-      x1 + offset,
-      y1 + offset,
-      (r, g, b),
-    )
-    return
-  }
-  render_draw_pen_capsule(
-    vm,
-    x0 + offset,
-    y0 + offset,
-    x1 + offset,
-    y1 + offset,
+  let stroke : PenVectorStroke = {
+    x0: old_x,
+    y0: old_y,
+    x1: new_x,
+    y1: new_y,
     diameter,
-    color,
-  )
+    offset,
+    r: color.0,
+    g: color.1,
+    b: color.2,
+    a: color.3,
+  }
+  render_queue_pen_stroke(vm, stroke)
 }
 
 ///|
@@ -565,33 +613,21 @@ fn render_draw_pen_point(vm : Vm, target_index : Int) -> Unit {
   if a <= 0 {
     return
   }
-  vm.redraw_requested = true
   let diameter = render_pen_line_diameter(vm, target)
   let offset = render_pen_line_offset(target)
-  let (x, y) = render_stage_to_pixel_double(vm, target.x, target.y)
-  if diameter <= 1.0 &&
-    a >= 255 &&
-    target.x.floor() == target.x &&
-    target.y.floor() == target.y {
-    render_draw_thin_opaque_pen_line(
-      vm,
-      x + offset,
-      y + offset,
-      x + offset,
-      y + offset,
-      (r, g, b),
-    )
-    return
-  }
-  render_draw_pen_capsule(
-    vm,
-    x + offset,
-    y + offset,
-    x + offset,
-    y + offset,
+  let stroke : PenVectorStroke = {
+    x0: target.x,
+    y0: target.y,
+    x1: target.x,
+    y1: target.y,
     diameter,
-    (r, g, b, a),
-  )
+    offset,
+    r,
+    g,
+    b,
+    a,
+  }
+  render_queue_pen_stroke(vm, stroke)
 }
 
 ///|
@@ -967,6 +1003,7 @@ fn render_stamp_sprite_to_pen(vm : Vm, target_index : Int) -> Unit {
     return
   }
 
+  render_flush_pen_vectors(vm)
   ensure_pen_pixels(vm)
 
   let uniforms = render_effect_uniforms(target)
@@ -1165,18 +1202,11 @@ fn render_stamp_sprite_to_pen(vm : Vm, target_index : Int) -> Unit {
 }
 
 ///|
-fn render_sample_scene_without_target(
+fn render_collect_visible_sprite_indices(
   vm : Vm,
   excluded_target_index : Int,
-  px : Int,
-  py : Int,
-) -> (Int, Int, Int, Int) {
-  let (stage_x, stage_y) = render_pixel_to_stage(vm, px, py)
-  let mut out = render_sample_stage_backdrop_at(vm, stage_x, stage_y)
-  match render_read_pen_pixel(vm, px, py) {
-    Some(pen_rgba) => out = render_blend_rgba(out, pen_rgba)
-    None => ()
-  }
+) -> Array[Int] {
+  let out = []
   for i, target in vm.targets {
     if i == vm.stage_index || i == excluded_target_index {
       continue
@@ -1184,10 +1214,7 @@ fn render_sample_scene_without_target(
     if target.deleted || target.is_stage || !target.visible {
       continue
     }
-    match render_sample_sprite_at(vm, i, stage_x, stage_y, true, true) {
-      Some(color) => out = render_blend_rgba(out, color)
-      None => ()
-    }
+    out.push(i)
   }
   out
 }
@@ -1200,14 +1227,51 @@ fn render_scene_to_frame(vm : Vm) -> RenderFrame {
   if width <= 0 || height <= 0 {
     return RenderFrame::{ width, height, pixels }
   }
+  render_flush_pen_vectors(vm)
+  let visible_sprite_indices = render_collect_visible_sprite_indices(vm, -1)
+  let width_double = Double::from_int(width)
+  let height_double = Double::from_int(height)
+  let stage_x_step = 480.0 / width_double
+  let stage_y_step = 360.0 / height_double
+  let stage_x_start = stage_x_step * 0.5 - 240.0
+  let mut stage_y = 180.0 - stage_y_step * 0.5
+  let pen_len = vm.pen_pixels.length()
   for py in 0..<height {
-    for px in 0..<width {
-      let color = render_sample_scene_without_target(vm, -1, px, py)
+    let mut stage_x = stage_x_start
+    let mut pen_base = py * width * 4
+    for _ in 0..<width {
+      let mut color = render_sample_stage_backdrop_at(vm, stage_x, stage_y)
+      if pen_base + 3 < pen_len {
+        let pen_alpha = vm.pen_pixels[pen_base + 3].to_int()
+        if pen_alpha > 0 {
+          color = render_blend_rgba(
+            color,
+            (
+              vm.pen_pixels[pen_base].to_int(),
+              vm.pen_pixels[pen_base + 1].to_int(),
+              vm.pen_pixels[pen_base + 2].to_int(),
+              pen_alpha,
+            ),
+          )
+        }
+      }
+      for sprite_index in visible_sprite_indices {
+        match
+          render_sample_sprite_at(
+            vm, sprite_index, stage_x, stage_y, true, true,
+          ) {
+          Some(sprite_color) => color = render_blend_rgba(color, sprite_color)
+          None => ()
+        }
+      }
       pixels.push(color.0.to_byte())
       pixels.push(color.1.to_byte())
       pixels.push(color.2.to_byte())
       pixels.push(color.3.to_byte())
+      stage_x += stage_x_step
+      pen_base += 4
     }
+    stage_y -= stage_y_step
   }
   RenderFrame::{ width, height, pixels }
 }
@@ -1304,18 +1368,59 @@ fn target_is_touching_color(
   if target.deleted || target.is_stage {
     return false
   }
-  for py in 0..<vm.pen_height {
-    for px in 0..<vm.pen_width {
-      let (stage_x, stage_y) = render_pixel_to_stage(vm, px, py)
+  render_flush_pen_vectors(vm)
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if width <= 0 || height <= 0 {
+    return false
+  }
+  let visible_sprite_indices = render_collect_visible_sprite_indices(
+    vm, target_index,
+  )
+  let width_double = Double::from_int(width)
+  let height_double = Double::from_int(height)
+  let stage_x_step = 480.0 / width_double
+  let stage_y_step = 360.0 / height_double
+  let stage_x_start = stage_x_step * 0.5 - 240.0
+  let mut stage_y = 180.0 - stage_y_step * 0.5
+  let pen_len = vm.pen_pixels.length()
+  for py in 0..<height {
+    let mut stage_x = stage_x_start
+    let mut pen_base = py * width * 4
+    for _ in 0..<width {
       match
         render_sample_sprite_at(
           vm, target_index, stage_x, stage_y, false, false,
         ) {
         Some(mask_color) =>
           if mask_color.3 > 0 {
-            let sampled = render_sample_scene_without_target(
-              vm, target_index, px, py,
+            let mut sampled = render_sample_stage_backdrop_at(
+              vm, stage_x, stage_y,
             )
+            if pen_base + 3 < pen_len {
+              let pen_alpha = vm.pen_pixels[pen_base + 3].to_int()
+              if pen_alpha > 0 {
+                sampled = render_blend_rgba(
+                  sampled,
+                  (
+                    vm.pen_pixels[pen_base].to_int(),
+                    vm.pen_pixels[pen_base + 1].to_int(),
+                    vm.pen_pixels[pen_base + 2].to_int(),
+                    pen_alpha,
+                  ),
+                )
+              }
+            }
+            for sprite_index in visible_sprite_indices {
+              match
+                render_sample_sprite_at(
+                  vm, sprite_index, stage_x, stage_y, true, true,
+                ) {
+                Some(sprite_color) =>
+                  sampled = render_blend_rgba(sampled, sprite_color)
+                None => ()
+              }
+            }
             if render_color_matches(
                 (sampled.0, sampled.1, sampled.2),
                 color_rgb,
@@ -1325,7 +1430,10 @@ fn target_is_touching_color(
           }
         None => ()
       }
+      stage_x += stage_x_step
+      pen_base += 4
     }
+    stage_y -= stage_y_step
   }
   false
 }
@@ -1344,18 +1452,59 @@ fn target_color_is_touching_color(
   if target.deleted || target.is_stage {
     return false
   }
-  for py in 0..<vm.pen_height {
-    for px in 0..<vm.pen_width {
-      let (stage_x, stage_y) = render_pixel_to_stage(vm, px, py)
+  render_flush_pen_vectors(vm)
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if width <= 0 || height <= 0 {
+    return false
+  }
+  let visible_sprite_indices = render_collect_visible_sprite_indices(
+    vm, target_index,
+  )
+  let width_double = Double::from_int(width)
+  let height_double = Double::from_int(height)
+  let stage_x_step = 480.0 / width_double
+  let stage_y_step = 360.0 / height_double
+  let stage_x_start = stage_x_step * 0.5 - 240.0
+  let mut stage_y = 180.0 - stage_y_step * 0.5
+  let pen_len = vm.pen_pixels.length()
+  for py in 0..<height {
+    let mut stage_x = stage_x_start
+    let mut pen_base = py * width * 4
+    for _ in 0..<width {
       match
         render_sample_sprite_at(
           vm, target_index, stage_x, stage_y, false, false,
         ) {
         Some(mask_color) =>
           if render_mask_matches(mask_color, mask_rgb) {
-            let sampled = render_sample_scene_without_target(
-              vm, target_index, px, py,
+            let mut sampled = render_sample_stage_backdrop_at(
+              vm, stage_x, stage_y,
             )
+            if pen_base + 3 < pen_len {
+              let pen_alpha = vm.pen_pixels[pen_base + 3].to_int()
+              if pen_alpha > 0 {
+                sampled = render_blend_rgba(
+                  sampled,
+                  (
+                    vm.pen_pixels[pen_base].to_int(),
+                    vm.pen_pixels[pen_base + 1].to_int(),
+                    vm.pen_pixels[pen_base + 2].to_int(),
+                    pen_alpha,
+                  ),
+                )
+              }
+            }
+            for sprite_index in visible_sprite_indices {
+              match
+                render_sample_sprite_at(
+                  vm, sprite_index, stage_x, stage_y, true, true,
+                ) {
+                Some(sprite_color) =>
+                  sampled = render_blend_rgba(sampled, sprite_color)
+                None => ()
+              }
+            }
             if render_color_matches(
                 (sampled.0, sampled.1, sampled.2),
                 target_rgb,
@@ -1365,7 +1514,10 @@ fn target_color_is_touching_color(
           }
         None => ()
       }
+      stage_x += stage_x_step
+      pen_base += 4
     }
+    stage_y -= stage_y_step
   }
   false
 }

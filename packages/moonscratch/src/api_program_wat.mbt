@@ -738,6 +738,30 @@ fn compile_number_expr_from_block(
         Some(value) => Some(expr_json_unary_num("round", value))
         None => None
       }
+    "operator_mathop" =>
+      match
+        (
+          field_value(block, "OPERATOR"),
+          compile_number_expr_from_input(
+            target,
+            target_index,
+            block,
+            "NUM",
+            depth + 1,
+            allow_variable,
+          ),
+        ) {
+        (Some((raw_op, _)), Some(value)) =>
+          match raw_op.trim().to_lower() {
+            "abs" => Some(expr_json_unary_num("abs", value))
+            "floor" => Some(expr_json_unary_num("floor", value))
+            "ceiling" => Some(expr_json_unary_num("ceil", value))
+            "sqrt" => Some(expr_json_unary_num("sqrt", value))
+            "round" => Some(expr_json_unary_num("round", value))
+            _ => None
+          }
+        _ => None
+      }
     _ => None
   }
 }

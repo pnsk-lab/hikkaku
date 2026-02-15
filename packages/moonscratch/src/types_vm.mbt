@@ -6,6 +6,20 @@ pub(all) struct PrecompiledProject {
 }
 
 ///|
+pub(all) struct PenVectorStroke {
+  x0 : Double
+  y0 : Double
+  x1 : Double
+  y1 : Double
+  diameter : Double
+  offset : Double
+  r : Int
+  g : Int
+  b : Int
+  a : Int
+}
+
+///|
 pub(all) struct Vm {
   targets : Array[TargetState]
   stage_index : Int
@@ -14,6 +28,7 @@ pub(all) struct Vm {
   pen_width : Int
   pen_height : Int
   mut pen_pixels : Array[Byte]
+  mut pen_vectors : Array[PenVectorStroke]
   mut threads : Array[Thread]
   mut next_thread_id : Int
   mut run_id : Int

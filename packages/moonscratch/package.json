@@ -4,17 +4,20 @@
   "module": "js/index.ts",
   "scripts": {
     "test": "moon build --target js && moon test && vp test run",
-    "bench": "vp test bench",
+    "bench": "bun benchmarks/run.bench.ts",
     "build": "moon build --target js && vp pack",
     "typecheck": "tsgo",
     "preinstall": "bun ./scripts/preinstall.ts"
   },
   "devDependencies": {
+    "@scratch/scratch-render": "^12.6.2",
     "@scratch/scratch-vm": "^12.6.2",
     "@turbowarp/types": "^0.0.14",
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20260211.1",
+    "@vitest/browser-playwright": "^4.0.18",
     "@vitest/browser-preview": "^4.0.18",
+    "mitata": "latest",
     "hikkaku": "workspace:*",
     "sb3-types": "^0.1.16",
     "scratch-storage": "^6.1.8",

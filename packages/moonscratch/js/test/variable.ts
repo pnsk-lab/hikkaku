@@ -12,10 +12,10 @@ import {
   ifThen,
   join,
   length,
+  multiply,
   or,
   repeat,
   setVariableTo,
-  multiply,
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
@@ -103,11 +103,15 @@ describe('js/test variable handling', () => {
           setVariableTo(statusVerified, 1)
         })
 
-        ifElse(and(gt(total.get(), 5), equals(status.get(), 'ready!')), () => {
-          changeVariableBy(total, 4)
-        }, () => {
-          changeVariableBy(total, -1)
-        })
+        ifElse(
+          and(gt(total.get(), 5), equals(status.get(), 'ready!')),
+          () => {
+            changeVariableBy(total, 4)
+          },
+          () => {
+            changeVariableBy(total, -1)
+          },
+        )
       })
     })
 
@@ -131,14 +135,21 @@ describe('js/test variable handling', () => {
       whenFlagClicked(() => {
         setVariableTo(label, join('hello', ', world'))
         setVariableTo(labelLength, length(label.get()))
-        ifElse(gt(labelLength.get(), 8), () => {
-          setVariableTo(status, 'long')
-        }, () => {
-          setVariableTo(status, 'short')
-        })
-        ifThen(or(equals(status.get(), 'long'), equals(status.get(), 'short')), () => {
-          setVariableTo(isLong, 1)
-        })
+        ifElse(
+          gt(labelLength.get(), 8),
+          () => {
+            setVariableTo(status, 'long')
+          },
+          () => {
+            setVariableTo(status, 'short')
+          },
+        )
+        ifThen(
+          or(equals(status.get(), 'long'), equals(status.get(), 'short')),
+          () => {
+            setVariableTo(isLong, 1)
+          },
+        )
       })
     })
 
@@ -171,7 +182,10 @@ describe('js/test variable handling', () => {
           changeVariableBy(spriteScore, getVariable(stageScore))
         })
         ifThen(gt(spriteScore.get(), 5), () => {
-          setVariableTo(stageScore, add(getVariable(stageScore), spriteScore.get()))
+          setVariableTo(
+            stageScore,
+            add(getVariable(stageScore), spriteScore.get()),
+          )
         })
       })
     })

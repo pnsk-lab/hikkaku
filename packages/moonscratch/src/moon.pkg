@@ -12,6 +12,7 @@ options(
       "exports": [
         "vm_compile_from_json",
         "vm_compile_project_to_wat",
+        "vm_compile_project_to_wasm",
         "vm_abi_version",
         "vm_new_from_compiled",
         "vm_start",
@@ -37,6 +38,7 @@ options(
       "exports": [
         "vm_compile_from_json",
         "vm_compile_project_to_wat",
+        "vm_compile_project_to_wasm",
         "vm_abi_version",
         "vm_new_from_compiled",
         "vm_start",

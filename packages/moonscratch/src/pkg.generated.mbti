@@ -10,6 +10,8 @@ pub fn vm_broadcast(Vm, String) -> Unit
 
 pub fn vm_compile_from_json(String, assets_json? : String) -> PrecompiledProject raise VmError
 
+pub fn vm_compile_project_to_wasm(String, assets_json? : String) -> String raise VmError
+
 pub fn vm_compile_project_to_wat(String, assets_json? : String) -> String raise VmError
 
 pub fn vm_exec_opcode_once_by_pc(Vm, Int, Int) -> Int
@@ -227,6 +229,19 @@ pub impl Eq for OpcodeTag
 pub impl Show for OpcodeTag
 pub impl ToJson for OpcodeTag
 
+pub(all) struct PenVectorStroke {
+  x0 : Double
+  y0 : Double
+  x1 : Double
+  y1 : Double
+  diameter : Double
+  offset : Double
+  r : Int
+  g : Int
+  b : Int
+  a : Int
+}
+
 pub(all) struct PrecompiledProject {
   targets : Array[TargetState]
   stage_index : Int
@@ -381,6 +396,7 @@ pub(all) struct Vm {
   pen_width : Int
   pen_height : Int
   mut pen_pixels : Array[Byte]
+  mut pen_vectors : Array[PenVectorStroke]
   mut threads : Array[Thread]
   mut next_thread_id : Int
   mut run_id : Int

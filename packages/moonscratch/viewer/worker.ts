@@ -7,6 +7,7 @@ import {
 const FRAME_FORCE_TIMEOUT_OUT_OF_WARP = 1000 / 30 // 30 FPS
 const FRAME_FORCE_TIMEOUT_IN_WARP = 1000 / 5 // 5 FPS
 const TICKS_TIMEOUT = 1
+const WORKER_METRICS_WINDOW_MS = 1000
 
 type ViewerWorkerRequest =
   | {
@@ -33,6 +34,11 @@ const flushPendingInputs = (): void => {
 }
 
 const playbackLoop = async (token: number): Promise<void> => {
+  let workerFpsFrames = 0
+  let workerOps = 0
+  let metricsStartedAt = 0
+  let currentWorkerFps = 0
+  let currentWorkerOpsPerSecond = 0
   while (true) {
     if (!vm || token !== runToken) {
       return
@@ -40,8 +46,10 @@ const playbackLoop = async (token: number): Promise<void> => {
     flushPendingInputs()
 
     const frameStart = performance.now()
+    let frameOps = 0
     while (true) {
       const frameInfo = vm.stepFrame()
+      frameOps += frameInfo.ops
       if (frameInfo.stopReason === 'finished') {
         break
       } else if (frameInfo.stopReason === 'rerender') {
@@ -56,14 +64,30 @@ const playbackLoop = async (token: number): Promise<void> => {
       //console.log(frameInfo.isInWarp)
       if (frameInfo.isInWarp) {
         if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_IN_WARP) {
-          //console.log('Forcing frame end due to warp timeout')
+          console.log('FRAME: warp timeout')
           break
         }
       } else {
         if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_OUT_OF_WARP) {
-          //console.log('Forcing frame end due to timeout')
+          console.log('FRAME: normal timeout')
           break
         }
+      }
+    }
+
+    workerFpsFrames += 1
+    workerOps += frameOps
+    const now = performance.now()
+    if (metricsStartedAt === 0) {
+      metricsStartedAt = now
+    } else {
+      const elapsedMs = now - metricsStartedAt
+      if (elapsedMs >= WORKER_METRICS_WINDOW_MS) {
+        currentWorkerFps = (workerFpsFrames * 1000) / elapsedMs
+        currentWorkerOpsPerSecond = (workerOps * 1000) / elapsedMs
+        workerFpsFrames = 0
+        workerOps = 0
+        metricsStartedAt = now
       }
     }
 
@@ -72,9 +96,11 @@ const playbackLoop = async (token: number): Promise<void> => {
     postMessage({
       type: 'frame',
       frame,
+      workerFps: currentWorkerFps,
+      workerOpsPerSecond: currentWorkerOpsPerSecond,
     })
 
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    await new Promise(requestAnimationFrame)
   }
 }
 

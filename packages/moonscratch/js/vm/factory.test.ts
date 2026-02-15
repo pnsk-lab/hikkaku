@@ -1,5 +1,16 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
-
+import {
+  EXAMPLE_PROJECT,
+  getStageVariables,
+  HOST_OPCODE_FALLBACK_PROJECT,
+  stepMany,
+  TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+  WASM_MATHOP_LOOP_COUNT_ID,
+  WASM_MATHOP_LOOP_PROJECT,
+  WASM_ONLY_HIKKAKU_BRANCH_ID,
+  WASM_ONLY_HIKKAKU_PROJECT,
+  WASM_ONLY_HIKKAKU_RESULT_ID,
+} from '../test/test-projects.ts'
 import {
   compileProjectToWasm,
   compileProjectToWat,
@@ -15,16 +26,6 @@ import {
   moonscratch,
   precompileProgramForRuntime,
 } from './factory.ts'
-import {
-  EXAMPLE_PROJECT,
-  getStageVariables,
-  HOST_OPCODE_FALLBACK_PROJECT,
-  stepMany,
-  TEXT_TO_SPEECH_TRANSLATE_PROJECT,
-  WASM_ONLY_HIKKAKU_BRANCH_ID,
-  WASM_ONLY_HIKKAKU_PROJECT,
-  WASM_ONLY_HIKKAKU_RESULT_ID,
-} from '../test/test-projects.ts'
 
 describe('moonscratch/js/vm/factory.ts', () => {
   test('exports createVM aliases', () => {
@@ -58,6 +59,21 @@ describe('moonscratch/js/vm/factory.ts', () => {
     const payload = program.readPayload()
     expect(payload.projectJson).toContain('"targets"')
     expect(payload.assetsJson).toContain('custom_asset')
+  })
+
+  test('builds project WASM bytes through moonbit binding by default', () => {
+    const compileWasmSpy = vi.spyOn(
+      moonscratch as unknown as {
+        vm_compile_project_to_wasm: (...args: unknown[]) => unknown
+      },
+      'vm_compile_project_to_wasm',
+    )
+    const compiled = compileProjectToWasm({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    expect(compiled.wasmBytes.byteLength).toBeGreaterThan(8)
+    expect(compileWasmSpy).toHaveBeenCalledTimes(1)
+    compileWasmSpy.mockRestore()
   })
 
   test('embeds AOT command payload for eligible linear green-flag scripts', () => {
@@ -171,7 +187,9 @@ describe('moonscratch/js/vm/factory.ts', () => {
       projectJson: WASM_ONLY_HIKKAKU_PROJECT,
     })
     expect(program.hasWasmExec()).toBe(true)
-    expect(program.readPayload().commandsJson).not.toContain('"op":"host_opcode"')
+    expect(program.readPayload().commandsJson).not.toContain(
+      '"op":"host_opcode"',
+    )
     expect(program.readPayload().commandsJson).not.toContain('"op":"host_tail"')
 
     const execOpcodeSpy = vi.spyOn(
@@ -197,6 +215,25 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(execTailSpy).toHaveBeenCalledTimes(0)
     execOpcodeSpy.mockRestore()
     execTailSpy.mockRestore()
+  })
+
+  test('executes repeat-until mathop expressions through wasm without host-tail fallback', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: WASM_MATHOP_LOOP_PROJECT,
+    })
+    expect(program.hasWasmExec()).toBe(true)
+    expect(program.readPayload().commandsJson).not.toContain(
+      '"op":"host_opcode"',
+    )
+    expect(program.readPayload().commandsJson).not.toContain('"op":"host_tail"')
+
+    const vm = createHeadlessVM({ program, initialNowMs: 0 })
+    vm.greenFlag()
+    const frame = vm.stepFrame()
+
+    const vars = getStageVariables(vm)
+    expect(vars[WASM_MATHOP_LOOP_COUNT_ID]).toBe(3)
+    expect(frame.stopReason).toBe('finished')
   })
 
   test('delegates unsupported opcode to moonbit host during wasm exec', () => {

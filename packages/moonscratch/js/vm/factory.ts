@@ -7,7 +7,7 @@ import {
   unwrapResult,
 } from './json.ts'
 import { toOptionsJson } from './options.ts'
-import { defaultWatToWasm, instantiateProgramModule } from './program-wasm.ts'
+import { instantiateProgramModule } from './program-wasm.ts'
 import { resolveMissingScratchAssets } from './scratch-assets.ts'
 import type {
   CompileProjectToWasmOptions,
@@ -32,6 +32,10 @@ type BoundMoonscratchFactory = {
     assetsJson?: string,
   ) => MoonResult<unknown, unknown>
   vm_compile_project_to_wat?: (
+    projectJson: string,
+    assetsJson?: string,
+  ) => MoonResult<string, unknown>
+  vm_compile_project_to_wasm?: (
     projectJson: string,
     assetsJson?: string,
   ) => MoonResult<string, unknown>
@@ -194,12 +198,49 @@ const toUint8Array = (value: Uint8Array | ArrayBuffer): Uint8Array => {
   return value instanceof Uint8Array ? value : new Uint8Array(value)
 }
 
+const decodeBase64ToUint8Array = (base64: string): Uint8Array => {
+  const maybeBuffer = globalThis as {
+    Buffer?: { from: (input: string, encoding: string) => Uint8Array }
+  }
+  if (typeof maybeBuffer.Buffer?.from === 'function') {
+    return new Uint8Array(maybeBuffer.Buffer.from(base64, 'base64'))
+  }
+  const maybeAtob = (globalThis as { atob?: (input: string) => string }).atob
+  if (typeof maybeAtob === 'function') {
+    const binary = maybeAtob(base64)
+    const out = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index += 1) {
+      out[index] = binary.charCodeAt(index) & 0xff
+    }
+    return out
+  }
+  throw new Error('No base64 decoder found in this runtime')
+}
+
 export const compileProjectToWasm = ({
   watToWasm,
   ...rest
 }: CompileProjectToWasmOptions): CompileProjectToWasmResult => {
   const compiled = compileProjectToWat(rest)
-  const wasm = toUint8Array((watToWasm ?? defaultWatToWasm)(compiled.wat))
+  let wasm: Uint8Array
+  if (watToWasm) {
+    wasm = toUint8Array(watToWasm(compiled.wat))
+  } else {
+    const binding = requireBinding()
+    if (typeof binding.vm_compile_project_to_wasm !== 'function') {
+      throw new Error(
+        'vm_compile_project_to_wasm is unavailable in this build. Please rebuild moonscratch JS bindings.',
+      )
+    }
+    const wasmBase64 = unwrapResult(
+      binding.vm_compile_project_to_wasm(
+        toProjectJsonString(rest.projectJson),
+        toAssetsJson(rest.assets),
+      ),
+      'vm_compile_project_to_wasm failed',
+    )
+    wasm = decodeBase64ToUint8Array(wasmBase64)
+  }
   return {
     ...compiled,
     wasmBytes: wasm,
@@ -299,12 +340,16 @@ const commandContainsHostTail = (entry: unknown, depth = 0): boolean => {
     return true
   }
   if (command.op === 'if' && Array.isArray(command.then)) {
-    return command.then.some((child) => commandContainsHostTail(child, depth + 1))
+    return command.then.some((child) =>
+      commandContainsHostTail(child, depth + 1),
+    )
   }
   if (command.op === 'if_else') {
-    const thenHasTail = Array.isArray(command.then) &&
+    const thenHasTail =
+      Array.isArray(command.then) &&
       command.then.some((child) => commandContainsHostTail(child, depth + 1))
-    const elseHasTail = Array.isArray(command.else) &&
+    const elseHasTail =
+      Array.isArray(command.else) &&
       command.else.some((child) => commandContainsHostTail(child, depth + 1))
     return thenHasTail || elseHasTail
   }
@@ -315,7 +360,7 @@ const commandContainsHostTail = (entry: unknown, depth = 0): boolean => {
     Array.isArray(command.body)
   ) {
     return command.body.some((child) =>
-      commandContainsHostTail(child, depth + 1)
+      commandContainsHostTail(child, depth + 1),
     )
   }
   return false
@@ -326,7 +371,9 @@ const commandsIncludeHostTail = (commandsJson: string): boolean => {
     const parsed = JSON.parse(commandsJson) as unknown
     const exec = Array.isArray(parsed)
       ? parsed
-      : parsed && typeof parsed === 'object' && Array.isArray((parsed as { exec?: unknown }).exec)
+      : parsed &&
+          typeof parsed === 'object' &&
+          Array.isArray((parsed as { exec?: unknown }).exec)
         ? (parsed as { exec: unknown[] }).exec
         : []
     return exec.some((entry) => commandContainsHostTail(entry))
@@ -435,9 +482,7 @@ export const createHeadlessVM = ({
             )
           },
           execHostOpcode: (targetIndex, pc) => {
-            return (
-              binding.vm_exec_opcode_once_by_pc?.(vm, targetIndex, pc) ?? 0
-            )
+            return binding.vm_exec_opcode_once_by_pc?.(vm, targetIndex, pc) ?? 0
           },
         })
         if (runner) {

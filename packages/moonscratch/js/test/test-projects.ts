@@ -4,7 +4,9 @@ import {
   changeVariableBy,
   gt,
   ifElse,
+  mathop,
   repeat,
+  repeatUntil,
   setVariableTo,
   whenFlagClicked,
 } from 'hikkaku/blocks'
@@ -488,6 +490,38 @@ export const WASM_ONLY_HIKKAKU_PROJECT =
 
 export const WASM_ONLY_HIKKAKU_RESULT_ID = wasmOnlyResult.id
 export const WASM_ONLY_HIKKAKU_BRANCH_ID = wasmOnlyBranch.id
+
+const WASM_MATHOP_LOOP_PROJECT_BUILDER = new Project()
+const wasmMathopCandidate =
+  WASM_MATHOP_LOOP_PROJECT_BUILDER.stage.createVariable('candidate', 10)
+const wasmMathopDivisor = WASM_MATHOP_LOOP_PROJECT_BUILDER.stage.createVariable(
+  'divisor',
+  1,
+)
+const wasmMathopCount = WASM_MATHOP_LOOP_PROJECT_BUILDER.stage.createVariable(
+  'count',
+  0,
+)
+
+WASM_MATHOP_LOOP_PROJECT_BUILDER.stage.run(() => {
+  whenFlagClicked(() => {
+    setVariableTo(wasmMathopCandidate, 10)
+    setVariableTo(wasmMathopDivisor, 1)
+    setVariableTo(wasmMathopCount, 0)
+    repeatUntil(
+      gt(wasmMathopDivisor.get(), mathop('sqrt', wasmMathopCandidate.get())),
+      () => {
+        changeVariableBy(wasmMathopCount, 1)
+        changeVariableBy(wasmMathopDivisor, 1)
+      },
+    )
+  })
+})
+
+export const WASM_MATHOP_LOOP_PROJECT =
+  WASM_MATHOP_LOOP_PROJECT_BUILDER.toScratch() as ScratchProject
+
+export const WASM_MATHOP_LOOP_COUNT_ID = wasmMathopCount.id
 
 export const HOST_OPCODE_FALLBACK_PROJECT: ScratchProject = {
   meta: PROJECT_META,

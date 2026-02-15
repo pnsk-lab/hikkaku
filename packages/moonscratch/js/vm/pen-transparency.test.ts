@@ -10,8 +10,8 @@ import {
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import { stepMany } from '../test/test-projects.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 
 describe('moonscratch/js/vm pen transparency', () => {
   test('does not overdraw alpha by repeatedly blending the same stroke area', () => {

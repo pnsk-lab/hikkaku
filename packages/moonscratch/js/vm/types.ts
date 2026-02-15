@@ -269,11 +269,7 @@ export interface ProgramPayload {
 
 export interface ProgramWasmExecHost {
   getVarNumber: (targetIndex: number, variableId: string) => number
-  setVarNumber: (
-    targetIndex: number,
-    variableId: string,
-    value: number,
-  ) => void
+  setVarNumber: (targetIndex: number, variableId: string, value: number) => void
   setVarJson: (
     targetIndex: number,
     variableId: string,

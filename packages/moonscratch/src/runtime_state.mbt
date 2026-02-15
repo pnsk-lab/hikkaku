@@ -4,6 +4,7 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
   let pen_width = if options.pen_width > 0 { options.pen_width } else { 480 }
   let pen_height = if options.pen_height > 0 { options.pen_height } else { 360 }
   let pen_pixels = []
+  let pen_vectors = []
   {
     targets,
     stage_index: precompiled.stage_index,
@@ -12,6 +13,7 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
     pen_width,
     pen_height,
     pen_pixels,
+    pen_vectors,
     threads: [],
     next_thread_id: 1,
     run_id: 0,

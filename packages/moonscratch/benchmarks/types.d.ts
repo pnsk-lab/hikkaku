@@ -6,3 +6,10 @@ declare module '@scratch/scratch-vm' {
   const VMClass: typeof VM
   export default VMClass
 }
+
+declare module '@scratch/scratch-render' {
+  import type Render from 'scratch-render'
+  export { Render }
+  const RenderClass: typeof Render
+  export default RenderClass
+}

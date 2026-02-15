@@ -3162,12 +3162,37 @@ fn exec_script_tail_runtime(vm : Vm, target_index : Int, start_pc : Int) -> Int 
 }
 
 ///|
+fn try_exec_host_opcode_fast(vm : Vm, target_index : Int, pc : Int) -> Bool {
+  let block = vm.targets[target_index].blocks_by_pc[pc]
+  match block.opcode {
+    "data_addtolist" =>
+      match field_value(block, "LIST") {
+        Some((list_name, list_id)) =>
+          match with_list_mut(vm, target_index, list_id, Some(list_name)) {
+            Some((owner, id, slot)) => {
+              let list = read_list_by_ref(vm, owner, id, slot)
+              list.push(value_from_input(vm, target_index, block, "ITEM", 0))
+              write_list_by_ref(vm, owner, id, slot, list)
+              true
+            }
+            None => true
+          }
+        None => true
+      }
+    _ => false
+  }
+}
+
+///|
 fn exec_opcode_once_runtime(vm : Vm, target_index : Int, pc : Int) -> Int {
   if target_index < 0 || target_index >= vm.targets.length() {
     return 0
   }
   if pc < 0 || pc >= vm.targets[target_index].blocks_by_pc.length() {
     return 0
+  }
+  if try_exec_host_opcode_fast(vm, target_index, pc) {
+    return 1
   }
 
   // Execute exactly one opcode in an ephemeral thread context.

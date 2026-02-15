@@ -7,8 +7,5 @@ export default defineConfig({
   },
   test: {
     include: ['./js/**/*.test.ts'],
-    benchmark: {
-      include: ['./benchmarks/**/*.bench.ts'],
-    },
   },
 })

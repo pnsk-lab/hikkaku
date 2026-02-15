@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
 import { renderWithSVG } from '../render/index.ts'
-import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import {
   EXAMPLE_PROJECT,
   getStageVariables,
@@ -8,6 +7,7 @@ import {
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
 } from '../test/test-projects.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import type { CreateHeadlessVMOptions, ProjectJson } from './types.ts'
 
 describe('moonscratch/js/vm/headless-vm.ts', () => {
