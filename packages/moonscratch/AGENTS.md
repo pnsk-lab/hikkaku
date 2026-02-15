@@ -82,3 +82,4 @@ You can browse and install extra skills here:
   - `bun typecheck`
   - `moon check`
   - `bun run test`
+- For project-level tests, generate `project.json` using `hikkaku`.
