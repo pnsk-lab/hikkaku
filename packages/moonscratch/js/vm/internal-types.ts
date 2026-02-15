@@ -16,6 +16,7 @@ export interface RawFrameReport {
   emitted_effects: number
   stop_reason: string
   should_render: boolean
+  is_in_warp: boolean
 }
 
 interface MoonOk<T> {

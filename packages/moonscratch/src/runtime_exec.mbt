@@ -2904,5 +2904,6 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
     emitted_effects: vm.effects.length(),
     stop_reason,
     should_render,
+    is_in_warp: has_active_warp_thread(vm),
   }
 }

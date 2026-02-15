@@ -38,6 +38,7 @@ export interface FrameReport {
   emittedEffects: number
   stopReason: FrameStopReason
   shouldRender: boolean
+  isInWarp: boolean
 }
 
 export type RunEndedBy = 'idle' | 'frame_limit'

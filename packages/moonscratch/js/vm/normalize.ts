@@ -61,4 +61,5 @@ export const toFrameReport = (report: RawFrameReport): FrameReport => ({
   emittedEffects: report.emitted_effects,
   stopReason: toFrameStopReason(report.stop_reason),
   shouldRender: report.should_render,
+  isInWarp: report.is_in_warp,
 })

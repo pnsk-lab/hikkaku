@@ -39,4 +39,5 @@ pub(all) struct FrameReport {
   emitted_effects : Int
   stop_reason : String
   should_render : Bool
+  is_in_warp : Bool
 } derive(Show, Eq, ToJson)

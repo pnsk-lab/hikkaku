@@ -70,6 +70,7 @@ pub(all) struct FrameReport {
   emitted_effects : Int
   stop_reason : String
   should_render : Bool
+  is_in_warp : Bool
 }
 pub impl Eq for FrameReport
 pub impl Show for FrameReport
@@ -230,4 +231,3 @@ pub impl ToJson for VmOptions
 // Type aliases
 
 // Traits
-

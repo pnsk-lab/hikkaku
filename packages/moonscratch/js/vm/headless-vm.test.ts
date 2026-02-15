@@ -28,6 +28,7 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
       emittedEffects: 0,
       stopReason: 'finished',
       shouldRender: true,
+      isInWarp: false,
     })
     expect(second.stopReason).toBe('finished')
     expect(getStageVariables(vm).var_score).toBe(42)

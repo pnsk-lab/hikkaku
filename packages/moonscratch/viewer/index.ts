@@ -379,5 +379,5 @@ canvas.addEventListener('blur', () => {
 })
 
 if (projects.length > 0) {
-  //startPlayback('rectangle')
+  startPlayback('rubiks-cube')
 }

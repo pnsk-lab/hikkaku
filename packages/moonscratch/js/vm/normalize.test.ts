@@ -33,6 +33,7 @@ describe('moonscratch/js/vm/normalize.ts', () => {
         emitted_effects: 3,
         stop_reason: 'timeout',
         should_render: true,
+        is_in_warp: false,
       }),
     ).toEqual({
       activeThreads: 2,
@@ -41,6 +42,7 @@ describe('moonscratch/js/vm/normalize.ts', () => {
       emittedEffects: 3,
       stopReason: 'timeout',
       shouldRender: true,
+      isInWarp: false,
     })
   })
 })
