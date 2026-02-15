@@ -29,11 +29,7 @@ export interface VMOptionsInput extends Partial<VMOptions> {
   stepTimeoutTicks?: number
 }
 
-export type FrameStopReason =
-  | 'finished'
-  | 'timeout'
-  | 'rerender'
-  | 'warp-exit'
+export type FrameStopReason = 'finished' | 'timeout' | 'rerender' | 'warp-exit'
 
 export interface FrameReport {
   activeThreads: number
@@ -57,6 +53,36 @@ export interface RunReport {
 export interface RunUntilIdleOptions {
   maxFrames?: number
 }
+
+export type VMInputEvent =
+  | {
+      type: 'answer'
+      answer: string
+    }
+  | {
+      type: 'mouse'
+      x: number
+      y: number
+      isDown?: boolean
+    }
+  | {
+      type: 'keys_down'
+      keys: string[]
+    }
+  | {
+      type: 'touching'
+      touching: Record<string, string[]>
+    }
+  | {
+      type: 'mouse_targets'
+      stage?: boolean
+      target?: string
+      targets?: string[]
+    }
+  | {
+      type: 'backdrop'
+      backdrop: string | string[]
+    }
 
 export type {
   RenderFrame,

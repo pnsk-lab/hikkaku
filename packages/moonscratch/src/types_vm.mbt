@@ -15,6 +15,7 @@ pub(all) struct Vm {
   mut answer : String
   mut effects : Array[HostEffect]
   mut io_state : Map[String, Json]
+  mut io_prev_state : Map[String, Json]
   mut waiting_children : Map[Int, Int]
   mut rng_state : Int
   mut control_counter : Int

@@ -1,3 +1,4 @@
+import { normalizeRenderFrame } from '../render/index.ts'
 import { moonscratch } from './bindings.ts'
 import { DEFAULT_MAX_FRAMES } from './constants.ts'
 import {
@@ -7,7 +8,6 @@ import {
   isTranslateRequestEffect,
 } from './effect-guards.ts'
 import { parseJson } from './json.ts'
-import { normalizeRenderFrame } from '../render/index.ts'
 import { renderFrameFromLegacySVG } from './legacy_render_frame.ts'
 import {
   cloneTranslateCache,
@@ -18,14 +18,15 @@ import {
 } from './normalize.ts'
 import type {
   EffectHandlers,
-  RenderFrame,
-  RenderFrameLike,
   FrameReport,
   JsonValue,
+  RenderFrame,
+  RenderFrameLike,
   RunReport,
   RunUntilIdleOptions,
   TranslateCache,
   VMEffect,
+  VMInputEvent,
   VMSnapshot,
 } from './types.ts'
 
@@ -116,11 +117,15 @@ export class HeadlessVM {
   }
 
   setAnswer(answer: string): void {
-    this.postIO('answer', answer)
+    this.dispatchInputEvent({
+      type: 'answer',
+      answer,
+    })
   }
 
   setMouseState(input: { x: number; y: number; isDown?: boolean }): void {
-    this.postIO('mouse', {
+    this.dispatchInputEvent({
+      type: 'mouse',
       x: input.x,
       y: input.y,
       isDown: input.isDown ?? false,
@@ -128,11 +133,86 @@ export class HeadlessVM {
   }
 
   setKeysDown(keys: string[]): void {
-    this.postIO('keys_down', keys)
+    this.dispatchInputEvent({
+      type: 'keys_down',
+      keys,
+    })
   }
 
   setTouching(touching: Record<string, string[]>): void {
-    this.postIO('touching', touching)
+    this.dispatchInputEvent({
+      type: 'touching',
+      touching,
+    })
+  }
+
+  setMouseTargets(input: {
+    stage?: boolean
+    target?: string
+    targets?: string[]
+  }): void {
+    this.dispatchInputEvent({
+      type: 'mouse_targets',
+      stage: input.stage,
+      target: input.target,
+      targets: input.targets,
+    })
+  }
+
+  setBackdrop(backdrop: string | string[]): void {
+    this.dispatchInputEvent({
+      type: 'backdrop',
+      backdrop,
+    })
+  }
+
+  dispatchInputEvents(events: VMInputEvent[]): void {
+    for (const event of events) {
+      this.dispatchInputEvent(event)
+    }
+  }
+
+  dispatchInputEvent(event: VMInputEvent): void {
+    switch (event.type) {
+      case 'answer':
+        this.postIO('answer', event.answer)
+        return
+      case 'mouse':
+        this.postIO('mouse', {
+          x: event.x,
+          y: event.y,
+          isDown: event.isDown ?? false,
+        })
+        return
+      case 'keys_down':
+        this.postIO('keys_down', event.keys)
+        return
+      case 'touching':
+        this.postIO('touching', event.touching)
+        return
+      case 'mouse_targets':
+        this.postIO('mouse_targets', {
+          stage: event.stage ?? false,
+          target: event.target ?? '',
+          targets: event.targets ?? [],
+        })
+        return
+      case 'backdrop':
+        if (Array.isArray(event.backdrop)) {
+          this.postIO('backdrop', {
+            backdrops: event.backdrop,
+          })
+          return
+        }
+        this.postIO('backdrop', {
+          backdrop: event.backdrop,
+        })
+        return
+      default: {
+        const unreachable: never = event
+        throw new Error(`Unknown input event: ${String(unreachable)}`)
+      }
+    }
   }
 
   broadcast(message: string): void {

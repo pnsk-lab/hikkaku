@@ -1,3 +1,5 @@
+export { renderWithSharp } from './sharp.ts'
+export { renderWithSVG } from './svg.ts'
 export type {
   RenderFrame,
   RenderFrameLike,
@@ -8,6 +10,4 @@ export type {
   WebGLRenderResult,
 } from './types.ts'
 export { normalizeRenderFrame } from './utils.ts'
-export { renderWithSVG } from './svg.ts'
-export { renderWithSharp } from './sharp.ts'
 export { renderWithWebGL } from './webgl.ts'

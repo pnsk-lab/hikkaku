@@ -29,6 +29,7 @@ fn vm_new_internal(
     answer: "",
     effects: [],
     io_state: {},
+    io_prev_state: {},
     waiting_children: {},
     rng_state: options.seed,
     control_counter: 0,

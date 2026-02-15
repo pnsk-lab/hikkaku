@@ -26,16 +26,14 @@ describe('moonscratch/js/vm/normalize.ts', () => {
 
   test('maps raw frame report fields', () => {
     expect(
-      toFrameReport(
-        {
-          active_threads: 2,
-          tick_count: 4,
-          op_count: 100,
-          emitted_effects: 3,
-          stop_reason: 'timeout',
-          should_render: true,
-        },
-      ),
+      toFrameReport({
+        active_threads: 2,
+        tick_count: 4,
+        op_count: 100,
+        emitted_effects: 3,
+        stop_reason: 'timeout',
+        should_render: true,
+      }),
     ).toEqual({
       activeThreads: 2,
       ticks: 4,

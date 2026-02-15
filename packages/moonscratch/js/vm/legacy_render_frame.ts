@@ -1,8 +1,6 @@
 import type { RenderFrame } from './types.ts'
 
-const parsePixel = (
-  value: string | undefined,
-): number | null => {
+const parsePixel = (value: string | undefined): number | null => {
   if (!value) {
     return null
   }
@@ -21,28 +19,24 @@ const parseFillColor = (
     return null
   }
   if (fill.startsWith('rgb(')) {
-  const parts = fill
-    .slice(4, -1)
-    .split(',')
-    .map((item) => parseFloat(item))
-  if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) {
-    return null
-  }
-  const [red, green, blue] = parts
-  if (
-    red === undefined ||
-    green === undefined ||
-    blue === undefined
-  ) {
-    return null
-  }
-  const alpha = Math.max(0, Math.min(255, Math.round(255 * opacity)))
-  return [
-    Math.max(0, Math.min(255, Math.round(red))),
-    Math.max(0, Math.min(255, Math.round(green))),
-    Math.max(0, Math.min(255, Math.round(blue))),
-    alpha,
-  ]
+    const parts = fill
+      .slice(4, -1)
+      .split(',')
+      .map((item) => parseFloat(item))
+    if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) {
+      return null
+    }
+    const [red, green, blue] = parts
+    if (red === undefined || green === undefined || blue === undefined) {
+      return null
+    }
+    const alpha = Math.max(0, Math.min(255, Math.round(255 * opacity)))
+    return [
+      Math.max(0, Math.min(255, Math.round(red))),
+      Math.max(0, Math.min(255, Math.round(green))),
+      Math.max(0, Math.min(255, Math.round(blue))),
+      alpha,
+    ]
   }
   return null
 }

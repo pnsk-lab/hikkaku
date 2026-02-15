@@ -1,10 +1,10 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
-
-import { createHeadlessVM } from './factory.ts'
 import { renderWithSVG } from '../render/index.ts'
+import { createHeadlessVM } from './factory.ts'
 import {
   EXAMPLE_PROJECT,
   getStageVariables,
+  INPUT_EVENT_PROJECT,
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
 } from './test-projects.ts'
@@ -45,6 +45,29 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
     expect(svg).toContain('shape-rendering="crispEdges"')
     expect(svg).toContain('fill="rgb(255,255,255)"')
     expect(svg).toContain('</svg>')
+  })
+
+  test('detects click and key hats from input state', () => {
+    const vm = createHeadlessVM({
+      projectJson: INPUT_EVENT_PROJECT,
+      initialNowMs: 0,
+    })
+    vm.greenFlag()
+    vm.setMouseState({
+      x: 0,
+      y: 0,
+      isDown: true,
+    })
+    vm.setMouseTargets({
+      stage: true,
+      targets: ['Sprite1'],
+    })
+    vm.setKeysDown(['space'])
+    stepMany(vm, 12)
+
+    expect(getStageVariables(vm).var_stage_click).toBe(1)
+    expect(getStageVariables(vm).var_sprite_click).toBe(1)
+    expect(getStageVariables(vm).var_key).toBe(1)
   })
 
   test('handleEffects dispatches handlers and caches translated text for next run', async () => {

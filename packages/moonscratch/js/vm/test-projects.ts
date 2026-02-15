@@ -161,6 +161,90 @@ export const TEXT_TO_SPEECH_TRANSLATE_PROJECT: ScratchProject = {
   ],
 }
 
+export const INPUT_EVENT_PROJECT: ScratchProject = {
+  meta: PROJECT_META,
+  targets: [
+    {
+      isStage: true,
+      name: 'Stage',
+      currentCostume: 0,
+      variables: {
+        var_stage_click: ['stage_click', 0],
+        var_sprite_click: ['sprite_click', 0],
+        var_key: ['key_pressed', 0],
+      },
+      lists: {},
+      blocks: {
+        hat_stage_click: {
+          opcode: 'event_whenstageclicked',
+          next: 'set_stage_click',
+          parent: null,
+          inputs: {},
+          fields: {},
+          topLevel: true,
+        },
+        set_stage_click: {
+          opcode: 'data_setvariableto',
+          next: null,
+          parent: 'hat_stage_click',
+          inputs: { VALUE: [1, [4, 1]] },
+          fields: { VARIABLE: ['stage_click', 'var_stage_click'] },
+          topLevel: false,
+        },
+      },
+      broadcasts: {},
+      costumes: [],
+      sounds: [],
+    },
+    {
+      isStage: false,
+      name: 'Sprite1',
+      currentCostume: 0,
+      variables: {},
+      lists: {},
+      broadcasts: {},
+      costumes: [],
+      sounds: [],
+      blocks: {
+        hat_sprite_click: {
+          opcode: 'event_whenthisspriteclicked',
+          next: 'set_sprite_click',
+          parent: null,
+          inputs: {},
+          fields: {},
+          topLevel: true,
+        },
+        set_sprite_click: {
+          opcode: 'data_setvariableto',
+          next: null,
+          parent: 'hat_sprite_click',
+          inputs: { VALUE: [1, [4, 1]] },
+          fields: { VARIABLE: ['sprite_click', 'var_sprite_click'] },
+          topLevel: false,
+        },
+        hat_key: {
+          opcode: 'event_whenkeypressed',
+          next: 'set_key',
+          parent: null,
+          inputs: {},
+          fields: {
+            KEY_OPTION: ['space', 'space'],
+          },
+          topLevel: true,
+        },
+        set_key: {
+          opcode: 'data_setvariableto',
+          next: null,
+          parent: 'hat_key',
+          inputs: { VALUE: [1, [4, 1]] },
+          fields: { VARIABLE: ['key_pressed', 'var_key'] },
+          topLevel: false,
+        },
+      },
+    },
+  ],
+}
+
 export const getStageVariables = (
   vm: HeadlessVM,
 ): Record<string, JsonValue> => {

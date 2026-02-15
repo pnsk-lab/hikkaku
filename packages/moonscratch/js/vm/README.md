@@ -62,15 +62,17 @@ console.log(frame.activeThreads);
   - `stopReason: 'rerender' | 'finished' | 'timeout'`.
 - `setTime(nowMs)` updates the runtime clock used by timer/wait behavior.
 
-## Input events
+## Input state
 
-`HeadlessVM` exposes helpers to send I/O:
+`HeadlessVM` exposes helpers to update I/O state:
 
 ```ts
 vm.setAnswer('Scratch');
 vm.setMouseState({ x: 120, y: 80, isDown: true });
 vm.setKeysDown(['space', 'arrowup']);
 vm.setTouching({ Sprite1: ['_mouse_'] });
+vm.setMouseTargets({ stage: true, targets: ['Sprite1'] });
+vm.setBackdrop('bg2');
 vm.postIO('username', 'alice'); // value as JsonValue
 vm.postIORawJson('loudness', '12');
 vm.broadcast('GO');

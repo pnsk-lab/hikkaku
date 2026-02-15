@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vite-plus/test'
 
 import * as assetsIndex from './assets/index.ts'
-import * as renderIndex from './render/index.ts'
 import * as index from './index.ts'
+import * as renderIndex from './render/index.ts'
 import * as vmIndex from './vm/index.ts'
 
 describe('moonscratch/js/index.ts', () => {

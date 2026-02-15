@@ -1,11 +1,11 @@
-import { normalizeRenderFrame } from './utils.ts'
+import type { CanvasLike } from '../assets/types.ts'
 import type {
   RenderFrame,
   RenderImageData,
   RenderWithWebGLOptions,
   RenderWithWebGLResult,
 } from './types.ts'
-import type { CanvasLike } from '../assets/types.ts'
+import { normalizeRenderFrame } from './utils.ts'
 
 const normalizeCanvas = (width: number, height: number): CanvasLike | null => {
   const global = globalThis as {
@@ -29,7 +29,9 @@ const createWebGLContext = (canvas: CanvasLike): unknown => {
   )
 }
 
-const isWebGLContext = (context: unknown): context is WebGLRenderingContextLike =>
+const isWebGLContext = (
+  context: unknown,
+): context is WebGLRenderingContextLike =>
   typeof context === 'object' &&
   context !== null &&
   'createTexture' in context &&

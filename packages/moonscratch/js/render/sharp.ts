@@ -1,14 +1,12 @@
-import { normalizeRenderFrame } from './utils.ts'
 import type { RenderFrame, RenderWithSharpOptions } from './types.ts'
+import { normalizeRenderFrame } from './utils.ts'
 
 type SharpNamespace = {
   default?: SharpFactory
   sharp?: SharpFactory
 }
 
-type SharpFactory = {
-  (input?: unknown, options?: unknown): SharpPipeline
-}
+type SharpFactory = (input?: unknown, options?: unknown) => SharpPipeline
 
 type SharpPipeline = {
   raw?(): SharpPipeline
@@ -18,7 +16,9 @@ type SharpPipeline = {
   toBuffer(): Promise<unknown>
 }
 
-const loadSharp = async (): Promise<(input?: unknown, options?: unknown) => SharpPipeline> => {
+const loadSharp = async (): Promise<
+  (input?: unknown, options?: unknown) => SharpPipeline
+> => {
   try {
     const sharp = (await import('sharp')) as unknown as SharpNamespace
     if (sharp.default) {
@@ -31,7 +31,9 @@ const loadSharp = async (): Promise<(input?: unknown, options?: unknown) => Shar
     throw new Error('invalid sharp module shape')
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error)
-    throw new Error(`sharp is required to render PNG/WebP/JPEG output: ${reason}`)
+    throw new Error(
+      `sharp is required to render PNG/WebP/JPEG output: ${reason}`,
+    )
   }
 }
 

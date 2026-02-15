@@ -1068,14 +1068,190 @@ fn parse_name_events(
 }
 
 ///|
-fn take_io_signal(vm : Vm, key : String) -> Json? {
-  match vm.io_state.get(key) {
-    Some(value) => {
-      vm.io_state.remove(key)
-      Some(value)
-    }
-    None => None
+fn parse_key_state_from_io(io_state : Map[String, Json]) -> Array[String] {
+  let out = []
+  match io_state.get("keys_down") {
+    Some(payload) =>
+      for key in parse_key_events(payload) {
+        out.push(lower_trim(key))
+      }
+    None => ()
   }
+  match io_state.get("keyboard") {
+    Some(payload) =>
+      for key in parse_key_events(payload) {
+        out.push(lower_trim(key))
+      }
+    None => ()
+  }
+  out
+}
+
+///|
+fn parse_backdrop_state_from_io(io_state : Map[String, Json]) -> Array[String] {
+  let out = []
+  match io_state.get("backdrop") {
+    Some(payload) =>
+      for name in parse_name_events(payload, "backdrop", "backdrops") {
+        out.push(name)
+      }
+    None => ()
+  }
+  out
+}
+
+///|
+fn unique_names(values : Array[String]) -> Array[String] {
+  let seen = {}
+  let out = []
+  for raw in values {
+    let value = raw.trim().to_string()
+    if value == "" || seen.get_or_default(value, false) {
+      continue
+    }
+    seen[value] = true
+    out.push(value)
+  }
+  out
+}
+
+///|
+fn newly_added_names(
+  current_values : Array[String],
+  previous_values : Array[String],
+) -> Array[String] {
+  let previous_set = {}
+  for raw in previous_values {
+    let value = raw.trim().to_string()
+    if value == "" {
+      continue
+    }
+    previous_set[value] = true
+  }
+
+  let seen = {}
+  let out = []
+  for raw in current_values {
+    let value = raw.trim().to_string()
+    if value == "" ||
+      previous_set.get_or_default(value, false) ||
+      seen.get_or_default(value, false) {
+      continue
+    }
+    seen[value] = true
+    out.push(value)
+  }
+  out
+}
+
+///|
+fn read_mouse_down_from_io_state(io_state : Map[String, Json]) -> Bool {
+  match io_state.get("mouse") {
+    Some(Object(obj)) =>
+      match obj.get("isDown") {
+        Some(value) => json_to_bool_value(value)
+        None =>
+          match obj.get("down") {
+            Some(value) => json_to_bool_value(value)
+            None => false
+          }
+      }
+    Some(value) => json_to_bool_value(value)
+    None =>
+      match io_state.get("mousedown") {
+        Some(value) => json_to_bool_value(value)
+        None => false
+      }
+  }
+}
+
+///|
+fn read_mouse_targets_from_io_state(
+  io_state : Map[String, Json],
+) -> (Bool, Array[String]) {
+  let mut stage = false
+  let targets = []
+  match io_state.get("mouse_targets") {
+    Some(True) => stage = true
+    Some(False) => ()
+    Some(payload) =>
+      match payload {
+        String(_) | Number(_, ..) =>
+          push_string_if_non_empty(targets, payload, false)
+        Array(items) =>
+          for item in items {
+            push_string_if_non_empty(targets, item, false)
+          }
+        Object(obj) => {
+          match obj.get("stage") {
+            Some(value) => stage = json_to_bool_value(value)
+            None => ()
+          }
+          match obj.get("target") {
+            Some(value) => push_string_if_non_empty(targets, value, false)
+            None => ()
+          }
+          match obj.get("targets") {
+            Some(Array(items)) =>
+              for item in items {
+                push_string_if_non_empty(targets, item, false)
+              }
+            _ => ()
+          }
+          match obj.get("sprite") {
+            Some(value) => push_string_if_non_empty(targets, value, false)
+            None => ()
+          }
+          match obj.get("sprites") {
+            Some(Array(items)) =>
+              for item in items {
+                push_string_if_non_empty(targets, item, false)
+              }
+            _ => ()
+          }
+        }
+        _ => ()
+      }
+    _ => ()
+  }
+  (stage, unique_names(targets))
+}
+
+///|
+fn has_mouse_down_rising_edge(vm : Vm) -> Bool {
+  let current = read_mouse_down_from_io_state(vm.io_state)
+  let previous = read_mouse_down_from_io_state(vm.io_prev_state)
+  current && !previous
+}
+
+///|
+fn dispatch_io_event_hats(vm : Vm) -> Int {
+  let mut count = 0
+
+  let current_keys = parse_key_state_from_io(vm.io_state)
+  let previous_keys = parse_key_state_from_io(vm.io_prev_state)
+  for key in newly_added_names(current_keys, previous_keys) {
+    count += spawn_hats_for_key(vm, key)
+  }
+
+  if has_mouse_down_rising_edge(vm) {
+    let (stage_clicked, sprite_targets) = read_mouse_targets_from_io_state(
+      vm.io_state,
+    )
+    if stage_clicked {
+      count += spawn_stage_clicked_hats(vm)
+    }
+    for name in sprite_targets {
+      count += spawn_sprite_clicked_hats(vm, name)
+    }
+  }
+
+  let current_backdrops = parse_backdrop_state_from_io(vm.io_state)
+  let previous_backdrops = parse_backdrop_state_from_io(vm.io_prev_state)
+  for name in newly_added_names(current_backdrops, previous_backdrops) {
+    count += spawn_hats_for_backdrop(vm, name, None)
+  }
+  count
 }
 
 ///|
@@ -1292,45 +1468,6 @@ fn spawn_predicate_hats(vm : Vm) -> Int {
 }
 
 ///|
-fn dispatch_io_event_hats(vm : Vm) -> Int {
-  let mut count = 0
-
-  match take_io_signal(vm, "key_pressed") {
-    Some(payload) =>
-      for key in parse_key_events(payload) {
-        count += spawn_hats_for_key(vm, key)
-      }
-    None => ()
-  }
-
-  match take_io_signal(vm, "stage_clicked") {
-    Some(payload) =>
-      if json_to_bool_value(payload) {
-        count += spawn_stage_clicked_hats(vm)
-      }
-    None => ()
-  }
-
-  match take_io_signal(vm, "sprite_clicked") {
-    Some(payload) =>
-      for name in parse_name_events(payload, "target", "targets") {
-        count += spawn_sprite_clicked_hats(vm, name)
-      }
-    None => ()
-  }
-
-  match take_io_signal(vm, "backdrop_switched") {
-    Some(payload) =>
-      for name in parse_name_events(payload, "backdrop", "backdrops") {
-        count += spawn_hats_for_backdrop(vm, name, None)
-      }
-    None => ()
-  }
-
-  count
-}
-
-///|
 fn spawn_hats_for_message(
   vm : Vm,
   message : String,
@@ -1396,7 +1533,6 @@ fn resolve_thread_input_wait(vm : Vm, thread : Thread) -> Thread {
           if key == "answer" {
             vm.answer = json_to_string_value(value)
           }
-          vm.io_state.remove(key)
           thread.wait_for_input = None
         }
         None => ()
@@ -2570,6 +2706,7 @@ fn green_flag_runtime(vm : Vm) -> Unit {
   }
   vm.hat_predicates.clear()
   vm.pending_translate_requests.clear()
+  vm.io_prev_state = copy_json_map(vm.io_state)
   vm.answer = ""
   vm.timer_start_ms = vm.now_ms
   vm.run_id += 1
@@ -2751,13 +2888,14 @@ fn step_frame_runtime(vm : Vm) -> FrameReport {
     should_render = true
     vm.redraw_requested = false
     vm.redraw_requested_while_warp = false
-  } else if
-    stop_reason != "rerender" &&
+  } else if stop_reason != "rerender" &&
     stop_reason != "warp-exit" &&
     stop_reason != "finished" {
     stop_reason = "timeout"
     should_render = false
   }
+
+  vm.io_prev_state = copy_json_map(vm.io_state)
 
   {
     active_threads: vm.threads.length(),

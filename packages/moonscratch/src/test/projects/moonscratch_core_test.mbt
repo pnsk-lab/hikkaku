@@ -1276,9 +1276,11 @@ test "event hats for key, click, backdrop, greaterthan and touchingobject" {
   )
   @moonscratch.vm_green_flag(vm)
 
-  @moonscratch.vm_post_io_json(vm, "key_pressed", "\"space\"")
-  @moonscratch.vm_post_io_json(vm, "stage_clicked", "true")
-  @moonscratch.vm_post_io_json(vm, "sprite_clicked", "\"Sprite1\"")
+  @moonscratch.vm_post_io_json(vm, "keys_down", "[\"space\"]")
+  @moonscratch.vm_post_io_json(vm, "mouse", "{\"x\":0,\"y\":0,\"isDown\":true}")
+  @moonscratch.vm_post_io_json(
+    vm, "mouse_targets", "{\"stage\":true,\"targets\":[\"Sprite1\"]}",
+  )
   @moonscratch.vm_post_io_json(vm, "touching", "{\"Sprite1\":[\"_mouse_\"]}")
 
   let mut now_ms = 0

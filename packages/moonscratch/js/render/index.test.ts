@@ -1,10 +1,6 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
 
-import {
-  renderWithSharp,
-  renderWithSVG,
-  renderWithWebGL,
-} from './index.ts'
+import { renderWithSharp, renderWithSVG, renderWithWebGL } from './index.ts'
 
 const sharpCalls: unknown[] = []
 
@@ -36,10 +32,7 @@ describe('moonscratch/js/render', () => {
     width: 2,
     height: 2,
     pixels: new Uint8Array([
-      255, 0, 0, 255,
-      0, 255, 0, 255,
-      0, 0, 255, 255,
-      255, 255, 255, 255,
+      255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
     ]),
   }
 

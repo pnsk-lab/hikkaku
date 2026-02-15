@@ -451,12 +451,6 @@ fn pressed_keys(vm : Vm) -> Array[String] {
     Some(payload) => append_key_events(keys, payload)
     None => ()
   }
-  if keys.is_empty() {
-    match vm.io_state.get("key_pressed") {
-      Some(payload) => append_key_events(keys, payload)
-      None => ()
-    }
-  }
   keys
 }
 
