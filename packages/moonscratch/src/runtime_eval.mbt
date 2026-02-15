@@ -137,13 +137,39 @@ fn as_number_or_none(value : Json) -> Double? {
 }
 
 ///|
-fn scratch_equals(left : Json, right : Json) -> Bool {
-  match (as_number_or_none(left), as_number_or_none(right)) {
-    (Some(a), Some(b)) => a == b
-    _ =>
-      json_to_string_value(left).to_lower() ==
-      json_to_string_value(right).to_lower()
+fn scratch_compare_as_string(left : Json, right : Json) -> Int {
+  let left_text = json_to_string_value(left).to_lower()
+  let right_text = json_to_string_value(right).to_lower()
+  if left_text < right_text {
+    -1
+  } else if left_text > right_text {
+    1
+  } else {
+    0
   }
+}
+
+///|
+fn scratch_compare(left : Json, right : Json) -> Int {
+  match (as_number_or_none(left), as_number_or_none(right)) {
+    (Some(left_number), Some(right_number)) => {
+      if left_number != left_number || right_number != right_number {
+        scratch_compare_as_string(left, right)
+      } else if left_number < right_number {
+        -1
+      } else if left_number > right_number {
+        1
+      } else {
+        0
+      }
+    }
+    _ => scratch_compare_as_string(left, right)
+  }
+}
+
+///|
+fn scratch_equals(left : Json, right : Json) -> Bool {
+  scratch_compare(left, right) == 0
 }
 
 ///|
@@ -831,18 +857,12 @@ fn eval_reporter_block_depth(
     "operator_lt" => {
       let left = value_from_input(vm, target_index, block, "OPERAND1", depth)
       let right = value_from_input(vm, target_index, block, "OPERAND2", depth)
-      json_bool(
-        json_to_string_value(left).to_lower() <
-        json_to_string_value(right).to_lower(),
-      )
+      json_bool(scratch_compare(left, right) < 0)
     }
     "operator_gt" => {
       let left = value_from_input(vm, target_index, block, "OPERAND1", depth)
       let right = value_from_input(vm, target_index, block, "OPERAND2", depth)
-      json_bool(
-        json_to_string_value(left).to_lower() >
-        json_to_string_value(right).to_lower(),
-      )
+      json_bool(scratch_compare(left, right) > 0)
     }
     "operator_equals" => {
       let left = value_from_input(vm, target_index, block, "OPERAND1", depth)
