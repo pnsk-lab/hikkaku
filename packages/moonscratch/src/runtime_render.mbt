@@ -198,15 +198,11 @@ fn vm_clear_pen_pixels(vm : Vm) -> Unit {
   }
 }
 
-///|
-fn render_stage_to_pixel(vm : Vm, x : Double, y : Double) -> (Int, Int) {
-  let px = ((x + 240.0) / 480.0 * Double::from_int(vm.pen_width))
-    .floor()
-    .to_int()
-  let py = ((180.0 - y) / 360.0 * Double::from_int(vm.pen_height))
-    .floor()
-    .to_int()
-  (px, py)
+fn render_stage_to_pixel_double(vm : Vm, x : Double, y : Double) -> (Double, Double) {
+  (
+    (x + 240.0) / 480.0 * Double::from_int(vm.pen_width),
+    (180.0 - y) / 360.0 * Double::from_int(vm.pen_height),
+  )
 }
 
 ///|
@@ -280,33 +276,68 @@ fn render_blend_pen_pixel(
 }
 
 ///|
-fn render_pen_brush_radius(vm : Vm, target : TargetState) -> Int {
+fn render_pen_line_diameter(vm : Vm, target : TargetState) -> Double {
   let sx = Double::from_int(vm.pen_width) / 480.0
   let sy = Double::from_int(vm.pen_height) / 360.0
   let scale = if sx < sy { sx } else { sy }
-  let diameter = render_clamp_double(
-    target.pen_size * scale,
-    1.0,
-    1200.0 * scale,
-  )
-  render_clamp_int((diameter / 2.0).floor().to_int(), 0, 6000)
+  render_clamp_double(target.pen_size * scale, 1.0, 1200.0 * scale)
 }
 
 ///|
-fn render_draw_pen_circle(
+fn render_pen_line_offset(target : TargetState) -> Double {
+  if target.pen_size == 1.0 || target.pen_size == 3.0 {
+    0.5
+  } else {
+    0.0
+  }
+}
+
+///|
+fn render_draw_pen_capsule(
   vm : Vm,
-  cx : Int,
-  cy : Int,
-  radius : Int,
+  x0 : Double,
+  y0 : Double,
+  x1 : Double,
+  y1 : Double,
+  diameter : Double,
   color : (Int, Int, Int, Int),
 ) -> Unit {
-  let rr = radius * radius
-  for y in (cy - radius)..<=(cy + radius) {
-    for x in (cx - radius)..<=(cx + radius) {
-      let dx = x - cx
-      let dy = y - cy
-      if dx * dx + dy * dy <= rr {
-        render_blend_pen_pixel(vm, x, y, color)
+  let (r, g, b, a) = color
+  if a <= 0 || diameter <= 0.0 {
+    return
+  }
+  let fade_radius = (diameter + 1.0) / 2.0
+  let min_x = (render_min_double(x0, x1) - fade_radius).floor().to_int()
+  let max_x = (render_max_double(x0, x1) + fade_radius).ceil().to_int()
+  let min_y = (render_min_double(y0, y1) - fade_radius).floor().to_int()
+  let max_y = (render_max_double(y0, y1) + fade_radius).ceil().to_int()
+  let seg_dx = x1 - x0
+  let seg_dy = y1 - y0
+  let seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy
+  for py in min_y..<=max_y {
+    let sample_y = Double::from_int(py) + 0.5
+    for px in min_x..<=max_x {
+      let sample_x = Double::from_int(px) + 0.5
+      let mut t = 0.0
+      if seg_len_sq > 0.0 {
+        t = ((sample_x - x0) * seg_dx + (sample_y - y0) * seg_dy) / seg_len_sq
+        t = render_clamp_double(t, 0.0, 1.0)
+      }
+      let nearest_x = x0 + seg_dx * t
+      let nearest_y = y0 + seg_dy * t
+      let dist_x = sample_x - nearest_x
+      let dist_y = sample_y - nearest_y
+      let distance = (dist_x * dist_x + dist_y * dist_y).sqrt()
+      let coverage = render_clamp_double(fade_radius - distance, 0.0, 1.0)
+      if coverage > 0.0 {
+        let alpha = render_clamp_int(
+          (Double::from_int(a) * coverage).round().to_int(),
+          0,
+          255,
+        )
+        if alpha > 0 {
+          render_blend_pen_pixel(vm, px, py, (r, g, b, alpha))
+        }
       }
     }
   }
@@ -333,55 +364,19 @@ fn render_draw_pen_line(
     return
   }
   let color = (r, g, b, a)
-  let radius = render_pen_brush_radius(vm, target)
-  let (x0, y0) = render_stage_to_pixel(vm, old_x, old_y)
-  let (x1, y1) = render_stage_to_pixel(vm, new_x, new_y)
-  let dx = x1 - x0
-  let dy = y1 - y0
-  if dx == 0 && dy == 0 {
-    render_draw_pen_circle(vm, x0, y0, radius, color)
-    return
-  }
-
-  // Radius 0 keeps pixel-perfect behavior with step-wise sampling.
-  if radius <= 0 {
-    let steps = if dx.abs() > dy.abs() { dx.abs() } else { dy.abs() }
-    for i in 0..<=steps {
-      let t = Double::from_int(i) / Double::from_int(steps)
-      let x = (Double::from_int(x0) + Double::from_int(dx) * t).round().to_int()
-      let y = (Double::from_int(y0) + Double::from_int(dy) * t).round().to_int()
-      render_blend_pen_pixel(vm, x, y, color)
-    }
-    return
-  }
-
-  let min_x = (if x0 < x1 { x0 } else { x1 }) - radius
-  let max_x = (if x0 > x1 { x0 } else { x1 }) + radius
-  let min_y = (if y0 < y1 { y0 } else { y1 }) - radius
-  let max_y = (if y0 > y1 { y0 } else { y1 }) + radius
-  let seg_dx = Double::from_int(dx)
-  let seg_dy = Double::from_int(dy)
-  let seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy
-  let radius_sq = Double::from_int(radius * radius)
-
-  for py in min_y..<=max_y {
-    for px in min_x..<=max_x {
-      let mut t = 0.0
-      if seg_len_sq > 0.0 {
-        let rel_x = Double::from_int(px - x0)
-        let rel_y = Double::from_int(py - y0)
-        t = (rel_x * seg_dx + rel_y * seg_dy) / seg_len_sq
-        t = render_clamp_double(t, 0.0, 1.0)
-      }
-      let nearest_x = Double::from_int(x0) + seg_dx * t
-      let nearest_y = Double::from_int(y0) + seg_dy * t
-      let dist_x = Double::from_int(px) - nearest_x
-      let dist_y = Double::from_int(py) - nearest_y
-      if dist_x * dist_x + dist_y * dist_y <= radius_sq {
-        render_blend_pen_pixel(vm, px, py, color)
-      }
-    }
-  }
+  let diameter = render_pen_line_diameter(vm, target)
+  let offset = render_pen_line_offset(target)
+  let (x0, y0) = render_stage_to_pixel_double(vm, old_x, old_y)
+  let (x1, y1) = render_stage_to_pixel_double(vm, new_x, new_y)
+  render_draw_pen_capsule(
+    vm,
+    x0 + offset,
+    y0 + offset,
+    x1 + offset,
+    y1 + offset,
+    diameter,
+    color,
+  )
 }
 
 ///|
@@ -398,9 +393,18 @@ fn render_draw_pen_point(vm : Vm, target_index : Int) -> Unit {
     return
   }
   vm.redraw_requested = true
-  let radius = render_pen_brush_radius(vm, target)
-  let (x, y) = render_stage_to_pixel(vm, target.x, target.y)
-  render_draw_pen_circle(vm, x, y, radius, (r, g, b, a))
+  let diameter = render_pen_line_diameter(vm, target)
+  let offset = render_pen_line_offset(target)
+  let (x, y) = render_stage_to_pixel_double(vm, target.x, target.y)
+  render_draw_pen_capsule(
+    vm,
+    x + offset,
+    y + offset,
+    x + offset,
+    y + offset,
+    diameter,
+    (r, g, b, a),
+  )
 }
 
 ///|

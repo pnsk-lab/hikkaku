@@ -64,4 +64,46 @@ describe('moonscratch/js/vm pen transparency', () => {
     expect(b).toBeLessThan(220)
     expect(Math.abs(r - b)).toBeLessThan(90)
   })
+
+  test('keeps subpixel coverage on diagonal size-1 pen lines', () => {
+    const project = new Project()
+    const sprite = project.createSprite('pen-sprite')
+
+    sprite.run(() => {
+      whenFlagClicked(() => {
+        clear()
+        setPenSizeTo(1)
+        setPenColorToColor('#00ff00')
+        setPenColorParamTo('transparency', 0)
+        penDown()
+        gotoXY(-120, -80)
+        gotoXY(120, 80)
+        penUp()
+      })
+    })
+
+    const vm = createHeadlessVM({
+      projectJson: project.toScratch(),
+      initialNowMs: 0,
+    })
+    vm.greenFlag()
+    stepMany(vm, 8)
+
+    const frame = vm.renderFrame()
+    let pureGreen = 0
+    let blendedGreen = 0
+    for (let index = 0; index < frame.pixels.length; index += 4) {
+      const r = frame.pixels[index] ?? 0
+      const g = frame.pixels[index + 1] ?? 0
+      const b = frame.pixels[index + 2] ?? 0
+      if (r === 0 && g === 255 && b === 0) {
+        pureGreen += 1
+      } else if (g === 255 && r === b && r > 0 && r < 255) {
+        blendedGreen += 1
+      }
+    }
+
+    expect(pureGreen).toBeGreaterThan(0)
+    expect(blendedGreen).toBeGreaterThan(0)
+  })
 })
