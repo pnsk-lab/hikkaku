@@ -46,7 +46,7 @@ const playbackLoop = async (token: number): Promise<void> => {
         //console.log('Frame timeout')
       } else if (frameInfo.stopReason === 'warp-exit') {
         // no-op
-       // console.log('Warp exit')
+        // console.log('Warp exit')
       }
       if (frameInfo.isInWarp) {
         if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_IN_WARP) {
