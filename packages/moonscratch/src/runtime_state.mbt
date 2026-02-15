@@ -10,9 +10,6 @@ fn vm_new_internal(
   let pen_width = if options.pen_width > 0 { options.pen_width } else { 480 }
   let pen_height = if options.pen_height > 0 { options.pen_height } else { 360 }
   let pen_pixels = []
-  for _ in 0..<(pen_width * pen_height * 4) {
-    pen_pixels.push(b'\x00')
-  }
   {
     targets,
     stage_index,

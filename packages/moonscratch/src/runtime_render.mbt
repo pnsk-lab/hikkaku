@@ -193,8 +193,22 @@ fn render_blend_rgba(
 
 ///|
 fn vm_clear_pen_pixels(vm : Vm) -> Unit {
-  for i in 0..<vm.pen_pixels.length() {
-    vm.pen_pixels[i] = b'\x00'
+  vm.pen_pixels.clear()
+}
+
+///|
+fn ensure_pen_pixels(vm : Vm) -> Unit {
+  let required = vm.pen_width * vm.pen_height * 4
+  if required <= 0 {
+    vm.pen_pixels.clear()
+    return
+  }
+  if vm.pen_pixels.length() == required {
+    return
+  }
+  vm.pen_pixels.clear()
+  for _ in 0..<required {
+    vm.pen_pixels.push(b'\x00')
   }
 }
 
@@ -250,6 +264,7 @@ fn render_write_pen_pixel(
   py : Int,
   rgba : (Int, Int, Int, Int),
 ) -> Unit {
+  ensure_pen_pixels(vm)
   match render_pen_pixel_base(vm, px, py) {
     Some(base) => {
       let (r, g, b, a) = rgba
@@ -271,7 +286,7 @@ fn render_blend_pen_pixel(
 ) -> Unit {
   match render_read_pen_pixel(vm, px, py) {
     Some(dst) => render_write_pen_pixel(vm, px, py, render_blend_rgba(dst, src))
-    None => ()
+    None => render_write_pen_pixel(vm, px, py, src)
   }
 }
 

@@ -1,26 +1,44 @@
 import { moonscratch } from './bindings.ts'
 import { HeadlessVM } from './headless-vm.ts'
 import type { MoonResult } from './internal-types.ts'
-import { toJsonString, toOptionalJsonString, unwrapResult } from './json.ts'
+import {
+  toOptionalJsonString,
+  toProjectJsonString,
+  unwrapResult,
+} from './json.ts'
 import { toOptionsJson } from './options.ts'
 import { resolveMissingScratchAssets } from './scratch-assets.ts'
 import type {
   CreateHeadlessVMOptions,
   CreateHeadlessVMWithScratchAssetsOptions,
+  JsonValue,
 } from './types.ts'
+
+const hasAnyAssetEntry = (assets: Record<string, JsonValue>): boolean => {
+  for (const _key in assets) {
+    return true
+  }
+  return false
+}
 
 export const createHeadlessVM = ({
   projectJson,
-  assets = {},
+  assets,
   options,
   initialNowMs,
   viewerLanguage,
   translateCache,
 }: CreateHeadlessVMOptions): HeadlessVM => {
+  const assetsJson =
+    assets === undefined ||
+    (typeof assets !== 'string' && !hasAnyAssetEntry(assets))
+      ? undefined
+      : toOptionalJsonString(assets, 'assets')
+
   const vm = unwrapResult(
     moonscratch.vm_new_from_json(
-      toJsonString(projectJson, 'projectJson', true),
-      toOptionalJsonString(assets, 'assets'),
+      toProjectJsonString(projectJson),
+      assetsJson,
       toOptionsJson(options),
     ) as MoonResult<unknown, unknown>,
     'vm_new_from_json failed',
