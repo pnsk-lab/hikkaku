@@ -99,12 +99,359 @@ fn value_from_input(
   input_name : String,
   depth : Int,
 ) -> Json {
+  vm.profiler_value_input_calls += 1
+  match block.input_block_ids.get(input_name) {
+    Some(block_id) =>
+      return eval_reporter_block_depth(vm, target_index, block_id, depth + 1)
+    None => ()
+  }
   match block_input_payload(block, input_name) {
     Some(String(block_id)) =>
       eval_reporter_block_depth(vm, target_index, block_id, depth + 1)
     Some(Array(primitive)) => decode_primitive(vm, target_index, primitive)
     Some(value) => value
     None => Json::null()
+  }
+}
+
+///|
+fn numeric_program_cache_key(target_index : Int, block_id : String) -> String {
+  "\{target_index}:\{block_id}"
+}
+
+///|
+fn compile_numeric_operand_ops(
+  target : TargetState,
+  block : ScratchBlock,
+  input_name : String,
+  ops : Array[NumericReporterOp],
+  visiting : Map[String, Bool],
+  depth : Int,
+) -> Bool {
+  match block.const_number_inputs.get(input_name) {
+    Some(value) => {
+      ops.push(NumericReporterOp::PushConst(value))
+      true
+    }
+    None =>
+      match block.input_block_ids.get(input_name) {
+        Some(child_id) =>
+          compile_numeric_reporter_ops(
+            target,
+            child_id,
+            ops,
+            visiting,
+            depth + 1,
+          )
+        None => false
+      }
+  }
+}
+
+///|
+fn compile_numeric_reporter_ops(
+  target : TargetState,
+  block_id : String,
+  ops : Array[NumericReporterOp],
+  visiting : Map[String, Bool],
+  depth : Int,
+) -> Bool {
+  if depth > 64 || visiting.contains(block_id) {
+    return false
+  }
+  visiting[block_id] = true
+  let block = match target.blocks.get(block_id) {
+    Some(value) => value
+    None => {
+      visiting.remove(block_id)
+      return false
+    }
+  }
+
+  let compiled = match block.opcode {
+    "math_number"
+    | "math_integer"
+    | "math_whole_number"
+    | "math_positive_number"
+    | "math_angle" =>
+      match field_value(block, "NUM") {
+        Some((value, _)) => {
+          ops.push(
+            NumericReporterOp::PushConst(
+              match parse_double_or_none(value) {
+                Some(parsed) => parsed
+                None => 0.0
+              },
+            ),
+          )
+          true
+        }
+        None => {
+          ops.push(NumericReporterOp::PushConst(0.0))
+          true
+        }
+      }
+    "data_variable" =>
+      match field_value(block, "VARIABLE") {
+        Some((name, id)) => {
+          let encoded_id = match id {
+            Some(value) => value
+            None => ""
+          }
+          ops.push(NumericReporterOp::LoadVariable(encoded_id, name))
+          true
+        }
+        None => false
+      }
+    "operator_add" =>
+      if compile_numeric_operand_ops(
+          target, block, "NUM1", ops, visiting, depth,
+        ) &&
+        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        ops.push(NumericReporterOp::Add)
+        true
+      } else {
+        false
+      }
+    "operator_subtract" =>
+      if compile_numeric_operand_ops(
+          target, block, "NUM1", ops, visiting, depth,
+        ) &&
+        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        ops.push(NumericReporterOp::Subtract)
+        true
+      } else {
+        false
+      }
+    "operator_multiply" =>
+      if compile_numeric_operand_ops(
+          target, block, "NUM1", ops, visiting, depth,
+        ) &&
+        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        ops.push(NumericReporterOp::Multiply)
+        true
+      } else {
+        false
+      }
+    "operator_divide" =>
+      if compile_numeric_operand_ops(
+          target, block, "NUM1", ops, visiting, depth,
+        ) &&
+        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        ops.push(NumericReporterOp::Divide)
+        true
+      } else {
+        false
+      }
+    "operator_mod" =>
+      if compile_numeric_operand_ops(
+          target, block, "NUM1", ops, visiting, depth,
+        ) &&
+        compile_numeric_operand_ops(target, block, "NUM2", ops, visiting, depth) {
+        ops.push(NumericReporterOp::Mod)
+        true
+      } else {
+        false
+      }
+    "operator_round" =>
+      if compile_numeric_operand_ops(target, block, "NUM", ops, visiting, depth) {
+        ops.push(NumericReporterOp::Round)
+        true
+      } else {
+        false
+      }
+    "operator_mathop" => {
+      let op = match field_value(block, "OPERATOR") {
+        Some((name, _)) => name
+        None => ""
+      }
+      if compile_numeric_operand_ops(target, block, "NUM", ops, visiting, depth) {
+        ops.push(NumericReporterOp::MathOp(op))
+        true
+      } else {
+        false
+      }
+    }
+    "motion_xposition" => {
+      ops.push(NumericReporterOp::LoadXPosition)
+      true
+    }
+    "motion_yposition" => {
+      ops.push(NumericReporterOp::LoadYPosition)
+      true
+    }
+    "motion_direction" => {
+      ops.push(NumericReporterOp::LoadDirection)
+      true
+    }
+    "looks_size" => {
+      ops.push(NumericReporterOp::LoadSize)
+      true
+    }
+    "sound_volume" => {
+      ops.push(NumericReporterOp::LoadVolume)
+      true
+    }
+    "music_getTempo" => {
+      ops.push(NumericReporterOp::LoadTempo)
+      true
+    }
+    "sensing_timer" => {
+      ops.push(NumericReporterOp::LoadTimer)
+      true
+    }
+    "sensing_mousex" => {
+      ops.push(NumericReporterOp::LoadMouseX)
+      true
+    }
+    "sensing_mousey" => {
+      ops.push(NumericReporterOp::LoadMouseY)
+      true
+    }
+    "control_get_counter" => {
+      ops.push(NumericReporterOp::LoadControlCounter)
+      true
+    }
+    _ => false
+  }
+  visiting.remove(block_id)
+  compiled
+}
+
+///|
+fn compile_numeric_reporter_program(
+  target : TargetState,
+  block_id : String,
+) -> NumericReporterProgram? {
+  let ops = []
+  let visiting = {}
+  if compile_numeric_reporter_ops(target, block_id, ops, visiting, 0) {
+    Some({ ops, })
+  } else {
+    None
+  }
+}
+
+///|
+fn eval_numeric_reporter_program(
+  vm : Vm,
+  target_index : Int,
+  program : NumericReporterProgram,
+) -> Double? {
+  let stack = []
+  for op in program.ops {
+    match op {
+      NumericReporterOp::PushConst(value) => stack.push(value)
+      NumericReporterOp::LoadVariable(encoded_id, name) => {
+        let variable_id = if encoded_id == "" { None } else { Some(encoded_id) }
+        stack.push(
+          json_to_number_value(
+            read_variable(vm, target_index, variable_id, Some(name)),
+          ),
+        )
+      }
+      NumericReporterOp::Add =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) => stack.push(left + right)
+          _ => return None
+        }
+      NumericReporterOp::Subtract =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) => stack.push(left - right)
+          _ => return None
+        }
+      NumericReporterOp::Multiply =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) => stack.push(left * right)
+          _ => return None
+        }
+      NumericReporterOp::Divide =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) =>
+            if right == 0.0 {
+              stack.push(0.0)
+            } else {
+              stack.push(left / right)
+            }
+          _ => return None
+        }
+      NumericReporterOp::Mod =>
+        match (stack.pop(), stack.pop()) {
+          (Some(right), Some(left)) =>
+            if right == 0.0 {
+              stack.push(0.0)
+            } else {
+              stack.push(left.mod(right))
+            }
+          _ => return None
+        }
+      NumericReporterOp::Round =>
+        match stack.pop() {
+          Some(value) => stack.push(value.round())
+          None => return None
+        }
+      NumericReporterOp::MathOp(name) =>
+        match stack.pop() {
+          Some(value) => stack.push(mathop(vm, name, value))
+          None => return None
+        }
+      NumericReporterOp::LoadXPosition => stack.push(vm.targets[target_index].x)
+      NumericReporterOp::LoadYPosition => stack.push(vm.targets[target_index].y)
+      NumericReporterOp::LoadDirection =>
+        stack.push(vm.targets[target_index].direction)
+      NumericReporterOp::LoadSize => stack.push(vm.targets[target_index].size)
+      NumericReporterOp::LoadVolume =>
+        stack.push(vm.targets[target_index].volume)
+      NumericReporterOp::LoadTempo => stack.push(vm.music_tempo)
+      NumericReporterOp::LoadTimer =>
+        stack.push(Double::from_int(vm.now_ms - vm.timer_start_ms) / 1000.0)
+      NumericReporterOp::LoadMouseX => {
+        let (x, _) = read_mouse_xy(vm)
+        stack.push(x)
+      }
+      NumericReporterOp::LoadMouseY => {
+        let (_, y) = read_mouse_xy(vm)
+        stack.push(y)
+      }
+      NumericReporterOp::LoadControlCounter =>
+        stack.push(Double::from_int(vm.control_counter))
+    }
+  }
+  if stack.length() == 1 {
+    Some(stack[0])
+  } else {
+    None
+  }
+}
+
+///|
+fn get_compiled_numeric_reporter_program(
+  vm : Vm,
+  target_index : Int,
+  block_id : String,
+) -> NumericReporterProgram? {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return None
+  }
+  let key = numeric_program_cache_key(target_index, block_id)
+  match vm.numeric_program_cache.get(key) {
+    Some(program) => Some(program)
+    None =>
+      if vm.numeric_program_compile_failed.contains(key) {
+        None
+      } else {
+        let target = vm.targets[target_index]
+        match compile_numeric_reporter_program(target, block_id) {
+          Some(program) => {
+            vm.numeric_program_cache[key] = program
+            Some(program)
+          }
+          None => {
+            vm.numeric_program_compile_failed[key] = true
+            None
+          }
+        }
+      }
   }
 }
 
@@ -116,8 +463,36 @@ fn number_from_input(
   input_name : String,
   depth : Int,
 ) -> Double {
+  vm.profiler_number_input_calls += 1
   match block.const_number_inputs.get(input_name) {
     Some(value) => return value
+    None => ()
+  }
+  match block.input_block_ids.get(input_name) {
+    Some(block_id) => {
+      if target_index >= 0 && target_index < vm.targets.length() {
+        match vm.targets[target_index].const_number_block_values.get(block_id) {
+          Some(value) => return value
+          None => ()
+        }
+      }
+      match get_compiled_numeric_reporter_program(vm, target_index, block_id) {
+        Some(program) =>
+          match eval_numeric_reporter_program(vm, target_index, program) {
+            Some(value) => return value
+            None => ()
+          }
+        None => ()
+      }
+      match
+        eval_reporter_number_block_depth(vm, target_index, block_id, depth + 1) {
+        Some(value) => return value
+        None =>
+          return json_to_number_value(
+            eval_reporter_block_depth(vm, target_index, block_id, depth + 1),
+          )
+      }
+    }
     None => ()
   }
   match block_input_payload(block, input_name) {
@@ -133,23 +508,136 @@ fn number_from_input(
         0.0
       }
     Some(String(block_id)) =>
-      json_to_number_value(
-        eval_reporter_block_depth(vm, target_index, block_id, depth + 1),
-      )
+      if target_index >= 0 && target_index < vm.targets.length() {
+        match vm.targets[target_index].const_number_block_values.get(block_id) {
+          Some(value) => value
+          None =>
+            match
+              get_compiled_numeric_reporter_program(vm, target_index, block_id) {
+              Some(program) =>
+                match eval_numeric_reporter_program(vm, target_index, program) {
+                  Some(value) => value
+                  None =>
+                    match
+                      eval_reporter_number_block_depth(
+                        vm,
+                        target_index,
+                        block_id,
+                        depth + 1,
+                      ) {
+                      Some(value) => value
+                      None =>
+                        json_to_number_value(
+                          eval_reporter_block_depth(
+                            vm,
+                            target_index,
+                            block_id,
+                            depth + 1,
+                          ),
+                        )
+                    }
+                }
+              None =>
+                match
+                  eval_reporter_number_block_depth(
+                    vm,
+                    target_index,
+                    block_id,
+                    depth + 1,
+                  ) {
+                  Some(value) => value
+                  None =>
+                    json_to_number_value(
+                      eval_reporter_block_depth(
+                        vm,
+                        target_index,
+                        block_id,
+                        depth + 1,
+                      ),
+                    )
+                }
+            }
+        }
+      } else {
+        match
+          get_compiled_numeric_reporter_program(vm, target_index, block_id) {
+          Some(program) =>
+            match eval_numeric_reporter_program(vm, target_index, program) {
+              Some(value) => value
+              None =>
+                match
+                  eval_reporter_number_block_depth(
+                    vm,
+                    target_index,
+                    block_id,
+                    depth + 1,
+                  ) {
+                  Some(value) => value
+                  None =>
+                    json_to_number_value(
+                      eval_reporter_block_depth(
+                        vm,
+                        target_index,
+                        block_id,
+                        depth + 1,
+                      ),
+                    )
+                }
+            }
+          None =>
+            match
+              eval_reporter_number_block_depth(
+                vm,
+                target_index,
+                block_id,
+                depth + 1,
+              ) {
+              Some(value) => value
+              None =>
+                json_to_number_value(
+                  eval_reporter_block_depth(
+                    vm,
+                    target_index,
+                    block_id,
+                    depth + 1,
+                  ),
+                )
+            }
+        }
+      }
     Some(value) => json_to_number_value(value)
     None => 0.0
   }
 }
 
 ///|
-fn mathop(name : String, value : Double) -> Double {
-  match name.to_lower() {
+fn mathop(vm : Vm, name : String, value : Double) -> Double {
+  let op = if name == "sin" || name == "cos" { name } else { name.to_lower() }
+  match op {
     "abs" => value.abs()
     "floor" => value.floor()
     "ceiling" => value.ceil()
     "sqrt" => value.sqrt()
-    "sin" => @math.sin(value * @math.PI / 180.0)
-    "cos" => @math.cos(value * @math.PI / 180.0)
+    "sin" =>
+      if vm.mathop_sin_cache_valid && vm.mathop_sin_cache_input == value {
+        vm.mathop_sin_cache_output
+      } else {
+        let computed = @math.sin(value * @math.PI / 180.0)
+        vm.mathop_sin_cache_valid = true
+        vm.mathop_sin_cache_input = value
+        vm.mathop_sin_cache_output = computed
+        computed
+      }
+    "cos" =>
+      if vm.mathop_cos_cache_valid && vm.mathop_cos_cache_input == value {
+        vm.mathop_cos_cache_output
+      } else {
+        let computed = @math.cos(value * @math.PI / 180.0)
+        vm.mathop_cos_cache_valid = true
+        vm.mathop_cos_cache_input = value
+        vm.mathop_cos_cache_output = computed
+        computed
+      }
     "tan" => @math.tan(value * @math.PI / 180.0)
     "asin" => @math.asin(value) * 180.0 / @math.PI
     "acos" => @math.acos(value) * 180.0 / @math.PI
@@ -159,6 +647,137 @@ fn mathop(name : String, value : Double) -> Double {
     "e ^" => @math.exp(value)
     "10 ^" => @math.pow(10.0, value)
     _ => value
+  }
+}
+
+///|
+fn eval_reporter_number_block_depth(
+  vm : Vm,
+  target_index : Int,
+  block_id : String,
+  depth : Int,
+) -> Double? {
+  if depth > 40 {
+    return None
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return None
+  }
+  let target = vm.targets[target_index]
+  let block = match target.blocks.get(block_id) {
+    Some(value) => value
+    None => return None
+  }
+
+  match block.opcode {
+    "math_number"
+    | "math_integer"
+    | "math_whole_number"
+    | "math_positive_number"
+    | "math_angle" =>
+      match field_value(block, "NUM") {
+        Some((value, _)) =>
+          Some(
+            match parse_double_or_none(value) {
+              Some(parsed) => parsed
+              None => 0.0
+            },
+          )
+        None => Some(0.0)
+      }
+    "operator_add" =>
+      Some(
+        number_from_input(vm, target_index, block, "NUM1", depth) +
+        number_from_input(vm, target_index, block, "NUM2", depth),
+      )
+    "operator_subtract" =>
+      Some(
+        number_from_input(vm, target_index, block, "NUM1", depth) -
+        number_from_input(vm, target_index, block, "NUM2", depth),
+      )
+    "operator_multiply" =>
+      Some(
+        number_from_input(vm, target_index, block, "NUM1", depth) *
+        number_from_input(vm, target_index, block, "NUM2", depth),
+      )
+    "operator_divide" => {
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
+      if right == 0.0 {
+        Some(0.0)
+      } else {
+        Some(number_from_input(vm, target_index, block, "NUM1", depth) / right)
+      }
+    }
+    "operator_mod" => {
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
+      if right == 0.0 {
+        Some(0.0)
+      } else {
+        Some(
+          number_from_input(vm, target_index, block, "NUM1", depth).mod(right),
+        )
+      }
+    }
+    "operator_round" =>
+      Some(number_from_input(vm, target_index, block, "NUM", depth).round())
+    "operator_mathop" => {
+      let op = match field_value(block, "OPERATOR") {
+        Some((name, _)) => name
+        None => ""
+      }
+      Some(
+        mathop(vm, op, number_from_input(vm, target_index, block, "NUM", depth)),
+      )
+    }
+    "data_variable" =>
+      match field_value(block, "VARIABLE") {
+        Some((name, id)) =>
+          Some(
+            json_to_number_value(
+              read_variable(vm, target_index, id, Some(name)),
+            ),
+          )
+        None => Some(0.0)
+      }
+    "argument_reporter_string_number" | "argument_reporter_boolean" => {
+      let arg_name = block_input_or_field_string(
+        vm, target_index, block, "VALUE", "VALUE", depth,
+      )
+      if arg_name == "" {
+        Some(0.0)
+      } else {
+        match current_procedure_param(vm, arg_name) {
+          Some(value) => Some(json_to_number_value(value))
+          None => Some(0.0)
+        }
+      }
+    }
+    "music_getTempo" => Some(vm.music_tempo)
+    "motion_xposition" => Some(vm.targets[target_index].x)
+    "motion_yposition" => Some(vm.targets[target_index].y)
+    "motion_direction" => Some(vm.targets[target_index].direction)
+    "looks_size" => Some(vm.targets[target_index].size)
+    "sound_volume" => Some(vm.targets[target_index].volume)
+    "sensing_timer" =>
+      Some(Double::from_int(vm.now_ms - vm.timer_start_ms) / 1000.0)
+    "sensing_mousex" => {
+      let (x, _) = read_mouse_xy(vm)
+      Some(x)
+    }
+    "sensing_mousey" => {
+      let (_, y) = read_mouse_xy(vm)
+      Some(y)
+    }
+    "sensing_current" => {
+      let menu = block_input_or_field_string(
+        vm, target_index, block, "CURRENTMENU", "CURRENTMENU", depth,
+      )
+      Some(current_menu_value(vm, menu))
+    }
+    "sensing_dayssince2000" => Some(days_since_2000(vm))
+    "sensing_loudness" => Some(read_loudness(vm))
+    "control_get_counter" => Some(Double::from_int(vm.control_counter))
+    _ => None
   }
 }
 
@@ -833,39 +1452,23 @@ fn eval_reporter_block_depth(
       }
     }
     "operator_add" => {
-      let left = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM1", depth),
-      )
-      let right = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM2", depth),
-      )
+      let left = number_from_input(vm, target_index, block, "NUM1", depth)
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
       json_number(left + right)
     }
     "operator_subtract" => {
-      let left = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM1", depth),
-      )
-      let right = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM2", depth),
-      )
+      let left = number_from_input(vm, target_index, block, "NUM1", depth)
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
       json_number(left - right)
     }
     "operator_multiply" => {
-      let left = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM1", depth),
-      )
-      let right = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM2", depth),
-      )
+      let left = number_from_input(vm, target_index, block, "NUM1", depth)
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
       json_number(left * right)
     }
     "operator_divide" => {
-      let left = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM1", depth),
-      )
-      let right = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM2", depth),
-      )
+      let left = number_from_input(vm, target_index, block, "NUM1", depth)
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
       if right == 0.0 {
         json_number(0.0)
       } else {
@@ -873,12 +1476,8 @@ fn eval_reporter_block_depth(
       }
     }
     "operator_random" => {
-      let from = json_to_number_value(
-        value_from_input(vm, target_index, block, "FROM", depth),
-      )
-      let to = json_to_number_value(
-        value_from_input(vm, target_index, block, "TO", depth),
-      )
+      let from = number_from_input(vm, target_index, block, "FROM", depth)
+      let to = number_from_input(vm, target_index, block, "TO", depth)
       let low = if from <= to { from } else { to }
       let high = if from <= to { to } else { from }
       let sampled = low + (high - low) * next_random_unit(vm)
@@ -933,9 +1532,7 @@ fn eval_reporter_block_depth(
       json_string(left + right)
     }
     "operator_letter_of" => {
-      let index = json_to_number_value(
-          value_from_input(vm, target_index, block, "LETTER", depth),
-        ).to_int() -
+      let index = number_from_input(vm, target_index, block, "LETTER", depth).to_int() -
         1
       let text = json_to_string_value(
         value_from_input(vm, target_index, block, "STRING", depth),
@@ -962,12 +1559,8 @@ fn eval_reporter_block_depth(
       json_bool(text.contains(needle))
     }
     "operator_mod" => {
-      let left = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM1", depth),
-      )
-      let right = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM2", depth),
-      )
+      let left = number_from_input(vm, target_index, block, "NUM1", depth)
+      let right = number_from_input(vm, target_index, block, "NUM2", depth)
       if right == 0.0 {
         json_number(0.0)
       } else {
@@ -975,9 +1568,7 @@ fn eval_reporter_block_depth(
       }
     }
     "operator_round" => {
-      let value = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM", depth),
-      )
+      let value = number_from_input(vm, target_index, block, "NUM", depth)
       json_number(value.round())
     }
     "operator_mathop" => {
@@ -985,10 +1576,8 @@ fn eval_reporter_block_depth(
         Some((name, _)) => name
         None => ""
       }
-      let value = json_to_number_value(
-        value_from_input(vm, target_index, block, "NUM", depth),
-      )
-      json_number(mathop(op, value))
+      let value = number_from_input(vm, target_index, block, "NUM", depth)
+      json_number(mathop(vm, op, value))
     }
     "motion_xposition" => json_number(vm.targets[target_index].x)
     "motion_yposition" => json_number(vm.targets[target_index].y)

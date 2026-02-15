@@ -51,8 +51,8 @@ pub(all) struct BroadcastHatStart {
 pub(all) struct ControlFrame {
   kind : ControlFrameKind
   mut remaining : Int
-  substack : String?
-  after : String?
+  substack : Int?
+  after : Int?
 }
 pub impl Eq for ControlFrame
 pub impl Show for ControlFrame
@@ -112,6 +112,36 @@ pub(all) struct KeyPressedHatStart {
   start_block : String
 }
 
+pub(all) enum NumericReporterOp {
+  PushConst(Double)
+  LoadVariable(String, String)
+  Add
+  Subtract
+  Multiply
+  Divide
+  Mod
+  Round
+  MathOp(String)
+  LoadXPosition
+  LoadYPosition
+  LoadDirection
+  LoadSize
+  LoadVolume
+  LoadTempo
+  LoadTimer
+  LoadMouseX
+  LoadMouseY
+  LoadControlCounter
+}
+pub impl Eq for NumericReporterOp
+pub impl Show for NumericReporterOp
+
+pub(all) struct NumericReporterProgram {
+  ops : Array[NumericReporterOp]
+}
+pub impl Eq for NumericReporterProgram
+pub impl Show for NumericReporterProgram
+
 pub(all) enum OpcodeTag {
   Unknown
   MotionChangeXBy
@@ -144,12 +174,22 @@ pub(all) struct PredicateHatStart {
 }
 
 pub(all) struct ProcedureFrame {
-  return_pc : String?
+  return_pc : Int?
   control_depth : Int
   params : Map[String, Json]
   proccode : String
   mut warp_mode : Bool
 }
+
+pub(all) struct ProcedureSpec {
+  start_block : String
+  param_names : Array[String]
+  param_ids : Array[String]
+  param_defaults : Array[Json]
+  warp_mode : Bool
+}
+pub impl Eq for ProcedureSpec
+pub impl Show for ProcedureSpec
 
 pub(all) struct ProjectBundle {
   project_json : String
@@ -215,9 +255,21 @@ pub(all) struct TargetState {
   mut looks_effect_ghost : Double
   variables : Map[String, Json]
   variable_names : Map[String, String]
+  variable_slot_by_id : Map[String, Int]
+  variable_slot_by_name : Map[String, Int]
+  variable_id_by_slot : Array[String]
+  mut variable_values : Array[Json]
   lists : Map[String, Array[Json]]
   list_names : Map[String, String]
+  list_slot_by_id : Map[String, Int]
+  list_slot_by_name : Map[String, Int]
+  list_id_by_slot : Array[String]
+  mut list_values : Array[Array[Json]]
   blocks : Map[String, ScratchBlock]
+  const_number_block_values : Map[String, Double]
+  procedures : Map[String, ProcedureSpec]
+  block_pc_by_id : Map[String, Int]
+  blocks_by_pc : Array[ScratchBlock]
   top_level_hats : Array[String]
   green_flag_starts : Array[String]
   stage_clicked_starts : Array[String]
@@ -232,7 +284,7 @@ pub(all) struct TargetState {
 pub(all) struct Thread {
   id : Int
   target_index : Int
-  mut pc : String?
+  mut pc : Int?
   mut wait_until_ms : Int?
   mut wait_for_input : String?
   mut done : Bool
@@ -274,6 +326,19 @@ pub(all) struct Vm {
   mut redraw_requested : Bool
   mut redraw_requested_while_warp : Bool
   mut current_thread_id : Int?
+  mut mathop_sin_cache_valid : Bool
+  mut mathop_sin_cache_input : Double
+  mut mathop_sin_cache_output : Double
+  mut mathop_cos_cache_valid : Bool
+  mut mathop_cos_cache_input : Double
+  mut mathop_cos_cache_output : Double
+  mut numeric_program_cache : Map[String, NumericReporterProgram]
+  mut numeric_program_compile_failed : Map[String, Bool]
+  mut profiler_execute_calls : Int
+  mut profiler_number_input_calls : Int
+  mut profiler_value_input_calls : Int
+  mut profiler_variable_reads : Int
+  mut profiler_variable_writes : Int
 }
 
 pub(all) struct VmOptions {

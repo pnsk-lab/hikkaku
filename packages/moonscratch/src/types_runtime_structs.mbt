@@ -2,8 +2,8 @@
 pub(all) struct ControlFrame {
   kind : ControlFrameKind
   mut remaining : Int
-  substack : String?
-  after : String?
+  substack : Int?
+  after : Int?
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -31,6 +31,43 @@ pub(all) struct ScratchBlock {
   mutation : Map[String, Json]
   top_level : Bool
 } derive(Show, Eq, ToJson)
+
+///|
+pub(all) enum NumericReporterOp {
+  PushConst(Double)
+  LoadVariable(String, String)
+  Add
+  Subtract
+  Multiply
+  Divide
+  Mod
+  Round
+  MathOp(String)
+  LoadXPosition
+  LoadYPosition
+  LoadDirection
+  LoadSize
+  LoadVolume
+  LoadTempo
+  LoadTimer
+  LoadMouseX
+  LoadMouseY
+  LoadControlCounter
+} derive(Show, Eq)
+
+///|
+pub(all) struct NumericReporterProgram {
+  ops : Array[NumericReporterOp]
+} derive(Show, Eq)
+
+///|
+pub(all) struct ProcedureSpec {
+  start_block : String
+  param_names : Array[String]
+  param_ids : Array[String]
+  param_defaults : Array[Json]
+  warp_mode : Bool
+} derive(Show, Eq)
 
 ///|
 pub(all) enum PredicateHatKind {
@@ -110,9 +147,21 @@ pub(all) struct TargetState {
   mut looks_effect_ghost : Double
   variables : Map[String, Json]
   variable_names : Map[String, String]
+  variable_slot_by_id : Map[String, Int]
+  variable_slot_by_name : Map[String, Int]
+  variable_id_by_slot : Array[String]
+  mut variable_values : Array[Json]
   lists : Map[String, Array[Json]]
   list_names : Map[String, String]
+  list_slot_by_id : Map[String, Int]
+  list_slot_by_name : Map[String, Int]
+  list_id_by_slot : Array[String]
+  mut list_values : Array[Array[Json]]
   blocks : Map[String, ScratchBlock]
+  const_number_block_values : Map[String, Double]
+  procedures : Map[String, ProcedureSpec]
+  block_pc_by_id : Map[String, Int]
+  blocks_by_pc : Array[ScratchBlock]
   top_level_hats : Array[String]
   green_flag_starts : Array[String]
   stage_clicked_starts : Array[String]
@@ -135,7 +184,7 @@ pub(all) struct RenderFrame {
 pub(all) struct Thread {
   id : Int
   target_index : Int
-  mut pc : String?
+  mut pc : Int?
   mut wait_until_ms : Int?
   mut wait_for_input : String?
   mut done : Bool
@@ -148,7 +197,7 @@ pub(all) struct Thread {
 
 ///|
 pub(all) struct ProcedureFrame {
-  return_pc : String?
+  return_pc : Int?
   control_depth : Int
   params : Map[String, Json]
   proccode : String
