@@ -35,12 +35,19 @@ type BoundMoonscratch = {
   vm_render_frame?: (vmHandle: BoundWasmVmHandle) => unknown
 }
 
+interface HeadlessVMHooks {
+  afterGreenFlag?: () => void
+  beforeStepFrame?: () => void
+}
+
 export class HeadlessVM {
   private readonly vmHandle: unknown
+  private readonly hooks: HeadlessVMHooks
   private translateCache: TranslateCache = {}
 
-  constructor(vmHandle: unknown) {
+  constructor(vmHandle: unknown, hooks: HeadlessVMHooks = {}) {
     this.vmHandle = vmHandle
+    this.hooks = hooks
   }
 
   get raw(): unknown {
@@ -53,9 +60,11 @@ export class HeadlessVM {
 
   greenFlag(): void {
     moonscratch.vm_green_flag(this.vmHandle)
+    this.hooks.afterGreenFlag?.()
   }
 
   stepFrame(): FrameReport {
+    this.hooks.beforeStepFrame?.()
     const raw = moonscratch.vm_step_frame(this.vmHandle)
     return toFrameReport(raw)
   }

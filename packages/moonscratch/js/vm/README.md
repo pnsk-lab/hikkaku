@@ -10,13 +10,15 @@ Exports are available from `moonscratch` (the package entrypoint) and from
 ```ts
 import {
   createHeadlessVM,
+  createHeadlessVMFromProject,
   createHeadlessVMWithScratchAssets,
-  createPrecompiledProject,
+  precompileProgramForRuntime,
+  createProgramModuleFromProject,
   HeadlessVM,
 } from 'moonscratch';
 ```
 
-`createVM` and `createVMWithScratchAssets` are aliases of the two create functions.
+`createVM`, `createVMFromProject`, and `createVMWithScratchAssets` are aliases.
 
 ## Basic usage
 
@@ -41,9 +43,9 @@ const projectJson = {
   ],
 };
 
-const precompiled = createPrecompiledProject({ projectJson });
+const program = createProgramModuleFromProject({ projectJson });
 const vm = createHeadlessVM({
-  precompiled,
+  program,
   options: {
     turbo: true,
     deterministic: true,
@@ -59,8 +61,15 @@ vm.setTime(Date.now()); // update runtime clock explicitly
 const frame = vm.stepFrame(); // run until rerender/finished/timeout event
 console.log(frame.activeThreads);
 
-// Reuse the precompiled project for many VM instances.
-const vm2 = createHeadlessVM({ precompiled });
+// Reuse the compiled program module for many VM instances.
+const vm2 = createHeadlessVM({ program });
+
+// Convenience helper: compile + instantiate + create VM in one call.
+const vm3 = createHeadlessVMFromProject({ projectJson });
+
+// Optional: precompile runtime artifact once, then create VMs.
+precompileProgramForRuntime({ program });
+const vm4 = createHeadlessVM({ program });
 ```
 
 - `stepFrame()` advances until one of three events happens.

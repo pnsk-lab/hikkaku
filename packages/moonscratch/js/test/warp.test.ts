@@ -8,32 +8,36 @@ import {
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, it } from 'vite-plus/test'
-import { createHeadlessVM, createPrecompiledProject } from '../vm'
+import { createHeadlessVM, createProgramModuleFromProject } from '../vm'
 
 describe('warp-exit', () => {
   it('should emit warp-exit before finished', () => {
     const project = new Project()
     project.stage.run(() => {
-      const fn = defineProcedure([procedureLabel('myfn')], () => {
-        // produce more blocks
-        for (let i = 0; i < 1000; i++) {
-          repeat(100, () => {
-            say('Hello')
-          })
-        }
-      }, true)
+      const fn = defineProcedure(
+        [procedureLabel('myfn')],
+        () => {
+          // produce more blocks
+          for (let i = 0; i < 1000; i++) {
+            repeat(100, () => {
+              say('Hello')
+            })
+          }
+        },
+        true,
+      )
       whenFlagClicked(() => {
         repeat(3, () => {
           callProcedure(fn, [])
         })
       })
     })
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: project.toScratch(),
       assets: {},
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       options: {
         stepTimeoutTicks: 10000,
         turbo: true,

@@ -57,12 +57,12 @@ Wrapper file: `js/headless-vm.mjs`
 ```js
 import {
   createHeadlessVM,
-  createPrecompiledProject,
+  createProgramModuleFromProject,
   createHeadlessVMWithScratchAssets,
 } from './js/headless-vm.mjs'
 
-const precompiled = createPrecompiledProject({ projectJson, assets })
-const vm = createHeadlessVM({ precompiled, options })
+const program = createProgramModuleFromProject({ projectJson, assets })
+const vm = createHeadlessVM({ program, options })
 vm.greenFlag()
 vm.setTime(Date.now())
 vm.stepFrame()

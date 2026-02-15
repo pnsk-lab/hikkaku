@@ -1,6 +1,6 @@
 import {
   createHeadlessVM,
-  createPrecompiledProject,
+  createProgramModuleFromProject,
   type VMInputEvent,
 } from '../js'
 
@@ -101,13 +101,13 @@ globalThis.onmessage = (event) => {
   runToken += 1
   const token = runToken
   try {
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: data.projectJson,
     })
     vm = createHeadlessVM({
-      precompiled,
+      program,
       options: {
-        stepTimeoutTicks: TICKS_TIMEOUT
+        stepTimeoutTicks: TICKS_TIMEOUT,
       },
     })
     vm.start()

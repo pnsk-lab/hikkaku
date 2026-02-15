@@ -1,14 +1,25 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
 
 import {
+  compileProjectToWasm,
+  compileProjectToWat,
   createHeadlessVM,
+  createHeadlessVMFromProject,
   createHeadlessVMWithScratchAssets,
-  createPrecompiledProject,
+  createProgramModule,
+  createProgramModuleFromProject,
+  createRuntime,
   createVM,
+  createVMFromProject,
   createVMWithScratchAssets,
+  moonscratch,
+  precompileProgramForRuntime,
 } from './factory.ts'
 import {
+  CONTROL_OPERATOR_DATA_PROJECT,
+  EXAMPLE_PROJECT,
   getStageVariables,
+  HOST_OPCODE_FALLBACK_PROJECT,
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
 } from './test-projects.ts'
@@ -16,15 +27,179 @@ import {
 describe('moonscratch/js/vm/factory.ts', () => {
   test('exports createVM aliases', () => {
     expect(createVM).toBe(createHeadlessVM)
+    expect(createVMFromProject).toBe(createHeadlessVMFromProject)
     expect(createVMWithScratchAssets).toBe(createHeadlessVMWithScratchAssets)
   })
 
-  test('creates VM from precompiled project', () => {
-    const precompiled = createPrecompiledProject({
+  test('compiles project JSON into generated WAT metadata', () => {
+    const runtime = createRuntime()
+    const compiled = compileProjectToWat({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    expect(compiled.abiVersion).toBe(runtime.abiVersion)
+    expect(compiled.manifest.abiVersion).toBe(runtime.abiVersion)
+    expect(compiled.wat).toContain(';; moonscratch_program_v1')
+    expect(compiled.wat).toContain(
+      `;; abi_version=${String(runtime.abiVersion)}`,
+    )
+  })
+
+  test('builds and loads project WASM module from generated WAT', () => {
+    const compiled = compileProjectToWasm({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+      assets: { custom_asset: { width: 1, height: 1, rgbaBase64: 'AP8A/w==' } },
+    })
+    const program = createProgramModule({
+      wasmBytes: compiled.wasmBytes,
+      manifest: compiled.manifest,
+    })
+    const payload = program.readPayload()
+    expect(payload.projectJson).toContain('"targets"')
+    expect(payload.assetsJson).toContain('custom_asset')
+  })
+
+  test('embeds AOT command payload for eligible linear green-flag scripts', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: EXAMPLE_PROJECT,
+    })
+    const payload = program.readPayload()
+    expect(payload.commandsJson).toBeDefined()
+    expect(payload.commandsJson).toContain('"op":"set_var_json_const"')
+    expect(payload.commandsJson).toContain('"catalog"')
+    const parsed = JSON.parse(payload.commandsJson ?? '{}') as {
+      exec_mode?: string
+      full_green_flag_starts?: unknown[]
+    }
+    expect(parsed.exec_mode).toBe('linear')
+    expect(Array.isArray(parsed.full_green_flag_starts)).toBe(true)
+    expect(parsed.full_green_flag_starts?.length ?? 0).toBeGreaterThan(0)
+  })
+
+  test('stores opcode catalog and host-tail commands for unsupported opcodes', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    const payload = program.readPayload()
+    expect(payload.commandsJson).toBeDefined()
+    expect(payload.commandsJson).toContain('"catalog"')
+    expect(payload.commandsJson).toContain('"op":"host_tail"')
+    expect(payload.commandsJson).toContain('translate_getViewerLanguage')
+    const parsed = JSON.parse(payload.commandsJson ?? '{}') as {
+      exec_mode?: string
+      full_green_flag_starts?: unknown[]
+    }
+    expect(parsed.exec_mode).toBe('linear')
+    expect(Array.isArray(parsed.full_green_flag_starts)).toBe(true)
+    expect(parsed.full_green_flag_starts?.length ?? 0).toBeGreaterThan(0)
+  })
+
+  test('caches runtime precompile result per program module', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    const compileSpy = vi.spyOn(
+      moonscratch as { vm_compile_from_json: (...args: unknown[]) => unknown },
+      'vm_compile_from_json',
+    )
+
+    const first = createHeadlessVM({ program, initialNowMs: 0 })
+    const second = createHeadlessVM({ program, initialNowMs: 0 })
+
+    expect(first).toBeDefined()
+    expect(second).toBeDefined()
+    expect(compileSpy).toHaveBeenCalledTimes(1)
+    compileSpy.mockRestore()
+  })
+
+  test('allows explicit runtime precompile before VM creation', () => {
+    const runtime = createRuntime()
+    const program = createProgramModuleFromProject({
+      projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
+    })
+    const compileSpy = vi.spyOn(
+      moonscratch as { vm_compile_from_json: (...args: unknown[]) => unknown },
+      'vm_compile_from_json',
+    )
+
+    precompileProgramForRuntime({ program, runtime })
+    const vm = createHeadlessVM({ runtime, program, initialNowMs: 0 })
+
+    expect(vm).toBeDefined()
+    expect(compileSpy).toHaveBeenCalledTimes(1)
+    compileSpy.mockRestore()
+  })
+
+  test('passes AOT command payload to runtime when present', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: EXAMPLE_PROJECT,
+    })
+    const aotSpy = vi.spyOn(
+      moonscratch as unknown as {
+        vm_set_aot_commands_json: (...args: unknown[]) => unknown
+      },
+      'vm_set_aot_commands_json',
+    )
+
+    const vm = createHeadlessVM({ program, initialNowMs: 0 })
+    vm.greenFlag()
+    const frame = vm.stepFrame()
+
+    expect(frame.stopReason).toBe('finished')
+    expect(getStageVariables(vm).var_score).toBe(42)
+    expect(aotSpy).toHaveBeenCalledTimes(1)
+    aotSpy.mockRestore()
+  })
+
+  test('runs linear AOT logic through program wasm on green flag', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: EXAMPLE_PROJECT,
+    })
+    expect(program.hasWasmExec()).toBe(true)
+
+    const vm = createHeadlessVM({ program, initialNowMs: 0 })
+    vm.greenFlag()
+
+    expect(getStageVariables(vm).var_score).toBe(42)
+    const frame = vm.stepFrame()
+    expect(frame.stopReason).toBe('finished')
+  })
+
+  test('runs control/operator/data command graph through program wasm', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: CONTROL_OPERATOR_DATA_PROJECT,
+    })
+    expect(program.hasWasmExec()).toBe(true)
+
+    const vm = createHeadlessVM({ program, initialNowMs: 0 })
+    vm.greenFlag()
+
+    const vars = getStageVariables(vm)
+    expect(vars.var_result).toBe(18)
+    expect(vars.var_branch).toBe(1)
+  })
+
+  test('delegates unsupported opcode to moonbit host during wasm exec', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: HOST_OPCODE_FALLBACK_PROJECT,
+    })
+    expect(program.hasWasmExec()).toBe(true)
+    expect(program.readPayload().commandsJson).toContain('"op":"host_opcode"')
+
+    const vm = createHeadlessVM({ program, initialNowMs: 0 })
+    vm.greenFlag()
+    const frame = vm.stepFrame()
+
+    const vars = getStageVariables(vm)
+    expect(vars.var_done).toBe(1)
+    expect(frame.stopReason).toBe('finished')
+  })
+
+  test('creates VM from compiled program module', () => {
+    const program = createProgramModuleFromProject({
       projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       initialNowMs: 0,
       viewerLanguage: 'ja',
     })
@@ -38,12 +213,12 @@ describe('moonscratch/js/vm/factory.ts', () => {
     )
   })
 
-  test('reuses precompiled project across multiple VM instances', () => {
-    const precompiled = createPrecompiledProject({
+  test('reuses compiled program module across multiple VM instances', () => {
+    const program = createProgramModuleFromProject({
       projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
     })
-    const first = createHeadlessVM({ precompiled, initialNowMs: 0 })
-    const second = createHeadlessVM({ precompiled, initialNowMs: 0 })
+    const first = createHeadlessVM({ program, initialNowMs: 0 })
+    const second = createHeadlessVM({ program, initialNowMs: 0 })
 
     first.greenFlag()
     second.greenFlag()
@@ -54,11 +229,11 @@ describe('moonscratch/js/vm/factory.ts', () => {
   })
 
   test('normalizes viewer language and translate cache in constructor options', () => {
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       viewerLanguage: ' JA ',
       translateCache: { JA: { hello: 'こんにちは' } },
     })

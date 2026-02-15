@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 
-import { createHeadlessVM, createPrecompiledProject } from './factory.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import type { ProjectJson } from './types.ts'
 
 const NON_WARP_REDRAW_PROJECT: ProjectJson = {
@@ -310,22 +310,22 @@ const WARP_FOREVER_PROJECT: ProjectJson = {
 }
 
 describe('moonscratch/js/vm scheduler render contracts', () => {
-  const nonWarpPrecompiled = createPrecompiledProject({
+  const nonWarpProgram = createProgramModuleFromProject({
     projectJson: NON_WARP_REDRAW_PROJECT,
   })
-  const warpPrecompiled = createPrecompiledProject({
+  const warpProgram = createProgramModuleFromProject({
     projectJson: WARP_REDRAW_PROJECT,
   })
-  const warpExitPrecompiled = createPrecompiledProject({
+  const warpExitProgram = createProgramModuleFromProject({
     projectJson: WARP_EXIT_PROJECT,
   })
-  const warpForeverPrecompiled = createPrecompiledProject({
+  const warpForeverProgram = createProgramModuleFromProject({
     projectJson: WARP_FOREVER_PROJECT,
   })
 
   test('non-warp redraw stops frame with rerender reason and asks renderer update', () => {
     const vm = createHeadlessVM({
-      precompiled: nonWarpPrecompiled,
+      program: nonWarpProgram,
       initialNowMs: 0,
     })
     vm.greenFlag()
@@ -340,7 +340,7 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
 
   test('warp redraw does not request render while warp is still active', () => {
     const vm = createHeadlessVM({
-      precompiled: warpPrecompiled,
+      program: warpProgram,
       initialNowMs: 0,
       options: {
         stepTimeoutTicks: 1,
@@ -358,7 +358,7 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
 
   test('returns warp-exit before finished when warp context ends in same frame', () => {
     const vm = createHeadlessVM({
-      precompiled: warpExitPrecompiled,
+      program: warpExitProgram,
       initialNowMs: 0,
       options: {
         stepTimeoutTicks: 10000,
@@ -378,7 +378,7 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
 
   test('emits warp-exit when forever script repeatedly re-enters warp procedure', () => {
     const vm = createHeadlessVM({
-      precompiled: warpForeverPrecompiled,
+      program: warpForeverProgram,
       initialNowMs: 0,
       options: {
         stepTimeoutTicks: 100,

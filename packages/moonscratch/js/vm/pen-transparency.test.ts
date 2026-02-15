@@ -10,7 +10,7 @@ import {
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { createHeadlessVM, createPrecompiledProject } from './factory.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import { stepMany } from './test-projects.ts'
 
 describe('moonscratch/js/vm pen transparency', () => {
@@ -39,11 +39,11 @@ describe('moonscratch/js/vm pen transparency', () => {
       })
     })
 
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: project.toScratch(),
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       initialNowMs: 0,
     })
     vm.greenFlag()
@@ -85,11 +85,11 @@ describe('moonscratch/js/vm pen transparency', () => {
       })
     })
 
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: project.toScratch(),
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       initialNowMs: 0,
     })
     vm.greenFlag()

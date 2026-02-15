@@ -43,6 +43,12 @@ pub(all) struct Vm {
   mut mathop_cos_cache_valid : Bool
   mut mathop_cos_cache_input : Double
   mut mathop_cos_cache_output : Double
+  mut aot_commands : Array[AotCommand]
+  mut aot_pending : Bool
+  mut aot_full_green_flag_starts : Map[Int, Array[Int]]
+  mut aot_use_full_exec : Bool
+  mut aot_wasm_only : Bool
+  mut frame_override : FrameReport?
 }
 
 ///|
@@ -54,4 +60,12 @@ pub(all) struct FrameReport {
   stop_reason : String
   should_render : Bool
   is_in_warp : Bool
+} derive(Show, Eq, ToJson)
+
+///|
+pub(all) enum AotCommand {
+  SetVariable(Int, String, Json)
+  ChangeVariable(Int, String, Double)
+  HostOpcode(Int, Int)
+  HostTail(Int, Int)
 } derive(Show, Eq, ToJson)

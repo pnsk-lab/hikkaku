@@ -1704,6 +1704,26 @@ fn spawn_hats_for_message(
 }
 
 ///|
+fn spawn_aot_green_flag_hats(vm : Vm) -> Int {
+  let mut count = 0
+  for target_index, target in vm.targets {
+    if target.deleted {
+      continue
+    }
+    match vm.aot_full_green_flag_starts.get(target_index) {
+      Some(start_pcs) =>
+        for start_pc in start_pcs {
+          if spawn_thread_pc(vm, target_index, start_pc, None) {
+            count += 1
+          }
+        }
+      None => ()
+    }
+  }
+  count
+}
+
+///|
 fn spawn_green_flag_hats(vm : Vm) -> Int {
   let mut count = 0
   for target_index, target in vm.targets {
@@ -3130,8 +3150,117 @@ fn start_vm_runtime(vm : Vm) -> Unit {
 }
 
 ///|
+fn exec_script_tail_runtime(vm : Vm, target_index : Int, start_pc : Int) -> Int {
+  vm.frame_override = None
+  if !spawn_thread_pc(vm, target_index, start_pc, None) {
+    return 0
+  }
+  vm.running = true
+  let frame = step_frame_runtime(vm)
+  vm.frame_override = Some(frame)
+  frame.op_count
+}
+
+///|
+fn exec_opcode_once_runtime(vm : Vm, target_index : Int, pc : Int) -> Int {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return 0
+  }
+  if pc < 0 || pc >= vm.targets[target_index].blocks_by_pc.length() {
+    return 0
+  }
+
+  // Execute exactly one opcode in an ephemeral thread context.
+  let thread_id = -1
+  ignore(
+    execute_thread_once(vm, {
+      id: thread_id,
+      target_index,
+      pc: Some(pc),
+      wait_until_ms: None,
+      wait_for_input: None,
+      done: false,
+      warp_mode: false,
+      warp_started_ms: 0,
+      stack: [],
+      loop_counters: {},
+      parent_waiter: None,
+    }),
+  )
+  vm.waiting_children.remove(thread_id)
+  vm.procedure_frames.remove(thread_id)
+  vm.current_thread_id = None
+  if !vm.threads.is_empty() {
+    vm.running = true
+  }
+  1
+}
+
+///|
+fn apply_aot_commands_frame(vm : Vm) -> FrameReport {
+  let effect_count_before = vm.effects.length()
+  let mut op_count = 0
+  let mut has_host_tail = false
+  vm.aot_pending = false
+  for command in vm.aot_commands {
+    match command {
+      AotCommand::SetVariable(target_index, variable_id, value) =>
+        if target_index >= 0 && target_index < vm.targets.length() {
+          write_variable(vm, target_index, Some(variable_id), None, value)
+          op_count += 1
+        }
+      AotCommand::ChangeVariable(target_index, variable_id, delta) =>
+        if target_index >= 0 && target_index < vm.targets.length() {
+          let current = read_variable(vm, target_index, Some(variable_id), None)
+          let next_value = json_number(json_to_number_value(current) + delta)
+          write_variable(vm, target_index, Some(variable_id), None, next_value)
+          op_count += 1
+        }
+      AotCommand::HostOpcode(target_index, pc) =>
+        op_count += exec_opcode_once_runtime(vm, target_index, pc)
+      AotCommand::HostTail(target_index, start_pc) =>
+        if spawn_thread_pc(vm, target_index, start_pc, None) {
+          has_host_tail = true
+        }
+    }
+  }
+  if has_host_tail {
+    vm.running = true
+    let host_frame = step_frame_runtime(vm)
+    return {
+      active_threads: host_frame.active_threads,
+      tick_count: host_frame.tick_count,
+      op_count: op_count + host_frame.op_count,
+      emitted_effects: vm.effects.length() - effect_count_before,
+      stop_reason: host_frame.stop_reason,
+      should_render: host_frame.should_render,
+      is_in_warp: host_frame.is_in_warp,
+    }
+  }
+  let active_threads = vm.threads.length()
+  if active_threads <= 0 {
+    vm.running = false
+    vm.redraw_requested = false
+    vm.redraw_requested_while_warp = false
+  } else {
+    vm.running = true
+  }
+  let stop_reason = if active_threads <= 0 { "finished" } else { "timeout" }
+  {
+    active_threads,
+    tick_count: 1,
+    op_count,
+    emitted_effects: vm.effects.length() - effect_count_before,
+    stop_reason,
+    should_render: true,
+    is_in_warp: has_active_warp_thread(vm),
+  }
+}
+
+///|
 fn green_flag_runtime(vm : Vm) -> Unit {
   clear_threads(vm)
+  vm.frame_override = None
   reset_targets_for_green_flag(vm)
   vm_clear_pen_pixels(vm)
   for i, target in vm.targets {
@@ -3156,6 +3285,22 @@ fn green_flag_runtime(vm : Vm) -> Unit {
   vm.redraw_requested = false
   vm.redraw_requested_while_warp = false
   vm.running = true
+  if vm.aot_wasm_only {
+    vm.aot_pending = false
+    vm.running = false
+    return
+  }
+  if vm.aot_use_full_exec {
+    let spawned = spawn_aot_green_flag_hats(vm)
+    if spawned == 0 {
+      vm.running = false
+    }
+    return
+  }
+  if !vm.aot_commands.is_empty() {
+    vm.aot_pending = true
+    return
+  }
   let spawned = spawn_green_flag_hats(vm)
   if spawned == 0 {
     vm.running = false
@@ -3199,6 +3344,17 @@ fn set_time_runtime(vm : Vm, now_ms : Int) -> Unit {
 
 ///|
 fn step_frame_runtime(vm : Vm) -> FrameReport {
+  match vm.frame_override {
+    Some(report) => {
+      vm.frame_override = None
+      return report
+    }
+    None => ()
+  }
+  if vm.aot_pending {
+    return apply_aot_commands_frame(vm)
+  }
+
   let spawned_io = dispatch_io_event_hats(vm)
   let spawned_predicates = spawn_predicate_hats(vm)
   if spawned_io > 0 || spawned_predicates > 0 {

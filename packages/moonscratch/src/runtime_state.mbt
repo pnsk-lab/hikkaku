@@ -41,6 +41,12 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
     mathop_cos_cache_valid: false,
     mathop_cos_cache_input: 0.0,
     mathop_cos_cache_output: 0.0,
+    aot_commands: [],
+    aot_pending: false,
+    aot_full_green_flag_starts: {},
+    aot_use_full_exec: false,
+    aot_wasm_only: false,
+    frame_override: None,
   }
 }
 
@@ -622,6 +628,22 @@ fn spawn_thread(
     Some(pc) => pc
     None => return
   }
+  ignore(spawn_thread_pc(vm, target_index, start_pc, parent_waiter))
+}
+
+///|
+fn spawn_thread_pc(
+  vm : Vm,
+  target_index : Int,
+  start_pc : Int,
+  parent_waiter : Int?,
+) -> Bool {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return false
+  }
+  if start_pc < 0 || start_pc >= vm.targets[target_index].blocks_by_pc.length() {
+    return false
+  }
   let thread_id = vm.next_thread_id
   vm.next_thread_id += 1
   let thread : Thread = {
@@ -638,6 +660,7 @@ fn spawn_thread(
     parent_waiter,
   }
   vm.threads.push(thread)
+  true
 }
 
 ///|
@@ -645,6 +668,7 @@ fn clear_threads(vm : Vm) -> Unit {
   vm.threads.clear()
   vm.waiting_children.clear()
   vm.procedure_frames.clear()
+  vm.frame_override = None
   vm.current_thread_id = None
   vm.redraw_requested_while_warp = false
   vm.running = false
