@@ -338,16 +338,49 @@ fn render_draw_pen_line(
   let (x1, y1) = render_stage_to_pixel(vm, new_x, new_y)
   let dx = x1 - x0
   let dy = y1 - y0
-  let steps = if dx.abs() > dy.abs() { dx.abs() } else { dy.abs() }
-  if steps <= 0 {
+  if dx == 0 && dy == 0 {
     render_draw_pen_circle(vm, x0, y0, radius, color)
     return
   }
-  for i in 0..<=steps {
-    let t = Double::from_int(i) / Double::from_int(steps)
-    let x = (Double::from_int(x0) + Double::from_int(dx) * t).round().to_int()
-    let y = (Double::from_int(y0) + Double::from_int(dy) * t).round().to_int()
-    render_draw_pen_circle(vm, x, y, radius, color)
+
+  // Radius 0 keeps pixel-perfect behavior with step-wise sampling.
+  if radius <= 0 {
+    let steps = if dx.abs() > dy.abs() { dx.abs() } else { dy.abs() }
+    for i in 0..<=steps {
+      let t = Double::from_int(i) / Double::from_int(steps)
+      let x = (Double::from_int(x0) + Double::from_int(dx) * t).round().to_int()
+      let y = (Double::from_int(y0) + Double::from_int(dy) * t).round().to_int()
+      render_blend_pen_pixel(vm, x, y, color)
+    }
+    return
+  }
+
+  let min_x = (if x0 < x1 { x0 } else { x1 }) - radius
+  let max_x = (if x0 > x1 { x0 } else { x1 }) + radius
+  let min_y = (if y0 < y1 { y0 } else { y1 }) - radius
+  let max_y = (if y0 > y1 { y0 } else { y1 }) + radius
+  let seg_dx = Double::from_int(dx)
+  let seg_dy = Double::from_int(dy)
+  let seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy
+  let radius_sq = Double::from_int(radius * radius)
+
+  for py in min_y..<=max_y {
+    for px in min_x..<=max_x {
+      let mut t = 0.0
+      if seg_len_sq > 0.0 {
+        let rel_x = Double::from_int(px - x0)
+        let rel_y = Double::from_int(py - y0)
+        t = (rel_x * seg_dx + rel_y * seg_dy) / seg_len_sq
+        t = render_clamp_double(t, 0.0, 1.0)
+      }
+      let nearest_x = Double::from_int(x0) + seg_dx * t
+      let nearest_y = Double::from_int(y0) + seg_dy * t
+      let dist_x = Double::from_int(px) - nearest_x
+      let dist_y = Double::from_int(py) - nearest_y
+      if dist_x * dist_x + dist_y * dist_y <= radius_sq {
+        render_blend_pen_pixel(vm, px, py, color)
+      }
+    }
   }
 }
 
