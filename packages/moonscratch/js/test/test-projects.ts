@@ -1,6 +1,16 @@
+import { Project } from 'hikkaku'
+import {
+  add,
+  changeVariableBy,
+  gt,
+  ifElse,
+  repeat,
+  setVariableTo,
+  whenFlagClicked,
+} from 'hikkaku/blocks'
 import type { Meta, ScratchProject } from 'sb3-types'
 
-import type { HeadlessVM, JsonValue } from './index.ts'
+import type { HeadlessVM, JsonValue } from '../vm/index.ts'
 
 const PROJECT_META: Meta = {
   semver: '3.0.0',
@@ -445,6 +455,39 @@ export const CONTROL_OPERATOR_DATA_PROJECT: ScratchProject = {
     },
   ],
 }
+
+const WASM_ONLY_HIKKAKU_PROJECT_BUILDER = new Project()
+const wasmOnlyResult = WASM_ONLY_HIKKAKU_PROJECT_BUILDER.stage.createVariable(
+  'result',
+  0,
+)
+const wasmOnlyBranch = WASM_ONLY_HIKKAKU_PROJECT_BUILDER.stage.createVariable(
+  'branch',
+  0,
+)
+WASM_ONLY_HIKKAKU_PROJECT_BUILDER.stage.run(() => {
+  whenFlagClicked(() => {
+    setVariableTo(wasmOnlyResult, 0)
+    repeat(6, () => {
+      changeVariableBy(wasmOnlyResult, add(1, 2))
+    })
+    ifElse(
+      gt(wasmOnlyResult.get(), 17),
+      () => {
+        setVariableTo(wasmOnlyBranch, 1)
+      },
+      () => {
+        setVariableTo(wasmOnlyBranch, 2)
+      },
+    )
+  })
+})
+
+export const WASM_ONLY_HIKKAKU_PROJECT =
+  WASM_ONLY_HIKKAKU_PROJECT_BUILDER.toScratch() as ScratchProject
+
+export const WASM_ONLY_HIKKAKU_RESULT_ID = wasmOnlyResult.id
+export const WASM_ONLY_HIKKAKU_BRANCH_ID = wasmOnlyBranch.id
 
 export const HOST_OPCODE_FALLBACK_PROJECT: ScratchProject = {
   meta: PROJECT_META,

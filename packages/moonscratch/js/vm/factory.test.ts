@@ -16,13 +16,15 @@ import {
   precompileProgramForRuntime,
 } from './factory.ts'
 import {
-  CONTROL_OPERATOR_DATA_PROJECT,
   EXAMPLE_PROJECT,
   getStageVariables,
   HOST_OPCODE_FALLBACK_PROJECT,
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
-} from './test-projects.ts'
+  WASM_ONLY_HIKKAKU_BRANCH_ID,
+  WASM_ONLY_HIKKAKU_PROJECT,
+  WASM_ONLY_HIKKAKU_RESULT_ID,
+} from '../test/test-projects.ts'
 
 describe('moonscratch/js/vm/factory.ts', () => {
   test('exports createVM aliases', () => {
@@ -166,16 +168,35 @@ describe('moonscratch/js/vm/factory.ts', () => {
 
   test('runs control/operator/data command graph through program wasm', () => {
     const program = createProgramModuleFromProject({
-      projectJson: CONTROL_OPERATOR_DATA_PROJECT,
+      projectJson: WASM_ONLY_HIKKAKU_PROJECT,
     })
     expect(program.hasWasmExec()).toBe(true)
+    expect(program.readPayload().commandsJson).not.toContain('"op":"host_opcode"')
+    expect(program.readPayload().commandsJson).not.toContain('"op":"host_tail"')
+
+    const execOpcodeSpy = vi.spyOn(
+      moonscratch as unknown as {
+        vm_exec_opcode_once_by_pc: (...args: unknown[]) => number
+      },
+      'vm_exec_opcode_once_by_pc',
+    )
+    const execTailSpy = vi.spyOn(
+      moonscratch as unknown as {
+        vm_exec_script_tail_by_pc: (...args: unknown[]) => number
+      },
+      'vm_exec_script_tail_by_pc',
+    )
 
     const vm = createHeadlessVM({ program, initialNowMs: 0 })
     vm.greenFlag()
 
     const vars = getStageVariables(vm)
-    expect(vars.var_result).toBe(18)
-    expect(vars.var_branch).toBe(1)
+    expect(vars[WASM_ONLY_HIKKAKU_RESULT_ID]).toBe(18)
+    expect(vars[WASM_ONLY_HIKKAKU_BRANCH_ID]).toBe(1)
+    expect(execOpcodeSpy).toHaveBeenCalledTimes(0)
+    expect(execTailSpy).toHaveBeenCalledTimes(0)
+    execOpcodeSpy.mockRestore()
+    execTailSpy.mockRestore()
   })
 
   test('delegates unsupported opcode to moonbit host during wasm exec', () => {

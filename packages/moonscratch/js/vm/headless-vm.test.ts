@@ -7,7 +7,7 @@ import {
   INPUT_EVENT_PROJECT,
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
-} from './test-projects.ts'
+} from '../test/test-projects.ts'
 import type { CreateHeadlessVMOptions, ProjectJson } from './types.ts'
 
 describe('moonscratch/js/vm/headless-vm.ts', () => {

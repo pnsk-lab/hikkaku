@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
-import { getStageVariables } from './test-projects.ts'
+import { getStageVariables } from '../test/test-projects.ts'
 import type { ProjectJson } from './types.ts'
 
 const COMPARE_OPERATOR_PROJECT: ProjectJson = {
