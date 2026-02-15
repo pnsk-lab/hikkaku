@@ -3,13 +3,14 @@
   "type": "module",
   "module": "js/index.ts",
   "scripts": {
-    "test": "moon test && vp test run",
-    "build": "moon build && vp pack",
+    "test": "moon build --target js && moon test && vp test run",
+    "build": "moon build --target js && vp pack",
     "typecheck": "tsgo"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20260211.1",
+    "hikkaku": "workspace:*",
     "sb3-types": "^0.1.16",
     "vite-plus": "^0.0.0-3262bda4.20260210-0221"
   },
