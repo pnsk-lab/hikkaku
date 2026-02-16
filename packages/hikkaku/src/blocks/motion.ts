@@ -326,7 +326,10 @@ export const glide = (
  * glideTo(10, 'mouse-pointer')
  * ```
  */
-export const glideTo = (seconds: PrimitiveSource<number>, target: string) => {
+export const glideTo = (
+  seconds: PrimitiveSource<number>,
+  target: PrimitiveSource<string>,
+) => {
   return block('motion_glideto', {
     inputs: {
       SECS: fromPrimitiveSource(seconds),
@@ -338,7 +341,7 @@ export const glideTo = (seconds: PrimitiveSource<number>, target: string) => {
 export const menuOfGlideTo = (target: string = GOTO_RANDOM) => {
   return valueBlock('motion_glideto_menu', {
     fields: {
-      GLIDETO_MENU: [target, null],
+      TO: [target, null],
     },
     isShadow: true,
   })
