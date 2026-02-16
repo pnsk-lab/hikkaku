@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "package-manager-detector": "^1.6.0",
-    "tar": "^7.4.3",
+    "tar": "^7.5.9",
     "picocolors": "^1.1.1"
   },
   "module": "index.ts",
