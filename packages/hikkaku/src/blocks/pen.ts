@@ -1,5 +1,9 @@
-import { fromPrimitiveSource } from '../core/block-helper'
-import { block } from '../core/composer'
+import {
+  fromPrimitiveSource,
+  fromPrimitiveSourceColor,
+  menuInput,
+} from '../core/block-helper'
+import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
 
 export type PenColorParam =
@@ -98,7 +102,7 @@ export const penUp = () => {
 /**
  * Sets pen color.
  *
- * Input: `color`.
+ * Input: `color`. like: #ffffff, #fff, or 24-bit number.toString(), This does not accept values like "red" or "green" that CSS accepts.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param color See function signature for accepted input values.
@@ -107,13 +111,13 @@ export const penUp = () => {
  * ```ts
  * import { setPenColorTo } from 'hikkaku/blocks'
  *
- * setPenColorTo(undefined as any)
+ * setPenColorTo("#ff0000")
  * ```
  */
-export const setPenColorTo = (color: PrimitiveSource<string>) => {
+export const setPenColorTo = (color: PrimitiveSource<`#${string}`>) => {
   return block('pen_setPenColorToColor', {
     inputs: {
-      COLOR: fromPrimitiveSource(color),
+      COLOR: fromPrimitiveSourceColor(color),
     },
   })
 }
@@ -156,9 +160,17 @@ export const changePenColorParamBy = (
 ) => {
   return block('pen_changePenColorParamBy', {
     inputs: {
-      COLOR_PARAM: fromPrimitiveSource(param),
+      COLOR_PARAM: menuInput(param, menuOfPenColorParam),
       VALUE: fromPrimitiveSource(value),
     },
+  })
+}
+export const menuOfPenColorParam = (colorParam: PenColorParam = 'color') => {
+  return valueBlock('pen_menu_colorParam', {
+    fields: {
+      colorParam: [colorParam, null],
+    },
+    isShadow: true,
   })
 }
 
@@ -184,7 +196,7 @@ export const setPenColorParamTo = (
 ) => {
   return block('pen_setPenColorParamTo', {
     inputs: {
-      COLOR_PARAM: fromPrimitiveSource(param),
+      COLOR_PARAM: menuInput(param, menuOfPenColorParam),
       VALUE: fromPrimitiveSource(value),
     },
   })

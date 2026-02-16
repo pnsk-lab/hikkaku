@@ -244,7 +244,7 @@ export const broadcast = (message: PrimitiveSource<string>) => {
         typeof message === 'string'
           ? ([
               Shadow.SameBlockShadow,
-              [InputType.Broadcast, message, message],
+              [InputType.Broadcast, message, message /* id */],
             ] as Input)
           : fromPrimitiveSource(message),
     },
