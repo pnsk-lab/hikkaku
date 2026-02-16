@@ -1,5 +1,7 @@
+import type * as sb3 from 'sb3-types'
 import { fromCostumeSource, fromPrimitiveSource } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
+import { Shadow } from '../core/sb3-enum'
 import type { CostumeSource, PrimitiveSource } from '../core/types'
 
 export type LookEffect =
@@ -169,9 +171,40 @@ export const hide = () => {
  * ```
  */
 export const switchCostumeTo = (costume: CostumeSource) => {
+  // When given a costume reference or string, create a looks_costume menu block
+  let costumeInput: sb3.Input
+  
+  if (
+    typeof costume === 'object' &&
+    costume !== null &&
+    'type' in costume &&
+    costume.type === 'costume'
+  ) {
+    // Create a looks_costume menu block for the dropdown
+    const menuBlock = block('looks_costume', {
+      fields: {
+        COSTUME: [costume.name, null],
+      },
+      isShadow: true,
+    })
+    costumeInput = [Shadow.SameBlockShadow, menuBlock.id]
+  } else if (typeof costume === 'string') {
+    // Create a looks_costume menu block for the dropdown
+    const menuBlock = block('looks_costume', {
+      fields: {
+        COSTUME: [costume, null],
+      },
+      isShadow: true,
+    })
+    costumeInput = [Shadow.SameBlockShadow, menuBlock.id]
+  } else {
+    // costume is a HikkakuBlock (reporter block)
+    costumeInput = fromCostumeSource(costume)
+  }
+  
   return block('looks_switchcostumeto', {
     inputs: {
-      COSTUME: fromCostumeSource(costume),
+      COSTUME: costumeInput,
     },
   })
 }
