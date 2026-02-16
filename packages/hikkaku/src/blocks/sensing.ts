@@ -296,6 +296,7 @@ export const current = (menu: CurrentMenu) => {
     },
   })
 }
+//TODO better typings
 /**
  * Reads target attribute.
  *
@@ -312,7 +313,6 @@ export const current = (menu: CurrentMenu) => {
  * getAttributeOf('x position', 'cat')
  * ```
  */
-//TODO better typings
 export const getAttributeOf = (property: string, target: string) => {
   return valueBlock('sensing_of', {
     fields: {

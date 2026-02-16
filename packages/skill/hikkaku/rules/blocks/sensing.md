@@ -203,6 +203,24 @@ import { current } from 'hikkaku/blocks'
 current('loudness')
 ```
 
+## getAttributeOf(property, target)
+
+Reads target attribute.
+
+Input: `property`, `target`.
+
+Output: Scratch reporter block definition that can be used as an input value in other blocks.
+
+* `property: See function signature for accepted input values`
+* `target: See function signature for accepted input values`
+
+Example:
+```ts
+import { getAttributeOf } from 'hikkaku/blocks'
+
+getAttributeOf('x position', 'cat')
+```
+
 ## daysSince2000()
 
 Days since 2000-01-01.
