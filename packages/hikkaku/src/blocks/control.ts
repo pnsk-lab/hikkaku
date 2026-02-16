@@ -371,10 +371,10 @@ export const CREATE_CLONE_MYSELF = '_myself_'
  * createClone('mouse-pointer')
  * ```
  */
-export const createClone = (target: PrimitiveSource<string>) => {
+export const createClone = (target: string) => {
   return block('control_create_clone_of', {
-    inputs: {
-      CLONE_OPTION: fromPrimitiveSource(target),
+    fields: {
+      CLONE_OPTION: [target, null],
     },
   })
 }
