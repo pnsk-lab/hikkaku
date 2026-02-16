@@ -173,7 +173,7 @@ export const hide = () => {
 export const switchCostumeTo = (costume: CostumeSource) => {
   // When given a costume reference or string, create a looks_costume menu block
   let costumeInput: sb3.Input
-  
+
   if (
     typeof costume === 'object' &&
     costume !== null &&
@@ -201,7 +201,7 @@ export const switchCostumeTo = (costume: CostumeSource) => {
     // costume is a HikkakuBlock (reporter block)
     costumeInput = fromCostumeSource(costume)
   }
-  
+
   return block('looks_switchcostumeto', {
     inputs: {
       COSTUME: costumeInput,
