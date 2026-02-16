@@ -2,7 +2,11 @@ import type * as sb3 from 'sb3-types'
 import { fromCostumeSource, fromPrimitiveSource } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import { Shadow } from '../core/sb3-enum'
-import type { CostumeSource, PrimitiveSource } from '../core/types'
+import type {
+  CostumeReference,
+  CostumeSource,
+  PrimitiveSource,
+} from '../core/types'
 
 export type LookEffect =
   | 'color'
@@ -16,6 +20,28 @@ export type LookEffect =
 export type FrontBack = 'front' | 'back'
 export type ForwardBackward = 'forward' | 'backward'
 export type NumberName = 'number' | 'name'
+
+// Helper function to check if a value is a CostumeReference
+const isCostumeReference = (
+  value: CostumeSource,
+): value is CostumeReference => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'costume'
+  )
+}
+
+// Helper function to create a looks_costume menu block
+const createCostumeMenuBlock = (costumeName: string) => {
+  return block('looks_costume', {
+    fields: {
+      COSTUME: [costumeName, null],
+    },
+    isShadow: true,
+  })
+}
 
 /**
  * Displays a speech bubble.
@@ -174,28 +200,13 @@ export const switchCostumeTo = (costume: CostumeSource) => {
   // When given a costume reference or string, create a looks_costume menu block
   let costumeInput: sb3.Input
 
-  if (
-    typeof costume === 'object' &&
-    costume !== null &&
-    'type' in costume &&
-    costume.type === 'costume'
-  ) {
+  if (isCostumeReference(costume)) {
     // Create a looks_costume menu block for the dropdown
-    const menuBlock = block('looks_costume', {
-      fields: {
-        COSTUME: [costume.name, null],
-      },
-      isShadow: true,
-    })
+    const menuBlock = createCostumeMenuBlock(costume.name)
     costumeInput = [Shadow.SameBlockShadow, menuBlock.id]
   } else if (typeof costume === 'string') {
     // Create a looks_costume menu block for the dropdown
-    const menuBlock = block('looks_costume', {
-      fields: {
-        COSTUME: [costume, null],
-      },
-      isShadow: true,
-    })
+    const menuBlock = createCostumeMenuBlock(costume)
     costumeInput = [Shadow.SameBlockShadow, menuBlock.id]
   } else {
     // costume is a HikkakuBlock (reporter block)
