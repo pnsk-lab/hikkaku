@@ -22,7 +22,7 @@ Example:
 ```ts
 import { moveSteps } from 'hikkaku/blocks'
 
-moveSteps(undefined as any)
+moveSteps(10)
 ```
 
 ## gotoXY(x, y)

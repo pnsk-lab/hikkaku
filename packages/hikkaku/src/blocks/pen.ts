@@ -102,7 +102,7 @@ export const penUp = () => {
 /**
  * Sets pen color.
  *
- * Input: `color`. like: #ffffff, #fff, or 24-bit number.toString(), This does not accept values like "red" or "green" that CSS accepts.
+ * Input: `color`. like: #ffffff, #fff. This does not accept values like "red" or "green" that CSS accepts.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param color See function signature for accepted input values.

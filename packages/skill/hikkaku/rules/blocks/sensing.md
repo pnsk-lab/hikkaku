@@ -69,7 +69,7 @@ Example:
 ```ts
 import { touchingColor } from 'hikkaku/blocks'
 
-touchingColor(undefined as any)
+touchingColor("#ff0000")
 ```
 
 ## colorTouchingColor(color, targetColor)
@@ -87,7 +87,7 @@ Example:
 ```ts
 import { colorTouchingColor } from 'hikkaku/blocks'
 
-colorTouchingColor(undefined as any, undefined as any)
+colorTouchingColor("#ff0000", "#00ff00")
 ```
 
 ## distanceTo(target)
@@ -201,24 +201,6 @@ Example:
 import { current } from 'hikkaku/blocks'
 
 current('loudness')
-```
-
-## getAttributeOf(property, target)
-
-Reads target attribute.
-
-Input: `property`, `target`.
-
-Output: Scratch reporter block definition that can be used as an input value in other blocks.
-
-* `property: See function signature for accepted input values`
-* `target: See function signature for accepted input values`
-
-Example:
-```ts
-import { getAttributeOf } from 'hikkaku/blocks'
-
-getAttributeOf(undefined as any, 'mouse-pointer')
 ```
 
 ## daysSince2000()
