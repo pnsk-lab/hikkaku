@@ -21,7 +21,7 @@ export type FrontBack = 'front' | 'back'
 export type ForwardBackward = 'forward' | 'backward'
 export type NumberName = 'number' | 'name'
 
-// Helper function to check if a value is a CostumeReference
+// Type guard to check if a value is a CostumeReference object (has type: 'costume')
 const isCostumeReference = (
   value: CostumeSource,
 ): value is CostumeReference => {
@@ -33,7 +33,7 @@ const isCostumeReference = (
   )
 }
 
-// Helper function to create a looks_costume menu block
+// Creates a looks_costume menu block that renders as a dropdown in Scratch
 const createCostumeMenuBlock = (costumeName: string) => {
   return block('looks_costume', {
     fields: {
