@@ -169,7 +169,6 @@ export const goTo = (target: PrimitiveSource<string>) => {
 }
 export const GOTO_RANDOM = '_random_'
 export const menuOfGoTo = (target: string = GOTO_RANDOM) => {
-  console.log('menuOfGoTo', target)
   return valueBlock('motion_goto_menu', {
     fields: {
       TO: [target, null],
