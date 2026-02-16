@@ -35,5 +35,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # turbo
 .turbo
-# temporary files
-examples/tmp_*/**
