@@ -197,16 +197,18 @@ export const hide = () => {
  * ```
  */
 export const switchCostumeTo = (costume: CostumeSource) => {
-  // When given a costume reference or string, create a looks_costume menu block
   let costumeInput: sb3.Input
 
-  if (isCostumeReference(costume)) {
+  // Extract costume name for menu block creation
+  const costumeName = isCostumeReference(costume)
+    ? costume.name
+    : typeof costume === 'string'
+      ? costume
+      : null
+
+  if (costumeName !== null) {
     // Create a looks_costume menu block for the dropdown
-    const menuBlock = createCostumeMenuBlock(costume.name)
-    costumeInput = [Shadow.SameBlockShadow, menuBlock.id]
-  } else if (typeof costume === 'string') {
-    // Create a looks_costume menu block for the dropdown
-    const menuBlock = createCostumeMenuBlock(costume)
+    const menuBlock = createCostumeMenuBlock(costumeName)
     costumeInput = [Shadow.SameBlockShadow, menuBlock.id]
   } else {
     // costume is a HikkakuBlock (reporter block)
