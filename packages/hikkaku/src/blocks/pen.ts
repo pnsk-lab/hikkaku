@@ -114,7 +114,9 @@ export const penUp = () => {
  * setPenColorTo("#ff0000")
  * ```
  */
-export const setPenColorTo = (color: PrimitiveSource<`#${string}`>) => {
+export const setPenColorTo = (
+  color: PrimitiveSource<`#${string}` | (string & {})>,
+) => {
   return block('pen_setPenColorToColor', {
     inputs: {
       COLOR: fromPrimitiveSourceColor(color),

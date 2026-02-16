@@ -28,10 +28,11 @@ export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
 }
 //TODO ちゃんとやる fromPrimitiveSourceごとリファクタする。fromPrimitiveSource(InputType.Color,source)みたいな感じで
 export const fromPrimitiveSourceColor = (
-  color: PrimitiveSource<`#${string}`>,
+  color: PrimitiveSource<`#${string}` | (string & {})>,
 ): sb3.Input => {
   if (typeof color === 'string') {
-    return [Shadow.SameBlockShadow, [InputType.Color, color]]
+    //TODO sb3-typesが厳密すぎる からなんとかする
+    return [Shadow.SameBlockShadow, [InputType.Color, color as `#${string}`]]
   }
   return fromPrimitiveSource(color)
 }
