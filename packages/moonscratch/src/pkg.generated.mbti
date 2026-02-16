@@ -397,6 +397,28 @@ pub(all) struct Vm {
   pen_height : Int
   mut pen_pixels : Array[Byte]
   mut pen_vectors : Array[PenVectorStroke]
+  mut render_revision : Int
+  mut render_cache_valid : Bool
+  mut render_cache_revision : Int
+  mut render_cache_pixels : Array[Byte]
+  mut pen_bounds_valid : Bool
+  mut pen_min_x : Int
+  mut pen_min_y : Int
+  mut pen_max_x : Int
+  mut pen_max_y : Int
+  mut backdrop_cache_valid : Bool
+  mut backdrop_cache_pixels : Array[Byte]
+  mut backdrop_cache_width : Int
+  mut backdrop_cache_height : Int
+  mut backdrop_cache_stage_index : Int
+  mut backdrop_cache_stage_costume_index : Int
+  mut backdrop_cache_effect_color : Double
+  mut backdrop_cache_effect_fisheye : Double
+  mut backdrop_cache_effect_whirl : Double
+  mut backdrop_cache_effect_pixelate : Double
+  mut backdrop_cache_effect_mosaic : Double
+  mut backdrop_cache_effect_brightness : Double
+  mut backdrop_cache_effect_ghost : Double
   mut threads : Array[Thread]
   mut next_thread_id : Int
   mut run_id : Int

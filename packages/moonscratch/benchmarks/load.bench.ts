@@ -1,6 +1,6 @@
 import { Project } from 'hikkaku'
 import { moveSteps } from 'hikkaku/blocks'
-import { bench } from 'mitata'
+import { bench, run } from 'mitata'
 import {
   createHeadlessVM,
   createProgramModuleFromProject,
@@ -22,3 +22,7 @@ bench('load/moonscratch', () => {
     initialNowMs: 0,
   })
 })
+
+if (import.meta.main) {
+  await run()
+}

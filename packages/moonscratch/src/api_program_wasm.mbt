@@ -26,6 +26,15 @@ const LOOP_GUARD_LOCAL : Int = 1
 const LOOP_GUARD_MAX : Int = 10000
 
 ///|
+const RUNNER_CACHED_LOCAL_START : Int = 2
+
+///|
+const RUNNER_CACHE_BASE_USE_THRESHOLD : Int = 4
+
+///|
+const RUNNER_CACHE_MAX_VARIABLES : Int = 32
+
+///|
 priv struct RunnerLiteralRef {
   ptr : Int
   len : Int
@@ -35,6 +44,15 @@ priv struct RunnerLiteralRef {
 priv struct WasmDataSegment {
   offset : Int
   bytes : Array[Byte]
+}
+
+///|
+priv struct RunnerCachedVar {
+  key : String
+  target : Int
+  variable_id : String
+  local_index : Int
+  use_count : Int
 }
 
 ///|
@@ -190,6 +208,11 @@ fn push_br(out : Array[Byte], depth : Int) -> Unit {
 fn push_br_if(out : Array[Byte], depth : Int) -> Unit {
   out.push((0x0d).to_byte())
   append_bytes(out, encode_u32_leb(depth))
+}
+
+///|
+fn runner_variable_key(target : Int, variable_id : String) -> String {
+  "\{target}:\{variable_id}"
 }
 
 ///|
@@ -567,6 +590,293 @@ fn parse_runner_commands_json(commands_json : String) -> Array[RunnerCommand] {
 }
 
 ///|
+fn runner_cached_var_usage_touch(
+  usage : Map[String, RunnerCachedVar],
+  order : Array[String],
+  target : Int,
+  variable_id : String,
+  weight : Int,
+) -> Unit {
+  let normalized_weight = if weight <= 0 { 1 } else { weight }
+  let key = runner_variable_key(target, variable_id)
+  match usage.get(key) {
+    Some(current) =>
+      usage[key] = {
+        key: current.key,
+        target: current.target,
+        variable_id: current.variable_id,
+        local_index: current.local_index,
+        use_count: current.use_count + normalized_weight,
+      }
+    None => {
+      usage[key] = {
+        key,
+        target,
+        variable_id,
+        local_index: -1,
+        use_count: normalized_weight,
+      }
+      order.push(key)
+    }
+  }
+}
+
+///|
+fn runner_usage_weight(loop_depth : Int) -> Int {
+  let capped = if loop_depth < 0 {
+    0
+  } else if loop_depth > 4 {
+    4
+  } else {
+    loop_depth
+  }
+  1 << capped
+}
+
+///|
+fn runner_collect_num_expr_usage(
+  expr : RunnerNumExpr,
+  usage : Map[String, RunnerCachedVar],
+  order : Array[String],
+  weight : Int,
+) -> Unit {
+  match expr {
+    Num(_) => ()
+    VarNum(target, variable_id) =>
+      runner_cached_var_usage_touch(usage, order, target, variable_id, weight)
+    BinNum(_, left, right) => {
+      runner_collect_num_expr_usage(left, usage, order, weight)
+      runner_collect_num_expr_usage(right, usage, order, weight)
+    }
+    UnaryNum(_, value) =>
+      runner_collect_num_expr_usage(value, usage, order, weight)
+  }
+}
+
+///|
+fn runner_collect_bool_expr_usage(
+  expr : RunnerBoolExpr,
+  usage : Map[String, RunnerCachedVar],
+  order : Array[String],
+  weight : Int,
+) -> Unit {
+  match expr {
+    Bool(_) => ()
+    CmpNum(_, left, right) => {
+      runner_collect_num_expr_usage(left, usage, order, weight)
+      runner_collect_num_expr_usage(right, usage, order, weight)
+    }
+    BinBool(_, left, right) => {
+      runner_collect_bool_expr_usage(left, usage, order, weight)
+      runner_collect_bool_expr_usage(right, usage, order, weight)
+    }
+    Not(value) => runner_collect_bool_expr_usage(value, usage, order, weight)
+  }
+}
+
+///|
+fn runner_collect_usage_from_commands(
+  commands : Array[RunnerCommand],
+  usage : Map[String, RunnerCachedVar],
+  order : Array[String],
+  blocked : Map[String, Bool],
+  loop_depth : Int,
+) -> Int {
+  let current_weight = runner_usage_weight(loop_depth)
+  let mut host_barrier_count = 0
+  for command in commands {
+    host_barrier_count += match command {
+      SetNumExpr(target, variable_id, expr) => {
+        runner_cached_var_usage_touch(
+          usage, order, target, variable_id, current_weight,
+        )
+        runner_collect_num_expr_usage(expr, usage, order, current_weight)
+        0
+      }
+      SetJsonConst(target, variable_id, _) => {
+        blocked[runner_variable_key(target, variable_id)] = true
+        0
+      }
+      ChangeNumExpr(target, variable_id, expr) => {
+        runner_cached_var_usage_touch(
+          usage, order, target, variable_id, current_weight,
+        )
+        runner_collect_num_expr_usage(expr, usage, order, current_weight)
+        0
+      }
+      If(cond, then_commands) => {
+        runner_collect_bool_expr_usage(cond, usage, order, current_weight)
+        runner_collect_usage_from_commands(
+          then_commands, usage, order, blocked, loop_depth,
+        )
+      }
+      IfElse(cond, then_commands, else_commands) => {
+        runner_collect_bool_expr_usage(cond, usage, order, current_weight)
+        runner_collect_usage_from_commands(
+          then_commands, usage, order, blocked, loop_depth,
+        ) +
+        runner_collect_usage_from_commands(
+          else_commands, usage, order, blocked, loop_depth,
+        )
+      }
+      Repeat(times, body) => {
+        runner_collect_num_expr_usage(times, usage, order, current_weight)
+        runner_collect_usage_from_commands(
+          body,
+          usage,
+          order,
+          blocked,
+          loop_depth + 1,
+        )
+      }
+      RepeatUntil(cond, body) => {
+        runner_collect_bool_expr_usage(
+          cond,
+          usage,
+          order,
+          runner_usage_weight(loop_depth + 1),
+        )
+        runner_collect_usage_from_commands(
+          body,
+          usage,
+          order,
+          blocked,
+          loop_depth + 1,
+        )
+      }
+      While(cond, body) => {
+        runner_collect_bool_expr_usage(
+          cond,
+          usage,
+          order,
+          runner_usage_weight(loop_depth + 1),
+        )
+        runner_collect_usage_from_commands(
+          body,
+          usage,
+          order,
+          blocked,
+          loop_depth + 1,
+        )
+      }
+      HostOpcode(_, _) | HostTail(_, _) => current_weight
+    }
+  }
+  host_barrier_count
+}
+
+///|
+fn runner_cache_min_use_count(host_barrier_count : Int) -> Int {
+  let _ignored = host_barrier_count
+  RUNNER_CACHE_BASE_USE_THRESHOLD
+}
+
+///|
+fn build_runner_cached_vars(
+  commands : Array[RunnerCommand],
+) -> (Map[String, RunnerCachedVar], Array[RunnerCachedVar]) {
+  let usage : Map[String, RunnerCachedVar] = {}
+  let order = []
+  let blocked : Map[String, Bool] = {}
+  let host_barrier_count = runner_collect_usage_from_commands(
+    commands, usage, order, blocked, 0,
+  )
+  let min_use_count = runner_cache_min_use_count(host_barrier_count)
+  let cached_by_key : Map[String, RunnerCachedVar] = {}
+  let cached_vars = []
+  let mut next_local_index = RUNNER_CACHED_LOCAL_START
+  for key in order {
+    if cached_vars.length() < RUNNER_CACHE_MAX_VARIABLES &&
+      !blocked.contains(key) {
+      match usage.get(key) {
+        Some(candidate) =>
+          if candidate.use_count >= min_use_count {
+            let cached = {
+              key: candidate.key,
+              target: candidate.target,
+              variable_id: candidate.variable_id,
+              local_index: next_local_index,
+              use_count: candidate.use_count,
+            }
+            cached_by_key[key] = cached
+            cached_vars.push(cached)
+            next_local_index += 1
+          }
+        None => ()
+      }
+    }
+  }
+  (cached_by_key, cached_vars)
+}
+
+///|
+fn runner_cached_var_lookup(
+  cached_by_key : Map[String, RunnerCachedVar],
+  target : Int,
+  variable_id : String,
+) -> RunnerCachedVar? {
+  cached_by_key.get(runner_variable_key(target, variable_id))
+}
+
+///|
+fn emit_runner_load_cached_var(
+  cached : RunnerCachedVar,
+  refs : Map[String, RunnerLiteralRef],
+  out : Array[Byte],
+) -> Bool {
+  match refs.get("id:\{cached.variable_id}") {
+    Some(id_ref) => {
+      push_i32_const(out, cached.target)
+      push_i32_const(out, id_ref.ptr)
+      push_i32_const(out, id_ref.len)
+      push_call(out, IMPORT_GET_VAR_NUM_INDEX)
+      push_local_set(out, cached.local_index)
+      true
+    }
+    None => false
+  }
+}
+
+///|
+fn emit_runner_flush_cached_var(
+  cached : RunnerCachedVar,
+  refs : Map[String, RunnerLiteralRef],
+  out : Array[Byte],
+) -> Bool {
+  match refs.get("id:\{cached.variable_id}") {
+    Some(id_ref) => {
+      push_i32_const(out, cached.target)
+      push_i32_const(out, id_ref.ptr)
+      push_i32_const(out, id_ref.len)
+      push_local_get(out, cached.local_index)
+      push_call(out, IMPORT_SET_VAR_NUM_INDEX)
+      true
+    }
+    None => false
+  }
+}
+
+///|
+fn emit_runner_sync_cached_vars(
+  cached_vars : Array[RunnerCachedVar],
+  refs : Map[String, RunnerLiteralRef],
+  out : Array[Byte],
+  load_mode : Bool,
+) -> Bool {
+  for cached in cached_vars {
+    let ok = if load_mode {
+      emit_runner_load_cached_var(cached, refs, out)
+    } else {
+      emit_runner_flush_cached_var(cached, refs, out)
+    }
+    if !ok {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn runner_register_literal(
   refs : Map[String, RunnerLiteralRef],
   bytes : Array[Byte],
@@ -728,6 +1038,7 @@ fn build_runner_literal_pool(
 fn emit_runner_num_expr(
   expr : RunnerNumExpr,
   refs : Map[String, RunnerLiteralRef],
+  cached_by_key : Map[String, RunnerCachedVar],
   out : Array[Byte],
 ) -> Bool {
   match expr {
@@ -736,19 +1047,26 @@ fn emit_runner_num_expr(
       true
     }
     VarNum(target, variable_id) =>
-      match refs.get("id:\{variable_id}") {
-        Some(id_ref) => {
-          push_i32_const(out, target)
-          push_i32_const(out, id_ref.ptr)
-          push_i32_const(out, id_ref.len)
-          push_call(out, IMPORT_GET_VAR_NUM_INDEX)
+      match runner_cached_var_lookup(cached_by_key, target, variable_id) {
+        Some(cached) => {
+          push_local_get(out, cached.local_index)
           true
         }
-        None => false
+        None =>
+          match refs.get("id:\{variable_id}") {
+            Some(id_ref) => {
+              push_i32_const(out, target)
+              push_i32_const(out, id_ref.ptr)
+              push_i32_const(out, id_ref.len)
+              push_call(out, IMPORT_GET_VAR_NUM_INDEX)
+              true
+            }
+            None => false
+          }
       }
     BinNum(op, left, right) => {
-      if !emit_runner_num_expr(left, refs, out) ||
-        !emit_runner_num_expr(right, refs, out) {
+      if !emit_runner_num_expr(left, refs, cached_by_key, out) ||
+        !emit_runner_num_expr(right, refs, cached_by_key, out) {
         return false
       }
       if op == "add" {
@@ -765,7 +1083,7 @@ fn emit_runner_num_expr(
       true
     }
     UnaryNum(op, value) => {
-      if !emit_runner_num_expr(value, refs, out) {
+      if !emit_runner_num_expr(value, refs, cached_by_key, out) {
         return false
       }
       if op == "round" {
@@ -788,6 +1106,7 @@ fn emit_runner_num_expr(
 fn emit_runner_bool_expr(
   expr : RunnerBoolExpr,
   refs : Map[String, RunnerLiteralRef],
+  cached_by_key : Map[String, RunnerCachedVar],
   out : Array[Byte],
 ) -> Bool {
   match expr {
@@ -796,8 +1115,8 @@ fn emit_runner_bool_expr(
       true
     }
     CmpNum(op, left, right) => {
-      if !emit_runner_num_expr(left, refs, out) ||
-        !emit_runner_num_expr(right, refs, out) {
+      if !emit_runner_num_expr(left, refs, cached_by_key, out) ||
+        !emit_runner_num_expr(right, refs, cached_by_key, out) {
         return false
       }
       if op == "lt" {
@@ -813,15 +1132,15 @@ fn emit_runner_bool_expr(
       true
     }
     BinBool(op, left, right) => {
-      if !emit_runner_bool_expr(left, refs, out) ||
-        !emit_runner_bool_expr(right, refs, out) {
+      if !emit_runner_bool_expr(left, refs, cached_by_key, out) ||
+        !emit_runner_bool_expr(right, refs, cached_by_key, out) {
         return false
       }
       out.push(if op == "and" { (0x71).to_byte() } else { (0x72).to_byte() })
       true
     }
     Not(value) => {
-      if !emit_runner_bool_expr(value, refs, out) {
+      if !emit_runner_bool_expr(value, refs, cached_by_key, out) {
         return false
       }
       out.push((0x45).to_byte())
@@ -834,22 +1153,33 @@ fn emit_runner_bool_expr(
 fn emit_runner_commands(
   commands : Array[RunnerCommand],
   refs : Map[String, RunnerLiteralRef],
+  cached_by_key : Map[String, RunnerCachedVar],
+  cached_vars : Array[RunnerCachedVar],
   out : Array[Byte],
 ) -> Bool {
   for command in commands {
     match command {
       SetNumExpr(target, variable_id, expr) =>
-        match refs.get("id:\{variable_id}") {
-          Some(id_ref) => {
-            push_i32_const(out, target)
-            push_i32_const(out, id_ref.ptr)
-            push_i32_const(out, id_ref.len)
-            if !emit_runner_num_expr(expr, refs, out) {
+        match runner_cached_var_lookup(cached_by_key, target, variable_id) {
+          Some(cached) => {
+            if !emit_runner_num_expr(expr, refs, cached_by_key, out) {
               return false
             }
-            push_call(out, IMPORT_SET_VAR_NUM_INDEX)
+            push_local_set(out, cached.local_index)
           }
-          None => return false
+          None =>
+            match refs.get("id:\{variable_id}") {
+              Some(id_ref) => {
+                push_i32_const(out, target)
+                push_i32_const(out, id_ref.ptr)
+                push_i32_const(out, id_ref.len)
+                if !emit_runner_num_expr(expr, refs, cached_by_key, out) {
+                  return false
+                }
+                push_call(out, IMPORT_SET_VAR_NUM_INDEX)
+              }
+              None => return false
+            }
         }
       SetJsonConst(target, variable_id, value_json) =>
         match (refs.get("id:\{variable_id}"), refs.get("json:\{value_json}")) {
@@ -864,51 +1194,68 @@ fn emit_runner_commands(
           _ => return false
         }
       ChangeNumExpr(target, variable_id, expr) =>
-        match refs.get("id:\{variable_id}") {
-          Some(id_ref) => {
-            push_i32_const(out, target)
-            push_i32_const(out, id_ref.ptr)
-            push_i32_const(out, id_ref.len)
-            push_i32_const(out, target)
-            push_i32_const(out, id_ref.ptr)
-            push_i32_const(out, id_ref.len)
-            push_call(out, IMPORT_GET_VAR_NUM_INDEX)
-            if !emit_runner_num_expr(expr, refs, out) {
+        match runner_cached_var_lookup(cached_by_key, target, variable_id) {
+          Some(cached) => {
+            push_local_get(out, cached.local_index)
+            if !emit_runner_num_expr(expr, refs, cached_by_key, out) {
               return false
             }
             out.push((0xa0).to_byte())
-            push_call(out, IMPORT_SET_VAR_NUM_INDEX)
+            push_local_set(out, cached.local_index)
           }
-          None => return false
+          None =>
+            match refs.get("id:\{variable_id}") {
+              Some(id_ref) => {
+                push_i32_const(out, target)
+                push_i32_const(out, id_ref.ptr)
+                push_i32_const(out, id_ref.len)
+                push_i32_const(out, target)
+                push_i32_const(out, id_ref.ptr)
+                push_i32_const(out, id_ref.len)
+                push_call(out, IMPORT_GET_VAR_NUM_INDEX)
+                if !emit_runner_num_expr(expr, refs, cached_by_key, out) {
+                  return false
+                }
+                out.push((0xa0).to_byte())
+                push_call(out, IMPORT_SET_VAR_NUM_INDEX)
+              }
+              None => return false
+            }
         }
       If(cond, then_commands) => {
-        if !emit_runner_bool_expr(cond, refs, out) {
+        if !emit_runner_bool_expr(cond, refs, cached_by_key, out) {
           return false
         }
         out.push((0x04).to_byte())
         out.push((0x40).to_byte())
-        if !emit_runner_commands(then_commands, refs, out) {
+        if !emit_runner_commands(
+            then_commands, refs, cached_by_key, cached_vars, out,
+          ) {
           return false
         }
         out.push((0x0b).to_byte())
       }
       IfElse(cond, then_commands, else_commands) => {
-        if !emit_runner_bool_expr(cond, refs, out) {
+        if !emit_runner_bool_expr(cond, refs, cached_by_key, out) {
           return false
         }
         out.push((0x04).to_byte())
         out.push((0x40).to_byte())
-        if !emit_runner_commands(then_commands, refs, out) {
+        if !emit_runner_commands(
+            then_commands, refs, cached_by_key, cached_vars, out,
+          ) {
           return false
         }
         out.push((0x05).to_byte())
-        if !emit_runner_commands(else_commands, refs, out) {
+        if !emit_runner_commands(
+            else_commands, refs, cached_by_key, cached_vars, out,
+          ) {
           return false
         }
         out.push((0x0b).to_byte())
       }
       Repeat(times, body) => {
-        if !emit_runner_num_expr(times, refs, out) {
+        if !emit_runner_num_expr(times, refs, cached_by_key, out) {
           return false
         }
         push_local_set(out, LOOP_COUNTER_LOCAL)
@@ -925,7 +1272,7 @@ fn emit_runner_commands(
         push_f64_const(out, 0.0)
         out.push((0x65).to_byte())
         push_br_if(out, 1)
-        if !emit_runner_commands(body, refs, out) {
+        if !emit_runner_commands(body, refs, cached_by_key, cached_vars, out) {
           return false
         }
         push_local_get(out, LOOP_COUNTER_LOCAL)
@@ -950,11 +1297,11 @@ fn emit_runner_commands(
         push_local_get(out, LOOP_GUARD_LOCAL)
         out.push((0x45).to_byte())
         push_br_if(out, 1)
-        if !emit_runner_bool_expr(cond, refs, out) {
+        if !emit_runner_bool_expr(cond, refs, cached_by_key, out) {
           return false
         }
         push_br_if(out, 1)
-        if !emit_runner_commands(body, refs, out) {
+        if !emit_runner_commands(body, refs, cached_by_key, cached_vars, out) {
           return false
         }
         push_local_get(out, LOOP_GUARD_LOCAL)
@@ -975,12 +1322,12 @@ fn emit_runner_commands(
         push_local_get(out, LOOP_GUARD_LOCAL)
         out.push((0x45).to_byte())
         push_br_if(out, 1)
-        if !emit_runner_bool_expr(cond, refs, out) {
+        if !emit_runner_bool_expr(cond, refs, cached_by_key, out) {
           return false
         }
         out.push((0x45).to_byte())
         push_br_if(out, 1)
-        if !emit_runner_commands(body, refs, out) {
+        if !emit_runner_commands(body, refs, cached_by_key, cached_vars, out) {
           return false
         }
         push_local_get(out, LOOP_GUARD_LOCAL)
@@ -992,16 +1339,28 @@ fn emit_runner_commands(
         out.push((0x0b).to_byte())
       }
       HostTail(target, start_pc) => {
+        if !emit_runner_sync_cached_vars(cached_vars, refs, out, false) {
+          return false
+        }
         push_i32_const(out, target)
         push_i32_const(out, start_pc)
         push_call(out, IMPORT_EXEC_TAIL_INDEX)
         out.push((0x1a).to_byte())
+        if !emit_runner_sync_cached_vars(cached_vars, refs, out, true) {
+          return false
+        }
       }
       HostOpcode(target, pc) => {
+        if !emit_runner_sync_cached_vars(cached_vars, refs, out, false) {
+          return false
+        }
         push_i32_const(out, target)
         push_i32_const(out, pc)
         push_call(out, IMPORT_EXEC_OPCODE_INDEX)
         out.push((0x1a).to_byte())
+        if !emit_runner_sync_cached_vars(cached_vars, refs, out, true) {
+          return false
+        }
       }
     }
   }
@@ -1009,12 +1368,38 @@ fn emit_runner_commands(
 }
 
 ///|
+fn append_runner_exec_locals(
+  body : Array[Byte],
+  cached_var_count : Int,
+) -> Unit {
+  if cached_var_count > 0 {
+    body.push((0x03).to_byte())
+    body.push((0x01).to_byte())
+    body.push((0x7c).to_byte())
+    body.push((0x01).to_byte())
+    body.push((0x7f).to_byte())
+    append_bytes(body, encode_u32_leb(cached_var_count))
+    body.push((0x7c).to_byte())
+  } else {
+    body.push((0x02).to_byte())
+    body.push((0x01).to_byte())
+    body.push((0x7c).to_byte())
+    body.push((0x01).to_byte())
+    body.push((0x7f).to_byte())
+  }
+}
+
+///|
 fn build_runner_exec_body(
   commands : Array[RunnerCommand],
   refs : Map[String, RunnerLiteralRef],
 ) -> Array[Byte] {
-  let body = bytes_from_ints([0x02, 0x01, 0x7c, 0x01, 0x7f])
-  if !emit_runner_commands(commands, refs, body) {
+  let (cached_by_key, cached_vars) = build_runner_cached_vars(commands)
+  let body = []
+  append_runner_exec_locals(body, cached_vars.length())
+  if !emit_runner_sync_cached_vars(cached_vars, refs, body, true) ||
+    !emit_runner_commands(commands, refs, cached_by_key, cached_vars, body) ||
+    !emit_runner_sync_cached_vars(cached_vars, refs, body, false) {
     push_i32_const(body, 0)
     body.push((0x0b).to_byte())
     return body

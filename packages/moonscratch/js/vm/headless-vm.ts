@@ -1,4 +1,3 @@
-import { normalizeRenderFrame } from '../render/index.ts'
 import { moonscratch } from './bindings.ts'
 import { DEFAULT_MAX_FRAMES } from './constants.ts'
 import {
@@ -20,7 +19,6 @@ import type {
   FrameReport,
   JsonValue,
   RenderFrame,
-  RenderFrameLike,
   RunReport,
   RunUntilIdleOptions,
   TranslateCache,
@@ -274,9 +272,7 @@ export class HeadlessVM {
         'vm_render_frame is unavailable in this build. Please rebuild moonscratch JS bindings.',
       )
     }
-    return normalizeRenderFrame(
-      binding.vm_render_frame(this.vmHandle) as RenderFrameLike,
-    )
+    return binding.vm_render_frame(this.vmHandle) as RenderFrame
   }
 
   setViewerLanguage(language: string): void {

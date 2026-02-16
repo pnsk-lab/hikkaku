@@ -19,7 +19,7 @@ import {
   subtract,
   whenFlagClicked,
 } from 'hikkaku/blocks'
-import { bench } from 'mitata'
+import { bench, run } from 'mitata'
 import {
   createHeadlessVM,
   createProgramModuleFromProject,
@@ -138,3 +138,7 @@ const primesVM = createHeadlessVM({
 bench('calc-primes', () => {
   runUntilFinished(primesVM)
 })
+
+if (import.meta.main) {
+  await run()
+}

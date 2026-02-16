@@ -1829,7 +1829,11 @@ fn is_current_thread_in_warp_context(vm : Vm) -> Bool {
 
 ///|
 fn request_redraw(vm : Vm) -> Unit {
+  if !vm.redraw_requested {
+    vm.render_revision += 1
+  }
   vm.redraw_requested = true
+  vm.render_cache_valid = false
   if is_current_thread_in_warp_context(vm) {
     vm.redraw_requested_while_warp = true
   }
@@ -2938,7 +2942,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
           let limit = json_to_number_value(
             value_from_input(vm, target_index, block, "VALUE", 0),
           )
-          let key = "for_each:\{block.id}"
+          let key = block.id
           let index = thread.loop_counters.get_or_default(key, 0)
           if Double::from_int(index) < limit {
             let next_index = index + 1

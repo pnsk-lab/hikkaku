@@ -82,7 +82,9 @@ describe('moonscratch/js/vm/factory.ts', () => {
     })
     const payload = program.readPayload()
     expect(payload.commandsJson).toBeDefined()
-    expect(payload.commandsJson).toContain('"op":"set_var_json_const"')
+    expect(payload.commandsJson).toMatch(
+      /"op":"set_var_(num_expr|json_const)"/,
+    )
     expect(payload.commandsJson).toContain('"catalog"')
     const parsed = JSON.parse(payload.commandsJson ?? '{}') as {
       exec_mode?: string

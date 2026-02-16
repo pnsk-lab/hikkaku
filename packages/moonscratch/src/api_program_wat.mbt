@@ -396,6 +396,14 @@ fn literal_value_from_input(block : ScratchBlock, input_name : String) -> Json? 
 }
 
 ///|
+fn json_finite_number_or_none(value : Json) -> Double? {
+  match value {
+    Number(n, ..) => if n.is_nan() || n.is_inf() { None } else { Some(n) }
+    _ => None
+  }
+}
+
+///|
 fn resolve_reporter_block_id(
   block : ScratchBlock,
   input_name : String,
@@ -1067,11 +1075,22 @@ fn compile_sequence_from_pc(
               Some(variable_id) =>
                 match literal_value_from_input(block, "VALUE") {
                   Some(value) =>
-                    AotCompileStmtResult::Emit(
-                      command_json_set_var_json_const(
-                        target_index, variable_id, value,
-                      ),
-                    )
+                    match json_finite_number_or_none(value) {
+                      Some(number_value) =>
+                        AotCompileStmtResult::Emit(
+                          command_json_set_var_num_expr(
+                            target_index,
+                            variable_id,
+                            expr_json_num(number_value),
+                          ),
+                        )
+                      None =>
+                        AotCompileStmtResult::Emit(
+                          command_json_set_var_json_const(
+                            target_index, variable_id, value,
+                          ),
+                        )
+                    }
                   None =>
                     match
                       compile_number_expr_from_input(

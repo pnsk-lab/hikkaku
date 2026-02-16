@@ -1,5 +1,5 @@
 {
-  "name": "example-markdown-renderer",
+  "name": "@repo/example-markdown-renderer",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,5 +18,8 @@
   "author": {
     "name": "EdamAmex",
     "url": "https://x.com/evex_dev"
+  },
+  "exports": {
+    ".": "./src/main.ts"
   }
 }

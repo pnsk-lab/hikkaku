@@ -20,7 +20,7 @@ import {
   setY,
   whenFlagClicked,
 } from 'hikkaku/blocks'
-import { bench } from 'mitata'
+import { bench, run } from 'mitata'
 import {
   createHeadlessVM,
   createProgramModuleFromProject,
@@ -74,6 +74,36 @@ const vm = createHeadlessVM({
 bench('draw/moonscratch', () => {
   runUntilFinished(vm)
 })
+
+const FRAME_FORCE_TIMEOUT_OUT_OF_WARP_MS = 1000 / 30
+const FRAME_FORCE_TIMEOUT_IN_WARP_MS = 1000 / 5
+
+const stepLikeViewerFrame = (vm: {
+  stepFrame(): { stopReason: string; isInWarp: boolean }
+  renderFrame(): unknown
+}) => {
+  const frameStart = performance.now()
+  while (true) {
+    const frameInfo = vm.stepFrame()
+    if (
+      frameInfo.stopReason === 'finished' ||
+      frameInfo.stopReason === 'rerender'
+    ) {
+      break
+    }
+    const elapsed = performance.now() - frameStart
+    if (frameInfo.isInWarp) {
+      if (elapsed > FRAME_FORCE_TIMEOUT_IN_WARP_MS) {
+        break
+      }
+    } else {
+      if (elapsed > FRAME_FORCE_TIMEOUT_OUT_OF_WARP_MS) {
+        break
+      }
+    }
+  }
+  vm.renderFrame()
+}
 
 const TESSERACT_VERTICES_2D = Array.from({ length: 16 }, (_, vertex) => {
   const sign = (bit: number) => {
@@ -166,11 +196,20 @@ const tesseractVM = createHeadlessVM({
   program: tesseractProgram,
   initialNowMs: 0,
   options: {
-    stepTimeoutTicks: 1000000,
-    turbo: true,
+    stepTimeoutTicks: 1,
   },
 })
+tesseractVM.start()
 
 bench('draw/tesseract-30/moonscratch', () => {
-  runUntilFinished(tesseractVM)
+  tesseractVM.stopAll()
+  tesseractVM.greenFlag()
+  for (let frame = 0; frame < 30; frame += 1) {
+    stepLikeViewerFrame(tesseractVM)
+  }
+  tesseractVM.stopAll()
 })
+
+if (import.meta.main) {
+  await run()
+}
