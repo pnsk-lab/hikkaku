@@ -1,4 +1,8 @@
-import { fromPrimitiveSource, menuInput } from '../core/block-helper'
+import {
+  fromPrimitiveSource,
+  fromPrimitiveSourceColor,
+  menuInput,
+} from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
 
@@ -90,13 +94,13 @@ export const menuOfTouchingObject = (target: string = '_mouse_') => {
  * ```ts
  * import { touchingColor } from 'hikkaku/blocks'
  *
- * touchingColor(undefined as any)
+ * touchingColor("#ff0000")
  * ```
  */
-export const touchingColor = (color: PrimitiveSource<string>) => {
+export const touchingColor = (color: PrimitiveSource<`#${string}`>) => {
   return valueBlock('sensing_touchingcolor', {
     inputs: {
-      COLOR: fromPrimitiveSource(color),
+      COLOR: fromPrimitiveSourceColor(color),
     },
   })
 }
@@ -114,17 +118,17 @@ export const touchingColor = (color: PrimitiveSource<string>) => {
  * ```ts
  * import { colorTouchingColor } from 'hikkaku/blocks'
  *
- * colorTouchingColor(undefined as any, undefined as any)
+ * colorTouchingColor("#ff0000", "#00ff00")
  * ```
  */
 export const colorTouchingColor = (
-  color: PrimitiveSource<string>,
-  targetColor: PrimitiveSource<string>,
+  color: PrimitiveSource<`#${string}`>,
+  targetColor: PrimitiveSource<`#${string}`>,
 ) => {
   return valueBlock('sensing_coloristouchingcolor', {
     inputs: {
-      COLOR: fromPrimitiveSource(color),
-      COLOR2: fromPrimitiveSource(targetColor),
+      COLOR: fromPrimitiveSourceColor(color),
+      COLOR2: fromPrimitiveSourceColor(targetColor),
     },
   })
 }
@@ -305,9 +309,10 @@ export const current = (menu: CurrentMenu) => {
  * ```ts
  * import { getAttributeOf } from 'hikkaku/blocks'
  *
- * getAttributeOf(undefined as any, 'mouse-pointer')
+ * getAttributeOf('x position', 'cat')
  * ```
  */
+//TODO better typings
 export const getAttributeOf = (property: string, target: string) => {
   return valueBlock('sensing_of', {
     fields: {

@@ -14,7 +14,7 @@ import type { PrimitiveSource } from '../core/types'
  * ```ts
  * import { moveSteps } from 'hikkaku/blocks'
  *
- * moveSteps(undefined as any)
+ * moveSteps(10)
  * ```
  */
 export const moveSteps = (steps: PrimitiveSource<number>) => {

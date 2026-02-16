@@ -107,7 +107,7 @@ export const repeatWhile = (
  * ```ts
  * import { forEach } from 'hikkaku/blocks'
  *
- * forEach(variable as any, 10, () => {})
+ * forEach(variable, 10, () => {})
  * ```
  */
 export const forEach = (

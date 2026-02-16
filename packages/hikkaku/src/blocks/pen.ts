@@ -151,7 +151,7 @@ export const setPenColorToColor = setPenColorTo
  * ```ts
  * import { changePenColorParamBy } from 'hikkaku/blocks'
  *
- * changePenColorParamBy(undefined as any, 10)
+ * changePenColorParamBy('color', 10)
  * ```
  */
 export const changePenColorParamBy = (
@@ -187,7 +187,7 @@ export const menuOfPenColorParam = (colorParam: PenColorParam = 'color') => {
  * ```ts
  * import { setPenColorParamTo } from 'hikkaku/blocks'
  *
- * setPenColorParamTo(undefined as any, 10)
+ * setPenColorParamTo('color', 10)
  * ```
  */
 export const setPenColorParamTo = (
