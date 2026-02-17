@@ -380,6 +380,28 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(getStageVariables(first)).toEqual(getStageVariables(second))
   })
 
+  test('keeps VM execution state isolated even when precompiled caches are reused', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: EXAMPLE_PROJECT,
+    })
+    const first = createHeadlessVM({ program, initialNowMs: 0 })
+    const second = createHeadlessVM({ program, initialNowMs: 0 })
+
+    first.greenFlag()
+    stepMany(first, 2)
+    first.renderFrame()
+
+    expect(getStageVariables(first).var_score).toBe(42)
+    expect(getStageVariables(second).var_score).toBe(0)
+
+    second.renderFrame()
+    expect(getStageVariables(second).var_score).toBe(0)
+
+    second.greenFlag()
+    stepMany(second, 2)
+    expect(getStageVariables(second).var_score).toBe(42)
+  })
+
   test('normalizes viewer language and translate cache in constructor options', () => {
     const program = createProgramModuleFromProject({
       projectJson: TEXT_TO_SPEECH_TRANSLATE_PROJECT,

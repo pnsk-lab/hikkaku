@@ -1361,12 +1361,25 @@ fn render_collect_visible_sprite_indices(
   vm : Vm,
   excluded_target_index : Int,
 ) -> Array[Int] {
-  let out = []
+  let out = Array::new(capacity=vm.targets.length())
   for i, target in vm.targets {
     if i == vm.stage_index || i == excluded_target_index {
       continue
     }
     if target.deleted || target.is_stage || !target.visible {
+      continue
+    }
+    if target.size <= 0.0 {
+      continue
+    }
+    let costume = match render_current_costume(target) {
+      Some(costume) => costume
+      None => continue
+    }
+    if costume.width <= 0 ||
+      costume.height <= 0 ||
+      costume.bitmap_resolution <= 0 ||
+      costume.pixels.length() < costume.width * costume.height * 4 {
       continue
     }
     out.push(i)
@@ -1387,15 +1400,10 @@ fn render_blend_channel_over_opaque_white(src : Int, src_alpha : Int) -> Byte {
 
 ///|
 fn render_build_opaque_white_pixels(width : Int, height : Int) -> Array[Byte] {
-  let pixels = []
-  let pixel_count = width * height
-  for _ in 0..<pixel_count {
-    pixels.push(b'\xff')
-    pixels.push(b'\xff')
-    pixels.push(b'\xff')
-    pixels.push(b'\xff')
+  if width <= 0 || height <= 0 {
+    return []
   }
-  pixels
+  Array::make(width * height * 4, b'\xff')
 }
 
 ///|
@@ -1404,9 +1412,8 @@ fn render_build_opaque_stage_pixels(
   width : Int,
   height : Int,
 ) -> Array[Byte] {
-  let pixels = []
   if width <= 0 || height <= 0 {
-    return pixels
+    return []
   }
   if costume.width <= 0 || costume.height <= 0 {
     return render_build_opaque_white_pixels(width, height)
@@ -1416,6 +1423,7 @@ fn render_build_opaque_stage_pixels(
   if costume.pixels.length() < src_width * src_height * 4 {
     return render_build_opaque_white_pixels(width, height)
   }
+  let pixels = Array::new(capacity=width * height * 4)
   let src_x_step = Double::from_int(src_width) / Double::from_int(width)
   let src_y_step = Double::from_int(src_height) / Double::from_int(height)
   let mut src_y = src_y_step * 0.5
@@ -2229,7 +2237,7 @@ fn render_scene_to_frame(vm : Vm) -> RenderFrame {
     }
     pixels
   } else {
-    let pixels = []
+    let pixels = Array::new(capacity=width * height * 4)
     let width_double = Double::from_int(width)
     let height_double = Double::from_int(height)
     let stage_x_step = 480.0 / width_double

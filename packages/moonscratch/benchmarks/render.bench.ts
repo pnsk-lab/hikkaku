@@ -14,24 +14,15 @@ import { bench, run } from "mitata";
 import {
   createHeadlessVM,
   createProgramModuleFromProject,
-  HeadlessVM,
 } from "../js";
 
 const emptyProject = new Project();
 const emptyCompiled = createProgramModuleFromProject({
   projectJson: emptyProject.toScratch(),
 });
-bench("render empty/moonscratch", function* () {
-  yield {
-    [0]() {
-      const emptyVM = createHeadlessVM({ program: emptyCompiled });
-
-      return emptyVM;
-    },
-    bench(vm: HeadlessVM) {
-      vm.renderFrame();
-    },
-  };
+bench("render empty/moonscratch", () => {
+  const emptyVM = createHeadlessVM({ program: emptyCompiled });
+  emptyVM.renderFrame();
 });
 
 const filledProject = new Project();
@@ -55,16 +46,9 @@ filledProject.createSprite("mysprite").run(() => {
 const filledCompiled = createProgramModuleFromProject({
   projectJson: filledProject.toScratch(),
 });
-bench("render filled/moonscratch", function* () {
-  yield {
-    [0]() {
-      const filledVM = createHeadlessVM({ program: filledCompiled });
-      return filledVM;
-    },
-    bench(vm: HeadlessVM) {
-      vm.renderFrame();
-    },
-  };
+bench("render filled/moonscratch", () => {
+  const filledVM = createHeadlessVM({ program: filledCompiled });
+  filledVM.renderFrame();
 });
 
 if (import.meta.main) {

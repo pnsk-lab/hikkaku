@@ -3,6 +3,7 @@ pub(all) struct PrecompiledProject {
   targets : Array[TargetState]
   stage_index : Int
   assets : Map[String, Json]
+  mut initial_opaque_backdrops : Map[String, Array[Byte]]
 }
 
 ///|
