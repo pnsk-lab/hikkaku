@@ -1,0 +1,41 @@
+{
+  "name": "@hikkaku/testing",
+  "version": "0.1.0",
+  "type": "module",
+  "module": "index.ts",
+  "private": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "url": "https://github.com/pnsk-lab/hikkaku",
+    "type": "git",
+    "directory": "packages/testing"
+  },
+  "scripts": {
+    "test": "vp test run",
+    "build": "vp pack",
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*",
+    "sb3-types": "^0.1.16",
+    "moonscratch": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  }
+}

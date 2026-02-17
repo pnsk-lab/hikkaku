@@ -12,6 +12,7 @@ on:
           - create-hikkaku
           - vite-plugin-turbowarp-packager
           - moonscratch
+          - testing
       release_type:
         description: 'Version bump type'
         required: true
@@ -73,7 +74,7 @@ jobs:
           package="$PACKAGE_NAME"
           release_type="$INPUT_RELEASE_TYPE"
 
-          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager|moonscratch)$ ]]; then
+          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager|moonscratch|testing)$ ]]; then
             echo "Unsupported package: $package"
             exit 1
           fi
@@ -178,6 +179,10 @@ jobs:
         if: steps.metadata.outputs.package == 'moonscratch'
         run: bun run --filter moonscratch build
 
+      - name: Build testing
+        if: steps.metadata.outputs.package == 'testing'
+        run: bun run --cwd packages/testing build
+
       - name: Build gpts zip
         if: steps.metadata.outputs.package == 'hikkaku'
         run: bun run --filter gpts-zip build
@@ -198,6 +203,9 @@ jobs:
               ;;
             moonscratch)
               dir='packages/moonscratch'
+              ;;
+            testing)
+              dir='packages/testing'
               ;;
             *)
               echo "Unsupported package: ${{ steps.metadata.outputs.package }}"
