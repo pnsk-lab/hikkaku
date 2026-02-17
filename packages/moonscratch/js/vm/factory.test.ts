@@ -138,9 +138,7 @@ describe('moonscratch/js/vm/factory.ts', () => {
     })
     const payload = program.readPayload()
     expect(payload.commandsJson).toBeDefined()
-    expect(payload.commandsJson).toMatch(
-      /"op":"set_var_(num_expr|json_const)"/,
-    )
+    expect(payload.commandsJson).toMatch(/"op":"set_var_(num_expr|json_const)"/)
     expect(payload.commandsJson).toContain('"catalog"')
     const parsed = JSON.parse(payload.commandsJson ?? '{}') as {
       exec_mode?: string
@@ -319,7 +317,9 @@ describe('moonscratch/js/vm/factory.ts', () => {
     vm.greenFlag()
     const frame = vm.stepFrame()
 
-    const sprite = vm.snapshot().targets.find((target) => target.name === 'Sprite1')
+    const sprite = vm
+      .snapshot()
+      .targets.find((target) => target.name === 'Sprite1')
     expect(frame.stopReason).toBe('finished')
     expect(sprite?.x).toBe(12)
     expect(sprite?.y).toBe(-8)

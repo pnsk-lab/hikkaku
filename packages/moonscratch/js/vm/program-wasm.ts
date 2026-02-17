@@ -149,7 +149,9 @@ export const instantiateProgramModule = (
   const commandsPtr = readExportedI32(exports, 'ms_commands_ptr')
   const commandsLen = readExportedI32(exports, 'ms_commands_len')
 
-  const projectBase64 = decodeUtf8(readMemorySlice(memory, projectPtr, projectLen))
+  const projectBase64 = decodeUtf8(
+    readMemorySlice(memory, projectPtr, projectLen),
+  )
   const assetsBase64 = decodeUtf8(readMemorySlice(memory, assetsPtr, assetsLen))
   const payload: ProgramPayload = {
     projectJson: decodeUtf8(decodeBase64(projectBase64)),

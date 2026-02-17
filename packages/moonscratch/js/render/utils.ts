@@ -59,9 +59,8 @@ const normalizeRenderFrameMeta = (
 }
 
 export const normalizeRenderFrame = (input: RenderFrameLike): RenderFrame => {
-  const { width, height, expectedLength, rawPixels } = normalizeRenderFrameMeta(
-    input,
-  )
+  const { width, height, expectedLength, rawPixels } =
+    normalizeRenderFrameMeta(input)
   const pixels = new Uint8Array(expectedLength)
   const sourceLength = Math.min(expectedLength, rawPixels.length)
   for (let i = 0; i < sourceLength; i += 1) {
@@ -77,9 +76,8 @@ export const normalizeRenderFrame = (input: RenderFrameLike): RenderFrame => {
 export const normalizeRenderFrameTrusted = (
   input: RenderFrameLike,
 ): RenderFrame => {
-  const { width, height, expectedLength, rawPixels } = normalizeRenderFrameMeta(
-    input,
-  )
+  const { width, height, expectedLength, rawPixels } =
+    normalizeRenderFrameMeta(input)
   if (rawPixels instanceof Uint8Array) {
     return {
       width,

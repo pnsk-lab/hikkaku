@@ -333,9 +333,9 @@ describe('moonscratch/js/vm scheduler render contracts', () => {
 
     const frame = vm.stepFrame()
 
-    expect(frame.stopReason === 'rerender' || frame.stopReason === 'finished').toBe(
-      true,
-    )
+    expect(
+      frame.stopReason === 'rerender' || frame.stopReason === 'finished',
+    ).toBe(true)
     expect(frame.shouldRender).toBe(true)
     if (frame.stopReason === 'rerender') {
       expect(frame.activeThreads).toBeGreaterThan(0)
