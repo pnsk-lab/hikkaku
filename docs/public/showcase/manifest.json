@@ -36,6 +36,10 @@
     "title": "Json Parser",
     "path": "/showcase/json-parser.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/json-parser",
+    "author": {
+      "name": "Kingping",
+      "url": "https://scratch.mit.edu/users/Kangping/"
+    },
     "status": "ok"
   },
   {
@@ -54,6 +58,10 @@
     "title": "Rectangle",
     "path": "/showcase/rectangle.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/rectangle",
+    "author": {
+      "name": "Kingping",
+      "url": "https://scratch.mit.edu/users/Kangping/"
+    },
     "status": "ok"
   },
   {
@@ -75,7 +83,8 @@
     "title": "Simple",
     "path": "/showcase/simple.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/simple",
-    "status": "ok"
+    "status": "error",
+    "error": "ENOENT: no such file or directory, open '/root/jet9/hikkaku/examples/simple/dist/project.sb3'"
   },
   {
     "id": "tesseract",

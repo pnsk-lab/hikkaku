@@ -69,7 +69,7 @@ Example:
 ```ts
 import { touchingColor } from 'hikkaku/blocks'
 
-touchingColor(undefined as any)
+touchingColor("#ff0000")
 ```
 
 ## colorTouchingColor(color, targetColor)
@@ -87,7 +87,7 @@ Example:
 ```ts
 import { colorTouchingColor } from 'hikkaku/blocks'
 
-colorTouchingColor(undefined as any, undefined as any)
+colorTouchingColor("#ff0000", "#00ff00")
 ```
 
 ## distanceTo(target)
@@ -218,7 +218,7 @@ Example:
 ```ts
 import { getAttributeOf } from 'hikkaku/blocks'
 
-getAttributeOf(undefined as any, 'mouse-pointer')
+getAttributeOf('x position', 'cat')
 ```
 
 ## daysSince2000()

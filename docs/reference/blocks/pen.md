@@ -87,7 +87,7 @@ penUp()
 
 Sets pen color.
 
-Input: `color`.
+Input: `color`. like: #ffffff, #fff. This does not accept values like "red" or "green" that CSS accepts.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
@@ -97,7 +97,7 @@ Example:
 ```ts
 import { setPenColorTo } from 'hikkaku/blocks'
 
-setPenColorTo(undefined as any)
+setPenColorTo("#ff0000")
 ```
 
 ## setPenColorToColor()
@@ -132,7 +132,7 @@ Example:
 ```ts
 import { changePenColorParamBy } from 'hikkaku/blocks'
 
-changePenColorParamBy(undefined as any, 10)
+changePenColorParamBy('color', 10)
 ```
 
 ## setPenColorParamTo(param, value)
@@ -150,7 +150,7 @@ Example:
 ```ts
 import { setPenColorParamTo } from 'hikkaku/blocks'
 
-setPenColorParamTo(undefined as any, 10)
+setPenColorParamTo('color', 10)
 ```
 
 ## changePenSizeBy(size)

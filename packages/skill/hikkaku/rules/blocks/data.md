@@ -22,7 +22,7 @@ Example:
 ```ts
 import { getVariable } from 'hikkaku/blocks'
 
-getVariable(variable as any)
+getVariable(variable)
 ```
 
 ## setVariableTo(variable, value)
@@ -40,7 +40,7 @@ Example:
 ```ts
 import { setVariableTo } from 'hikkaku/blocks'
 
-setVariableTo(variable as any, 10)
+setVariableTo(variable, 10)
 ```
 
 ## changeVariableBy(variable, value)
@@ -58,7 +58,7 @@ Example:
 ```ts
 import { changeVariableBy } from 'hikkaku/blocks'
 
-changeVariableBy(variable as any, 10)
+changeVariableBy(variable, 10)
 ```
 
 ## showVariable(variable)
@@ -75,7 +75,7 @@ Example:
 ```ts
 import { showVariable } from 'hikkaku/blocks'
 
-showVariable(variable as any)
+showVariable(variable)
 ```
 
 ## hideVariable(variable)
@@ -92,7 +92,7 @@ Example:
 ```ts
 import { hideVariable } from 'hikkaku/blocks'
 
-hideVariable(variable as any)
+hideVariable(variable)
 ```
 
 ## getListContents(list)
@@ -109,7 +109,7 @@ Example:
 ```ts
 import { getListContents } from 'hikkaku/blocks'
 
-getListContents(list as any)
+getListContents(list)
 ```
 
 ## addToList(list, item)
@@ -127,7 +127,7 @@ Example:
 ```ts
 import { addToList } from 'hikkaku/blocks'
 
-addToList(list as any, undefined as any)
+addToList(list, "banana")
 ```
 
 ## deleteOfList(list, index)
@@ -145,7 +145,7 @@ Example:
 ```ts
 import { deleteOfList } from 'hikkaku/blocks'
 
-deleteOfList(list as any, undefined as any)
+deleteOfList(list, 1)
 ```
 
 ## deleteAllOfList(list)
@@ -162,7 +162,7 @@ Example:
 ```ts
 import { deleteAllOfList } from 'hikkaku/blocks'
 
-deleteAllOfList(list as any)
+deleteAllOfList(list)
 ```
 
 ## insertAtList(list, index, item)
@@ -181,7 +181,7 @@ Example:
 ```ts
 import { insertAtList } from 'hikkaku/blocks'
 
-insertAtList(list as any, undefined as any, undefined as any)
+insertAtList(list, 42, "banana")
 ```
 
 ## replaceItemOfList(list, index, item)
@@ -200,7 +200,7 @@ Example:
 ```ts
 import { replaceItemOfList } from 'hikkaku/blocks'
 
-replaceItemOfList(list as any, undefined as any, undefined as any)
+replaceItemOfList(list, 42, "banana")
 ```
 
 ## getItemOfList(list, index)
@@ -218,7 +218,7 @@ Example:
 ```ts
 import { getItemOfList } from 'hikkaku/blocks'
 
-getItemOfList(list as any, undefined as any)
+getItemOfList(list, 1)
 ```
 
 ## getItemNumOfList(list, item)
@@ -236,7 +236,7 @@ Example:
 ```ts
 import { getItemNumOfList } from 'hikkaku/blocks'
 
-getItemNumOfList(list as any, undefined as any)
+getItemNumOfList(list, "banana")
 ```
 
 ## lengthOfList(list)
@@ -253,7 +253,7 @@ Example:
 ```ts
 import { lengthOfList } from 'hikkaku/blocks'
 
-lengthOfList(list as any)
+lengthOfList(list)
 ```
 
 ## listContainsItem(list, item)
@@ -271,7 +271,7 @@ Example:
 ```ts
 import { listContainsItem } from 'hikkaku/blocks'
 
-listContainsItem(list as any, undefined as any)
+listContainsItem(list,"banana")
 ```
 
 ## showList(list)
@@ -288,7 +288,7 @@ Example:
 ```ts
 import { showList } from 'hikkaku/blocks'
 
-showList(list as any)
+showList(list)
 ```
 
 ## hideList(list)
@@ -305,5 +305,5 @@ Example:
 ```ts
 import { hideList } from 'hikkaku/blocks'
 
-hideList(list as any)
+hideList(list)
 ```

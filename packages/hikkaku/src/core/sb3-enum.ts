@@ -40,4 +40,5 @@ export const InputType = {
   ) as 6,
   String: toNumericEnum(inputType.String, 10) as 10,
   Broadcast: toNumericEnum(inputType.Broadcast, 11) as 11,
+  Color: toNumericEnum(inputType.Color, 9) as 9,
 } as const

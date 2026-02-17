@@ -244,7 +244,7 @@ export const broadcast = (message: PrimitiveSource<string>) => {
         typeof message === 'string'
           ? ([
               Shadow.SameBlockShadow,
-              [InputType.Broadcast, message, message],
+              [InputType.Broadcast, message, message /* id */],
             ] as Input)
           : fromPrimitiveSource(message),
     },
@@ -269,7 +269,13 @@ export const broadcast = (message: PrimitiveSource<string>) => {
 export const broadcastAndWait = (message: PrimitiveSource<string>) => {
   return block('event_broadcastandwait', {
     inputs: {
-      BROADCAST_INPUT: fromPrimitiveSource(message),
+      BROADCAST_INPUT:
+        typeof message === 'string'
+          ? ([
+              Shadow.SameBlockShadow,
+              [InputType.Broadcast, message, message /* id */],
+            ] as Input)
+          : fromPrimitiveSource(message),
     },
   })
 }

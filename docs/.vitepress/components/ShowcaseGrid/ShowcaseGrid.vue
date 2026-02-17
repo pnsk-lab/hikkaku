@@ -36,6 +36,8 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import ShowcaseCard from './ShowcaseCard.vue'
+import ShowcaseModal from './ShowcaseModal.vue'
 import { parseManifestAuthor, type ShowcaseEntry } from './types'
 
 const entries = ref<ShowcaseEntry[]>([])

@@ -1,4 +1,8 @@
-import { fromPrimitiveSource, fromSoundSource } from '../core/block-helper'
+import {
+  fromPrimitiveSource,
+  menuInput,
+  unwrapSoundSource,
+} from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource, SoundSource } from '../core/types'
 
@@ -31,7 +35,7 @@ export type SoundEffect = 'pitch' | 'pan'
 export const playSound = (sound: SoundSource) => {
   return block('sound_play', {
     inputs: {
-      SOUND_MENU: fromSoundSource(sound),
+      SOUND_MENU: menuInput(unwrapSoundSource(sound), menuOfSounds),
     },
   })
 }
@@ -62,8 +66,17 @@ export const playSound = (sound: SoundSource) => {
 export const playSoundUntilDone = (sound: SoundSource) => {
   return block('sound_playuntildone', {
     inputs: {
-      SOUND_MENU: fromSoundSource(sound),
+      SOUND_MENU: menuInput(unwrapSoundSource(sound), menuOfSounds),
     },
+  })
+}
+
+export const menuOfSounds = (sound: string = '') => {
+  return valueBlock('sound_sounds_menu', {
+    fields: {
+      SOUND_MENU: [sound, null],
+    },
+    isShadow: true,
   })
 }
 

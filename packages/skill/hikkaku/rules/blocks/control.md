@@ -78,7 +78,7 @@ Example:
 ```ts
 import { forEach } from 'hikkaku/blocks'
 
-forEach(variable as any, 10, () => {})
+forEach(variable, 10, () => {})
 ```
 
 ## forever(handler)
@@ -232,7 +232,7 @@ Example:
 ```ts
 import { createClone } from 'hikkaku/blocks'
 
-createClone('mouse-pointer')
+createClone('Sprite1')
 ```
 
 ## deleteThisClone()

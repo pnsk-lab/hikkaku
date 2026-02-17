@@ -1,4 +1,8 @@
-import { fromPrimitiveSource } from '../core/block-helper'
+import {
+  fromPrimitiveSource,
+  fromPrimitiveSourceColor,
+  menuInput,
+} from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
 
@@ -65,11 +69,19 @@ export type DragMode = 'draggable' | 'not draggable'
 export const touchingObject = (target: string) => {
   return valueBlock('sensing_touchingobject', {
     inputs: {
-      TOUCHINGOBJECTMENU: fromPrimitiveSource(target),
+      TOUCHINGOBJECTMENU: menuInput(target, menuOfTouchingObject),
     },
   })
 }
 
+export const menuOfTouchingObject = (target: string = '_mouse_') => {
+  return valueBlock('sensing_touchingobjectmenu', {
+    fields: {
+      TOUCHINGOBJECTMENU: [target, null],
+    },
+    isShadow: true,
+  })
+}
 /**
  * Touching color check.
  *
@@ -82,13 +94,13 @@ export const touchingObject = (target: string) => {
  * ```ts
  * import { touchingColor } from 'hikkaku/blocks'
  *
- * touchingColor(undefined as any)
+ * touchingColor("#ff0000")
  * ```
  */
-export const touchingColor = (color: PrimitiveSource<string>) => {
+export const touchingColor = (color: PrimitiveSource<`#${string}`>) => {
   return valueBlock('sensing_touchingcolor', {
     inputs: {
-      COLOR: fromPrimitiveSource(color),
+      COLOR: fromPrimitiveSourceColor(color),
     },
   })
 }
@@ -106,17 +118,17 @@ export const touchingColor = (color: PrimitiveSource<string>) => {
  * ```ts
  * import { colorTouchingColor } from 'hikkaku/blocks'
  *
- * colorTouchingColor(undefined as any, undefined as any)
+ * colorTouchingColor("#ff0000", "#00ff00")
  * ```
  */
 export const colorTouchingColor = (
-  color: PrimitiveSource<string>,
-  targetColor: PrimitiveSource<string>,
+  color: PrimitiveSource<`#${string}`>,
+  targetColor: PrimitiveSource<`#${string}`>,
 ) => {
   return valueBlock('sensing_coloristouchingcolor', {
     inputs: {
-      COLOR: fromPrimitiveSource(color),
-      COLOR2: fromPrimitiveSource(targetColor),
+      COLOR: fromPrimitiveSourceColor(color),
+      COLOR2: fromPrimitiveSourceColor(targetColor),
     },
   })
 }
@@ -138,9 +150,18 @@ export const colorTouchingColor = (
  */
 export const distanceTo = (target: string) => {
   return valueBlock('sensing_distanceto', {
+    inputs: {
+      DISTANCETOMENU: menuInput(target, menuOfDistanceTo),
+    },
+  })
+}
+
+export const menuOfDistanceTo = (target: string = '_mouse_') => {
+  return valueBlock('sensing_distancetomenu', {
     fields: {
       DISTANCETOMENU: [target, null],
     },
+    isShadow: true,
   })
 }
 
@@ -239,8 +260,17 @@ export const getMouseDown = () => {
 export const getKeyPressed = (key: PrimitiveSource<string>) => {
   return valueBlock('sensing_keypressed', {
     inputs: {
-      KEY_OPTION: fromPrimitiveSource(key),
+      KEY_OPTION: menuInput(key, menuOfKeyOptions),
     },
+  })
+}
+
+export const menuOfKeyOptions = (key: string = 'space') => {
+  return valueBlock('sensing_keyoptions', {
+    fields: {
+      KEY_OPTION: [key, null],
+    },
+    isShadow: true,
   })
 }
 
@@ -266,7 +296,7 @@ export const current = (menu: CurrentMenu) => {
     },
   })
 }
-
+//TODO better typings
 /**
  * Reads target attribute.
  *
@@ -280,15 +310,25 @@ export const current = (menu: CurrentMenu) => {
  * ```ts
  * import { getAttributeOf } from 'hikkaku/blocks'
  *
- * getAttributeOf(undefined as any, 'mouse-pointer')
+ * getAttributeOf('x position', 'cat')
  * ```
  */
 export const getAttributeOf = (property: string, target: string) => {
   return valueBlock('sensing_of', {
     fields: {
       PROPERTY: [property, null],
-      OBJECT: [target, null],
     },
+    inputs: {
+      OBJECT: menuInput(target, menuOfAttributeObject),
+    },
+  })
+}
+export const menuOfAttributeObject = (object: string = '_stage_') => {
+  return valueBlock('sensing_of_object_menu', {
+    fields: {
+      OBJECT: [object, null],
+    },
+    isShadow: true,
   })
 }
 
