@@ -1,5 +1,5 @@
 import type { Project } from 'hikkaku'
-import { createHeadlessVM, createPrecompiledProject } from '../index.ts'
+import { createHeadlessVMFromProject } from '../index.ts'
 import type {
   FrameReport,
   HeadlessVM,
@@ -9,11 +9,8 @@ import type {
 } from '../vm/index.ts'
 
 export const createVmFromProject = (project: Project): HeadlessVM => {
-  const precompiled = createPrecompiledProject({
+  return createHeadlessVMFromProject({
     projectJson: project.toScratch(),
-  })
-  return createHeadlessVM({
-    precompiled,
     initialNowMs: 0,
   })
 }

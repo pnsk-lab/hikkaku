@@ -9,5 +9,5 @@ export type {
   RenderWithWebGLResult,
   WebGLRenderResult,
 } from './types.ts'
-export { normalizeRenderFrame } from './utils.ts'
+export { normalizeRenderFrame, normalizeRenderFrameTrusted } from './utils.ts'
 export { renderWithWebGL } from './webgl.ts'

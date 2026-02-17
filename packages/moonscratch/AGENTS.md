@@ -82,3 +82,10 @@ You can browse and install extra skills here:
   - `bun typecheck`
   - `moon check`
   - `bun run test`
+- For project-level tests, generate `project.json` using `hikkaku`.
+
+## Precompiled Cache Safety
+
+- Caches stored in `PrecompiledProject` must be limited to immutable data derived from the initial compiled project state.
+- Never store or feed back mutable VM execution state (runtime threads, pen/render buffers, variable/list mutations, etc.) into `PrecompiledProject`.
+- Creating a new VM from the same compiled program must always produce the same initial state as a fresh compile, and must not be affected by prior VM execution (including `emptyCompiled`-style reuse).

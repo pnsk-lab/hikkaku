@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { createHeadlessVM, createPrecompiledProject } from './factory.ts'
-import { getStageVariables } from './test-projects.ts'
+import { getStageVariables } from '../test/test-projects.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import type { ProjectJson } from './types.ts'
 
 const COMPARE_OPERATOR_PROJECT: ProjectJson = {
@@ -127,11 +127,11 @@ const COMPARE_OPERATOR_PROJECT: ProjectJson = {
 
 describe('moonscratch/js/vm compare operators', () => {
   test('compares negative numeric operands as numbers', () => {
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: COMPARE_OPERATOR_PROJECT,
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       initialNowMs: 0,
     })
     vm.greenFlag()

@@ -8,10 +8,14 @@ import * as scratchAssets from './scratch-assets.ts'
 describe('moonscratch/js/vm/index.ts', () => {
   test('re-exports vm runtime APIs', () => {
     expect(index.createHeadlessVM).toBe(factory.createHeadlessVM)
+    expect(index.createHeadlessVMFromProject).toBe(
+      factory.createHeadlessVMFromProject,
+    )
     expect(index.createHeadlessVMWithScratchAssets).toBe(
       factory.createHeadlessVMWithScratchAssets,
     )
     expect(index.createVM).toBe(factory.createVM)
+    expect(index.createVMFromProject).toBe(factory.createVMFromProject)
     expect(index.createVMWithScratchAssets).toBe(
       factory.createVMWithScratchAssets,
     )

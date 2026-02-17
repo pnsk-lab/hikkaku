@@ -1,9 +1,135 @@
 ///|
+fn precompiled_backdrop_cache_key(width : Int, height : Int) -> String {
+  "\{width}x\{height}"
+}
+
+///|
+fn precompiled_initial_opaque_backdrop_pixels(
+  precompiled : PrecompiledProject,
+  width : Int,
+  height : Int,
+) -> Array[Byte] {
+  if width <= 0 || height <= 0 {
+    return []
+  }
+  let key = precompiled_backdrop_cache_key(width, height)
+  match precompiled.initial_opaque_backdrops.get(key) {
+    Some(pixels) => pixels
+    None => {
+      let pixels = if precompiled.stage_index >= 0 &&
+        precompiled.stage_index < precompiled.targets.length() {
+        let stage = precompiled.targets[precompiled.stage_index]
+        match render_current_costume(stage) {
+          Some(costume) =>
+            render_build_opaque_stage_pixels(costume, width, height)
+          None => render_build_opaque_white_pixels(width, height)
+        }
+      } else {
+        render_build_opaque_white_pixels(width, height)
+      }
+      precompiled.initial_opaque_backdrops[key] = pixels
+      pixels
+    }
+  }
+}
+
+///|
+fn target_has_renderable_costume(target : TargetState) -> Bool {
+  if target.size <= 0.0 {
+    return false
+  }
+  match render_current_costume(target) {
+    Some(costume) =>
+      costume.width > 0 &&
+      costume.height > 0 &&
+      costume.bitmap_resolution > 0 &&
+      costume.pixels.length() >= costume.width * costume.height * 4
+    None => false
+  }
+}
+
+///|
+fn has_initial_renderable_sprite(
+  targets : Array[TargetState],
+  stage_index : Int,
+) -> Bool {
+  for i, target in targets {
+    if i == stage_index {
+      continue
+    }
+    if target.deleted || target.is_stage || !target.visible {
+      continue
+    }
+    if target_has_renderable_costume(target) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm {
   let targets = instantiate_targets(precompiled.targets)
   let pen_width = if options.pen_width > 0 { options.pen_width } else { 480 }
   let pen_height = if options.pen_height > 0 { options.pen_height } else { 360 }
   let pen_pixels = []
+  let pen_vectors = []
+
+  let stage = if precompiled.stage_index >= 0 &&
+    precompiled.stage_index < targets.length() {
+    Some(targets[precompiled.stage_index])
+  } else {
+    None
+  }
+  let backdrop_cache_pixels = precompiled_initial_opaque_backdrop_pixels(
+    precompiled, pen_width, pen_height,
+  )
+  let backdrop_cache_valid = backdrop_cache_pixels.length() ==
+    pen_width * pen_height * 4
+  let backdrop_cache_stage_index = match stage {
+    Some(_) => precompiled.stage_index
+    None => -1
+  }
+  let backdrop_cache_stage_costume_index = match stage {
+    Some(stage) => render_stage_costume_index_for_cache(stage)
+    None => -1
+  }
+  let (
+    backdrop_cache_effect_color,
+    backdrop_cache_effect_fisheye,
+    backdrop_cache_effect_whirl,
+    backdrop_cache_effect_pixelate,
+    backdrop_cache_effect_mosaic,
+    backdrop_cache_effect_brightness,
+    backdrop_cache_effect_ghost,
+  ) = match stage {
+    Some(stage) =>
+      (
+        stage.looks_effect_color,
+        stage.looks_effect_fisheye,
+        stage.looks_effect_whirl,
+        stage.looks_effect_pixelate,
+        stage.looks_effect_mosaic,
+        stage.looks_effect_brightness,
+        stage.looks_effect_ghost,
+      )
+    None => (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+  }
+  let stage_uniforms = match stage {
+    Some(stage) => render_effect_uniforms(stage)
+    None => render_no_effect_uniforms()
+  }
+  let stage_has_effects = stage_uniforms.enable_mosaic ||
+    stage_uniforms.enable_pixelate ||
+    stage_uniforms.enable_whirl ||
+    stage_uniforms.enable_fisheye ||
+    stage_uniforms.enable_color ||
+    stage_uniforms.enable_brightness ||
+    stage_uniforms.enable_ghost
+  let can_seed_render_cache = backdrop_cache_valid &&
+    !stage_has_effects &&
+    !has_initial_renderable_sprite(targets, precompiled.stage_index)
+
   {
     targets,
     stage_index: precompiled.stage_index,
@@ -12,6 +138,45 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
     pen_width,
     pen_height,
     pen_pixels,
+    pen_vectors,
+    render_revision: 0,
+    render_cache_valid: can_seed_render_cache,
+    render_cache_revision: if can_seed_render_cache {
+      0
+    } else {
+      -1
+    },
+    render_cache_pixels: if can_seed_render_cache {
+      backdrop_cache_pixels
+    } else {
+      []
+    },
+    pen_bounds_valid: false,
+    pen_min_x: 0,
+    pen_min_y: 0,
+    pen_max_x: 0,
+    pen_max_y: 0,
+    backdrop_cache_valid,
+    backdrop_cache_pixels,
+    backdrop_cache_width: if backdrop_cache_valid {
+      pen_width
+    } else {
+      0
+    },
+    backdrop_cache_height: if backdrop_cache_valid {
+      pen_height
+    } else {
+      0
+    },
+    backdrop_cache_stage_index,
+    backdrop_cache_stage_costume_index,
+    backdrop_cache_effect_color,
+    backdrop_cache_effect_fisheye,
+    backdrop_cache_effect_whirl,
+    backdrop_cache_effect_pixelate,
+    backdrop_cache_effect_mosaic,
+    backdrop_cache_effect_brightness,
+    backdrop_cache_effect_ghost,
     threads: [],
     next_thread_id: 1,
     run_id: 0,
@@ -41,6 +206,12 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
     mathop_cos_cache_valid: false,
     mathop_cos_cache_input: 0.0,
     mathop_cos_cache_output: 0.0,
+    aot_commands: [],
+    aot_pending: false,
+    aot_full_green_flag_starts: {},
+    aot_use_full_exec: false,
+    aot_wasm_only: false,
+    frame_override: None,
   }
 }
 
@@ -622,6 +793,22 @@ fn spawn_thread(
     Some(pc) => pc
     None => return
   }
+  ignore(spawn_thread_pc(vm, target_index, start_pc, parent_waiter))
+}
+
+///|
+fn spawn_thread_pc(
+  vm : Vm,
+  target_index : Int,
+  start_pc : Int,
+  parent_waiter : Int?,
+) -> Bool {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return false
+  }
+  if start_pc < 0 || start_pc >= vm.targets[target_index].blocks_by_pc.length() {
+    return false
+  }
   let thread_id = vm.next_thread_id
   vm.next_thread_id += 1
   let thread : Thread = {
@@ -638,6 +825,7 @@ fn spawn_thread(
     parent_waiter,
   }
   vm.threads.push(thread)
+  true
 }
 
 ///|
@@ -645,6 +833,7 @@ fn clear_threads(vm : Vm) -> Unit {
   vm.threads.clear()
   vm.waiting_children.clear()
   vm.procedure_frames.clear()
+  vm.frame_override = None
   vm.current_thread_id = None
   vm.redraw_requested_while_warp = false
   vm.running = false

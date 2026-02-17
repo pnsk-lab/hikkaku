@@ -4,9 +4,23 @@ package "nakasyou/moonscratch"
 // Values
 pub fn default_vm_options() -> VmOptions
 
+pub fn vm_abi_version() -> Int
+
 pub fn vm_broadcast(Vm, String) -> Unit
 
 pub fn vm_compile_from_json(String, assets_json? : String) -> PrecompiledProject raise VmError
+
+pub fn vm_compile_project_to_wasm(String, assets_json? : String) -> String raise VmError
+
+pub fn vm_compile_project_to_wat(String, assets_json? : String) -> String raise VmError
+
+pub fn vm_exec_draw_opcode(Vm, Int, String, Double, Double, Int) -> Int
+
+pub fn vm_exec_opcode_once_by_pc(Vm, Int, Int) -> Int
+
+pub fn vm_exec_script_tail_by_pc(Vm, Int, Int) -> Int
+
+pub fn vm_get_variable_number_by_id(Vm, Int, String) -> Double
 
 pub fn vm_green_flag(Vm) -> Unit
 
@@ -16,7 +30,13 @@ pub fn vm_post_io_json(Vm, String, String) -> Unit
 
 pub fn vm_render_frame(Vm) -> RenderFrame
 
+pub fn vm_set_aot_commands_json(Vm, String) -> Unit raise VmError
+
 pub fn vm_set_time(Vm, Int) -> Unit
+
+pub fn vm_set_variable_json_by_id(Vm, Int, String, String) -> Unit
+
+pub fn vm_set_variable_number_by_id(Vm, Int, String, Double) -> Unit
 
 pub fn vm_snapshot_json(Vm) -> String
 
@@ -34,6 +54,16 @@ pub suberror VmError {
 }
 
 // Types and methods
+pub(all) enum AotCommand {
+  SetVariable(Int, String, Json)
+  ChangeVariable(Int, String, Double)
+  HostOpcode(Int, Int)
+  HostTail(Int, Int)
+}
+pub impl Eq for AotCommand
+pub impl Show for AotCommand
+pub impl ToJson for AotCommand
+
 pub(all) struct BackdropHatStart {
   backdrop_name : String
   start_block : String
@@ -201,10 +231,24 @@ pub impl Eq for OpcodeTag
 pub impl Show for OpcodeTag
 pub impl ToJson for OpcodeTag
 
+pub(all) struct PenVectorStroke {
+  x0 : Double
+  y0 : Double
+  x1 : Double
+  y1 : Double
+  diameter : Double
+  offset : Double
+  r : Int
+  g : Int
+  b : Int
+  a : Int
+}
+
 pub(all) struct PrecompiledProject {
   targets : Array[TargetState]
   stage_index : Int
   assets : Map[String, Json]
+  mut initial_opaque_backdrops : Map[String, Array[Byte]]
 }
 
 pub(all) enum PredicateHatKind {
@@ -355,6 +399,29 @@ pub(all) struct Vm {
   pen_width : Int
   pen_height : Int
   mut pen_pixels : Array[Byte]
+  mut pen_vectors : Array[PenVectorStroke]
+  mut render_revision : Int
+  mut render_cache_valid : Bool
+  mut render_cache_revision : Int
+  mut render_cache_pixels : Array[Byte]
+  mut pen_bounds_valid : Bool
+  mut pen_min_x : Int
+  mut pen_min_y : Int
+  mut pen_max_x : Int
+  mut pen_max_y : Int
+  mut backdrop_cache_valid : Bool
+  mut backdrop_cache_pixels : Array[Byte]
+  mut backdrop_cache_width : Int
+  mut backdrop_cache_height : Int
+  mut backdrop_cache_stage_index : Int
+  mut backdrop_cache_stage_costume_index : Int
+  mut backdrop_cache_effect_color : Double
+  mut backdrop_cache_effect_fisheye : Double
+  mut backdrop_cache_effect_whirl : Double
+  mut backdrop_cache_effect_pixelate : Double
+  mut backdrop_cache_effect_mosaic : Double
+  mut backdrop_cache_effect_brightness : Double
+  mut backdrop_cache_effect_ghost : Double
   mut threads : Array[Thread]
   mut next_thread_id : Int
   mut run_id : Int
@@ -384,6 +451,12 @@ pub(all) struct Vm {
   mut mathop_cos_cache_valid : Bool
   mut mathop_cos_cache_input : Double
   mut mathop_cos_cache_output : Double
+  mut aot_commands : Array[AotCommand]
+  mut aot_pending : Bool
+  mut aot_full_green_flag_starts : Map[Int, Array[Int]]
+  mut aot_use_full_exec : Bool
+  mut aot_wasm_only : Bool
+  mut frame_override : FrameReport?
 }
 
 pub(all) struct VmOptions {

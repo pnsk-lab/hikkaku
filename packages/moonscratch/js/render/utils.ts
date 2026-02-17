@@ -19,7 +19,14 @@ const toByteArray = (value: ArrayLike<number>): ArrayLike<number> => {
   return value
 }
 
-export const normalizeRenderFrame = (input: RenderFrameLike): RenderFrame => {
+const normalizeRenderFrameMeta = (
+  input: RenderFrameLike,
+): {
+  width: number
+  height: number
+  expectedLength: number
+  rawPixels: ArrayLike<number>
+} => {
   if (
     typeof input !== 'object' ||
     input === null ||
@@ -43,14 +50,59 @@ export const normalizeRenderFrame = (input: RenderFrameLike): RenderFrame => {
 
   const expectedLength = normalizedWidth * normalizedHeight * 4
   const rawPixels = toByteArray(input.pixels)
+  return {
+    width: normalizedWidth,
+    height: normalizedHeight,
+    expectedLength,
+    rawPixels,
+  }
+}
+
+export const normalizeRenderFrame = (input: RenderFrameLike): RenderFrame => {
+  const { width, height, expectedLength, rawPixels } =
+    normalizeRenderFrameMeta(input)
   const pixels = new Uint8Array(expectedLength)
   const sourceLength = Math.min(expectedLength, rawPixels.length)
   for (let i = 0; i < sourceLength; i += 1) {
     pixels[i] = clampByte(rawPixels[i])
   }
   return {
-    width: normalizedWidth,
-    height: normalizedHeight,
+    width,
+    height,
+    pixels,
+  }
+}
+
+export const normalizeRenderFrameTrusted = (
+  input: RenderFrameLike,
+): RenderFrame => {
+  const { width, height, expectedLength, rawPixels } =
+    normalizeRenderFrameMeta(input)
+  if (rawPixels instanceof Uint8Array) {
+    return {
+      width,
+      height,
+      pixels:
+        rawPixels.length === expectedLength
+          ? rawPixels
+          : rawPixels.subarray(0, expectedLength),
+    }
+  }
+  if (Array.isArray(rawPixels) && rawPixels.length >= expectedLength) {
+    return {
+      width,
+      height,
+      pixels: rawPixels as unknown as Uint8Array,
+    }
+  }
+  const pixels = new Uint8Array(expectedLength)
+  const sourceLength = Math.min(expectedLength, rawPixels.length)
+  for (let i = 0; i < sourceLength; i += 1) {
+    pixels[i] = rawPixels[i] as number
+  }
+  return {
+    width,
+    height,
     pixels,
   }
 }

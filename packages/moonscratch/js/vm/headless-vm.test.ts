@@ -1,23 +1,23 @@
 import { describe, expect, test, vi } from 'vite-plus/test'
 import { renderWithSVG } from '../render/index.ts'
-import { createHeadlessVM, createPrecompiledProject } from './factory.ts'
 import {
   EXAMPLE_PROJECT,
   getStageVariables,
   INPUT_EVENT_PROJECT,
   stepMany,
   TEXT_TO_SPEECH_TRANSLATE_PROJECT,
-} from './test-projects.ts'
+} from '../test/test-projects.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from './factory.ts'
 import type { CreateHeadlessVMOptions, ProjectJson } from './types.ts'
 
 describe('moonscratch/js/vm/headless-vm.ts', () => {
   const createVm = (
     projectJson: ProjectJson,
-    overrides: Omit<CreateHeadlessVMOptions, 'precompiled'> = {},
+    overrides: Omit<CreateHeadlessVMOptions, 'program'> = {},
   ) => {
-    const precompiled = createPrecompiledProject({ projectJson })
+    const program = createProgramModuleFromProject({ projectJson })
     return createHeadlessVM({
-      precompiled,
+      program,
       ...overrides,
     })
   }
@@ -27,6 +27,7 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
       initialNowMs: 0,
     })
     vm.greenFlag()
+    expect(getStageVariables(vm).var_score).toBe(42)
     vm.setTime(17)
 
     const first = vm.stepFrame()
@@ -34,8 +35,8 @@ describe('moonscratch/js/vm/headless-vm.ts', () => {
 
     expect(first).toEqual({
       activeThreads: 0,
-      ticks: 1,
-      ops: 1,
+      ticks: 0,
+      ops: 0,
       emittedEffects: 0,
       stopReason: 'finished',
       shouldRender: true,

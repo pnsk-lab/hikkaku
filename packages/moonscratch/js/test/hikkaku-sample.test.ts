@@ -1,7 +1,7 @@
 import { Project } from 'hikkaku'
 import { setVariableTo, whenFlagClicked } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { createHeadlessVM, createPrecompiledProject } from '../index.ts'
+import { createHeadlessVM, createProgramModuleFromProject } from '../index.ts'
 
 describe('moonscratch/js/test/hikkaku-sample.test.ts', () => {
   test('runs a project generated with hikkaku', () => {
@@ -14,11 +14,11 @@ describe('moonscratch/js/test/hikkaku-sample.test.ts', () => {
       })
     })
 
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: project.toScratch(),
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       initialNowMs: 0,
     })
 

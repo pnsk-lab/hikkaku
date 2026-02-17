@@ -26,7 +26,7 @@ const toField = (field: VariableReference | ListReference): Fields => [
  * ```ts
  * import { getVariable } from 'hikkaku/blocks'
  *
- * getVariable(variable as any)
+ * getVariable(variable)
  * ```
  */
 export const getVariable = (variable: VariableReference) => {
@@ -50,7 +50,7 @@ export const getVariable = (variable: VariableReference) => {
  * ```ts
  * import { setVariableTo } from 'hikkaku/blocks'
  *
- * setVariableTo(variable as any, 10)
+ * setVariableTo(variable, 10)
  * ```
  */
 export const setVariableTo = (
@@ -80,7 +80,7 @@ export const setVariableTo = (
  * ```ts
  * import { changeVariableBy } from 'hikkaku/blocks'
  *
- * changeVariableBy(variable as any, 10)
+ * changeVariableBy(variable, 10)
  * ```
  */
 export const changeVariableBy = (
@@ -109,7 +109,7 @@ export const changeVariableBy = (
  * ```ts
  * import { showVariable } from 'hikkaku/blocks'
  *
- * showVariable(variable as any)
+ * showVariable(variable)
  * ```
  */
 export const showVariable = (variable: VariableReference) => {
@@ -132,7 +132,7 @@ export const showVariable = (variable: VariableReference) => {
  * ```ts
  * import { hideVariable } from 'hikkaku/blocks'
  *
- * hideVariable(variable as any)
+ * hideVariable(variable)
  * ```
  */
 export const hideVariable = (variable: VariableReference) => {
@@ -155,7 +155,7 @@ export const hideVariable = (variable: VariableReference) => {
  * ```ts
  * import { getListContents } from 'hikkaku/blocks'
  *
- * getListContents(list as any)
+ * getListContents(list)
  * ```
  */
 export const getListContents = (list: ListReference) => {
@@ -179,7 +179,7 @@ export const getListContents = (list: ListReference) => {
  * ```ts
  * import { addToList } from 'hikkaku/blocks'
  *
- * addToList(list as any, undefined as any)
+ * addToList(list, "banana")
  * ```
  */
 export const addToList = (
@@ -209,7 +209,7 @@ export const addToList = (
  * ```ts
  * import { deleteOfList } from 'hikkaku/blocks'
  *
- * deleteOfList(list as any, undefined as any)
+ * deleteOfList(list, 1)
  * ```
  */
 export const deleteOfList = (list: ListReference, index: ListIndex) => {
@@ -235,7 +235,7 @@ export const deleteOfList = (list: ListReference, index: ListIndex) => {
  * ```ts
  * import { deleteAllOfList } from 'hikkaku/blocks'
  *
- * deleteAllOfList(list as any)
+ * deleteAllOfList(list)
  * ```
  */
 export const deleteAllOfList = (list: ListReference) => {
@@ -260,7 +260,7 @@ export const deleteAllOfList = (list: ListReference) => {
  * ```ts
  * import { insertAtList } from 'hikkaku/blocks'
  *
- * insertAtList(list as any, undefined as any, undefined as any)
+ * insertAtList(list, 42, "banana")
  * ```
  */
 export const insertAtList = (
@@ -293,7 +293,7 @@ export const insertAtList = (
  * ```ts
  * import { replaceItemOfList } from 'hikkaku/blocks'
  *
- * replaceItemOfList(list as any, undefined as any, undefined as any)
+ * replaceItemOfList(list, 42, "banana")
  * ```
  */
 export const replaceItemOfList = (
@@ -325,7 +325,7 @@ export const replaceItemOfList = (
  * ```ts
  * import { getItemOfList } from 'hikkaku/blocks'
  *
- * getItemOfList(list as any, undefined as any)
+ * getItemOfList(list, 1)
  * ```
  */
 export const getItemOfList = (list: ListReference, index: ListIndex) => {
@@ -352,7 +352,7 @@ export const getItemOfList = (list: ListReference, index: ListIndex) => {
  * ```ts
  * import { getItemNumOfList } from 'hikkaku/blocks'
  *
- * getItemNumOfList(list as any, undefined as any)
+ * getItemNumOfList(list, "banana")
  * ```
  */
 export const getItemNumOfList = (
@@ -381,7 +381,7 @@ export const getItemNumOfList = (
  * ```ts
  * import { lengthOfList } from 'hikkaku/blocks'
  *
- * lengthOfList(list as any)
+ * lengthOfList(list)
  * ```
  */
 export const lengthOfList = (list: ListReference) => {
@@ -405,7 +405,7 @@ export const lengthOfList = (list: ListReference) => {
  * ```ts
  * import { listContainsItem } from 'hikkaku/blocks'
  *
- * listContainsItem(list as any, undefined as any)
+ * listContainsItem(list,"banana")
  * ```
  */
 export const listContainsItem = (
@@ -434,7 +434,7 @@ export const listContainsItem = (
  * ```ts
  * import { showList } from 'hikkaku/blocks'
  *
- * showList(list as any)
+ * showList(list)
  * ```
  */
 export const showList = (list: ListReference) => {
@@ -457,7 +457,7 @@ export const showList = (list: ListReference) => {
  * ```ts
  * import { hideList } from 'hikkaku/blocks'
  *
- * hideList(list as any)
+ * hideList(list)
  * ```
  */
 export const hideList = (list: ListReference) => {

@@ -27,6 +27,8 @@ type ViewerWorkerResponse =
   | {
       type: 'frame'
       frame: RenderFrame
+      workerFps: number
+      workerOpsPerSecond: number
     }
   | {
       type: 'finished'
@@ -155,6 +157,8 @@ let fpsStartedAt = 0
 let playbackToken = 0
 let isPointerDown = false
 const keysDown = new Set<string>()
+let workerFps = 0
+let workerOpsPerSecond = 0
 
 const postInput = (input: VMInputEvent): void => {
   if (!worker) {
@@ -228,8 +232,8 @@ const updateFps = (now = performance.now()): void => {
   fpsFrames += 1
   const elapsedMs = now - fpsStartedAt
   if (elapsedMs >= 500) {
-    const fps = (fpsFrames * 1000) / elapsedMs
-    fpsLabel.textContent = `${fps.toFixed(1)} FPS`
+    const renderFps = (fpsFrames * 1000) / elapsedMs
+    fpsLabel.textContent = `${renderFps.toFixed(1)} FPS, worker ${workerFps.toFixed(1)} FPS, ${workerOpsPerSecond.toFixed(0)} ops/s`
     fpsFrames = 0
     fpsStartedAt = now
   }
@@ -261,6 +265,8 @@ const stopPlayback = (): void => {
   isPointerDown = false
   fpsFrames = 0
   fpsStartedAt = 0
+  workerFps = 0
+  workerOpsPerSecond = 0
 }
 
 const startPlayback = async (projectId: string) => {
@@ -289,6 +295,8 @@ const startPlayback = async (projectId: string) => {
       }
       const payload = event.data as ViewerWorkerResponse
       if (payload.type === 'frame') {
+        workerFps = payload.workerFps
+        workerOpsPerSecond = payload.workerOpsPerSecond
         renderFrameToCanvas(payload.frame)
         return
       }

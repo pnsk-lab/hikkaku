@@ -1,12 +1,13 @@
 import {
   createHeadlessVM,
-  createPrecompiledProject,
+  createProgramModuleFromProject,
   type VMInputEvent,
 } from '../js'
 
 const FRAME_FORCE_TIMEOUT_OUT_OF_WARP = 1000 / 30 // 30 FPS
 const FRAME_FORCE_TIMEOUT_IN_WARP = 1000 / 5 // 5 FPS
 const TICKS_TIMEOUT = 1
+const WORKER_METRICS_WINDOW_MS = 1000
 
 type ViewerWorkerRequest =
   | {
@@ -32,7 +33,22 @@ const flushPendingInputs = (): void => {
   pendingInputs.length = 0
 }
 
+const waitForNextFrame = async (): Promise<void> => {
+  await new Promise<void>((resolve) => {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => resolve())
+      return
+    }
+    setTimeout(() => resolve(), FRAME_FORCE_TIMEOUT_OUT_OF_WARP)
+  })
+}
+
 const playbackLoop = async (token: number): Promise<void> => {
+  let workerFpsFrames = 0
+  let workerOps = 0
+  let metricsStartedAt = 0
+  let currentWorkerFps = 0
+  let currentWorkerOpsPerSecond = 0
   while (true) {
     if (!vm || token !== runToken) {
       return
@@ -40,41 +56,63 @@ const playbackLoop = async (token: number): Promise<void> => {
     flushPendingInputs()
 
     const frameStart = performance.now()
+    vm.setTime(frameStart)
+    let frameOps = 0
+    let shouldRender = false
+    let isFinished = false
     while (true) {
       const frameInfo = vm.stepFrame()
+      frameOps += frameInfo.ops
       if (frameInfo.stopReason === 'finished') {
+        shouldRender = frameInfo.shouldRender
+        isFinished = true
         break
-      } else if (frameInfo.stopReason === 'rerender') {
-        break
-      } else if (frameInfo.stopReason === 'timeout') {
-        // no-op
-        //console.log('Frame timeout')
-      } else if (frameInfo.stopReason === 'warp-exit') {
-        //postMessage({ type: 'warp-exit', isInWarp: frameInfo.isInWarp })
-        //console.log('warp-exit')
       }
-      //console.log(frameInfo.isInWarp)
-      if (frameInfo.isInWarp) {
-        if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_IN_WARP) {
-          //console.log('Forcing frame end due to warp timeout')
-          break
-        }
-      } else {
-        if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_OUT_OF_WARP) {
-          //console.log('Forcing frame end due to timeout')
-          break
-        }
+      if (frameInfo.shouldRender) {
+        shouldRender = true
+        break
+      }
+
+      const frameBudget = frameInfo.isInWarp
+        ? FRAME_FORCE_TIMEOUT_IN_WARP
+        : FRAME_FORCE_TIMEOUT_OUT_OF_WARP
+      if (performance.now() - frameStart > frameBudget) {
+        break
       }
     }
 
-    // 描画する
-    const frame = vm.renderFrame()
-    postMessage({
-      type: 'frame',
-      frame,
-    })
+    workerFpsFrames += 1
+    workerOps += frameOps
+    const now = performance.now()
+    if (metricsStartedAt === 0) {
+      metricsStartedAt = now
+    } else {
+      const elapsedMs = now - metricsStartedAt
+      if (elapsedMs >= WORKER_METRICS_WINDOW_MS) {
+        currentWorkerFps = (workerFpsFrames * 1000) / elapsedMs
+        currentWorkerOpsPerSecond = (workerOps * 1000) / elapsedMs
+        workerFpsFrames = 0
+        workerOps = 0
+        metricsStartedAt = now
+      }
+    }
 
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    if (shouldRender) {
+      const frame = vm.renderFrame()
+      postMessage({
+        type: 'frame',
+        frame,
+        workerFps: currentWorkerFps,
+        workerOpsPerSecond: currentWorkerOpsPerSecond,
+      })
+    }
+
+    if (isFinished) {
+      postMessage({ type: 'finished' })
+      return
+    }
+
+    await waitForNextFrame()
   }
 }
 
@@ -101,11 +139,11 @@ globalThis.onmessage = (event) => {
   runToken += 1
   const token = runToken
   try {
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: data.projectJson,
     })
     vm = createHeadlessVM({
-      precompiled,
+      program,
       options: {
         stepTimeoutTicks: TICKS_TIMEOUT,
       },

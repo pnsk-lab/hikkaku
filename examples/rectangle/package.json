@@ -1,5 +1,5 @@
 {
-  "name": "rectangle-example",
+  "name": "@repo/example-rectangle",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,5 +18,8 @@
   "author": {
     "name": "Kingping",
     "url": "https://scratch.mit.edu/users/Kangping/"
+  },
+  "exports": {
+    ".": "./src/main.ts"
   }
 }

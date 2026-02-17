@@ -42,6 +42,98 @@ pub fn vm_post_io_json(vm : Vm, device : String, payload_json : String) -> Unit 
 }
 
 ///|
+pub fn vm_set_aot_commands_json(
+  vm : Vm,
+  commands_json : String,
+) -> Unit raise VmError {
+  set_aot_commands_runtime(vm, commands_json)
+}
+
+///|
+pub fn vm_get_variable_number_by_id(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String,
+) -> Double {
+  if variable_id == "" {
+    return 0.0
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return 0.0
+  }
+  let current = read_variable(vm, target_index, Some(variable_id), None)
+  json_to_number_value(current)
+}
+
+///|
+pub fn vm_set_variable_number_by_id(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String,
+  value : Double,
+) -> Unit {
+  if variable_id == "" {
+    return
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return
+  }
+  write_variable(vm, target_index, Some(variable_id), None, json_number(value))
+}
+
+///|
+pub fn vm_set_variable_json_by_id(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String,
+  value_json : String,
+) -> Unit {
+  if variable_id == "" {
+    return
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return
+  }
+  if value_json.trim().is_empty() {
+    write_variable(vm, target_index, Some(variable_id), None, Json::null())
+    return
+  }
+  let parsed = try? @json.parse(value_json)
+  match parsed {
+    Ok(value) =>
+      write_variable(vm, target_index, Some(variable_id), None, value)
+    Err(_) =>
+      write_variable(vm, target_index, Some(variable_id), None, Json::null())
+  }
+}
+
+///|
+pub fn vm_exec_script_tail_by_pc(
+  vm : Vm,
+  target_index : Int,
+  start_pc : Int,
+) -> Int {
+  exec_script_tail_runtime(vm, target_index, start_pc)
+}
+
+///|
+pub fn vm_exec_opcode_once_by_pc(vm : Vm, target_index : Int, pc : Int) -> Int {
+  exec_opcode_once_runtime(vm, target_index, pc)
+}
+
+///|
+pub fn vm_exec_draw_opcode(
+  vm : Vm,
+  target_index : Int,
+  opcode : String,
+  arg0 : Double,
+  arg1 : Double,
+  extra : Int,
+) -> Int {
+  exec_draw_opcode_runtime(vm, target_index, opcode, arg0, arg1, extra)
+}
+
+///|
 pub fn vm_broadcast(vm : Vm, message : String) -> Unit {
   broadcast_runtime(vm, message)
 }

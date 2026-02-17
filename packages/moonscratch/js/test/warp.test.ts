@@ -8,7 +8,7 @@ import {
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, it } from 'vite-plus/test'
-import { createHeadlessVM, createPrecompiledProject } from '../vm'
+import { createHeadlessVM, createProgramModuleFromProject } from '../vm'
 
 describe('warp-exit', () => {
   it('should emit warp-exit before finished', () => {
@@ -32,12 +32,12 @@ describe('warp-exit', () => {
         })
       })
     })
-    const precompiled = createPrecompiledProject({
+    const program = createProgramModuleFromProject({
       projectJson: project.toScratch(),
       assets: {},
     })
     const vm = createHeadlessVM({
-      precompiled,
+      program,
       options: {
         stepTimeoutTicks: 10000,
         turbo: true,

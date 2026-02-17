@@ -7,7 +7,7 @@ import {
   whenFlagClicked,
 } from '../../hikkaku/src/blocks'
 import { Project } from '../../hikkaku/src/index'
-import { createHeadlessVM, createPrecompiledProject } from '.'
+import { createHeadlessVM, createProgramModuleFromProject } from '.'
 
 const project = new Project()
 project.stage.run(() => {
@@ -27,14 +27,14 @@ project.stage.run(() => {
   })
 })
 
-const precompiled = createPrecompiledProject({
+const program = createProgramModuleFromProject({
   projectJson: await Bun.file(
     new URL('../../../examples/tesseract/dist/project.json', import.meta.url),
   ).json(), //project.toScratch(),
 })
 
 const vm = createHeadlessVM({
-  precompiled,
+  program,
   options: {
     stepTimeoutTicks: 100,
   },

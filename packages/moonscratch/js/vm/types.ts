@@ -224,22 +224,106 @@ export interface EffectHandlers {
   effect?: (effect: VMEffect) => MaybePromise<void>
 }
 
-export interface PrecompiledProject {
-  raw: unknown
-}
-
-export interface CreatePrecompiledProjectOptions {
+export interface CompileProjectToWatOptions {
   projectJson: string | ProjectJson
   assets?: string | Record<string, JsonValue>
 }
 
+export interface ProgramManifest {
+  abiVersion: number
+  opcodeSetVersion: number
+  projectByteLength: number
+  assetsByteLength: number
+  buildFingerprint: string
+}
+
+export interface CompileProjectToWatResult {
+  wat: string
+  abiVersion: number
+  manifest: ProgramManifest
+}
+
+export type ProgramWasmBytes = Uint8Array | ArrayBuffer
+
+export type WatToWasm = (wat: string) => ProgramWasmBytes
+
+export interface CompileProjectToWasmOptions
+  extends CompileProjectToWatOptions {
+  watToWasm?: WatToWasm
+}
+
+export interface CompileProjectToWasmResult extends CompileProjectToWatResult {
+  wasmBytes: Uint8Array
+}
+
+export interface RuntimeHandle {
+  raw: unknown
+  abiVersion: number
+}
+
+export interface ProgramPayload {
+  projectJson: string
+  assetsJson: string
+  commandsJson?: string
+}
+
+export interface ProgramWasmExecHost {
+  getVarNumber: (targetIndex: number, variableId: string) => number
+  setVarNumber: (targetIndex: number, variableId: string, value: number) => void
+  setVarJson: (
+    targetIndex: number,
+    variableId: string,
+    valueJson: string,
+  ) => void
+  execHostOpcode: (targetIndex: number, pc: number) => number
+  execHostTail: (targetIndex: number, startPc: number) => number
+  execDrawOpcode: (
+    targetIndex: number,
+    opcode: string,
+    arg0: number,
+    arg1: number,
+    extra: number,
+  ) => number
+}
+
+export type ProgramWasmExecRunner = () => number
+
+export interface ProgramModule {
+  raw: WebAssembly.Instance
+  abiVersion: number
+  manifest: ProgramManifest
+  readPayload: () => ProgramPayload
+  hasWasmExec: () => boolean
+  createWasmExecRunner: (
+    host: ProgramWasmExecHost,
+  ) => ProgramWasmExecRunner | null
+}
+
+export interface CreateProgramModuleOptions {
+  wasmBytes: ProgramWasmBytes
+  manifest?: ProgramManifest
+}
+
+export interface CreateProgramModuleFromProjectOptions
+  extends CompileProjectToWasmOptions {}
+
+export interface PrecompileProgramForRuntimeOptions {
+  program: ProgramModule
+  runtime?: RuntimeHandle
+}
+
 export interface CreateHeadlessVMOptions {
-  precompiled: PrecompiledProject
+  program: ProgramModule
+  runtime?: RuntimeHandle
   options?: string | VMOptionsInput
   initialNowMs?: number
   viewerLanguage?: string
   translateCache?: TranslateCache
 }
+
+export interface CreateHeadlessVMFromProjectOptions
+  extends Omit<CreateHeadlessVMOptions, 'program'>,
+    CreateProgramModuleFromProjectOptions {}
 
 export interface ScratchAssetResponse {
   ok: boolean
@@ -265,7 +349,7 @@ export interface ResolveMissingScratchAssetsOptions {
 }
 
 export interface CreateHeadlessVMWithScratchAssetsOptions
-  extends Omit<CreateHeadlessVMOptions, 'precompiled'> {
+  extends Omit<CreateHeadlessVMFromProjectOptions, 'assets'> {
   projectJson: string | ProjectJson
   assets?: string | Record<string, JsonValue>
   scratchCdnBaseUrl?: string

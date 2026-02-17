@@ -1,4 +1,3 @@
-import { normalizeRenderFrame } from '../render/index.ts'
 import { moonscratch } from './bindings.ts'
 import { DEFAULT_MAX_FRAMES } from './constants.ts'
 import {
@@ -20,7 +19,6 @@ import type {
   FrameReport,
   JsonValue,
   RenderFrame,
-  RenderFrameLike,
   RunReport,
   RunUntilIdleOptions,
   TranslateCache,
@@ -35,12 +33,19 @@ type BoundMoonscratch = {
   vm_render_frame?: (vmHandle: BoundWasmVmHandle) => unknown
 }
 
+interface HeadlessVMHooks {
+  afterGreenFlag?: () => void
+  beforeStepFrame?: () => void
+}
+
 export class HeadlessVM {
   private readonly vmHandle: unknown
+  private readonly hooks: HeadlessVMHooks
   private translateCache: TranslateCache = {}
 
-  constructor(vmHandle: unknown) {
+  constructor(vmHandle: unknown, hooks: HeadlessVMHooks = {}) {
     this.vmHandle = vmHandle
+    this.hooks = hooks
   }
 
   get raw(): unknown {
@@ -53,9 +58,11 @@ export class HeadlessVM {
 
   greenFlag(): void {
     moonscratch.vm_green_flag(this.vmHandle)
+    this.hooks.afterGreenFlag?.()
   }
 
   stepFrame(): FrameReport {
+    this.hooks.beforeStepFrame?.()
     const raw = moonscratch.vm_step_frame(this.vmHandle)
     return toFrameReport(raw)
   }
@@ -265,9 +272,7 @@ export class HeadlessVM {
         'vm_render_frame is unavailable in this build. Please rebuild moonscratch JS bindings.',
       )
     }
-    return normalizeRenderFrame(
-      binding.vm_render_frame(this.vmHandle) as RenderFrameLike,
-    )
+    return binding.vm_render_frame(this.vmHandle) as RenderFrame
   }
 
   setViewerLanguage(language: string): void {

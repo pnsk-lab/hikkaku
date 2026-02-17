@@ -3,6 +3,21 @@ pub(all) struct PrecompiledProject {
   targets : Array[TargetState]
   stage_index : Int
   assets : Map[String, Json]
+  mut initial_opaque_backdrops : Map[String, Array[Byte]]
+}
+
+///|
+pub(all) struct PenVectorStroke {
+  x0 : Double
+  y0 : Double
+  x1 : Double
+  y1 : Double
+  diameter : Double
+  offset : Double
+  r : Int
+  g : Int
+  b : Int
+  a : Int
 }
 
 ///|
@@ -14,6 +29,29 @@ pub(all) struct Vm {
   pen_width : Int
   pen_height : Int
   mut pen_pixels : Array[Byte]
+  mut pen_vectors : Array[PenVectorStroke]
+  mut render_revision : Int
+  mut render_cache_valid : Bool
+  mut render_cache_revision : Int
+  mut render_cache_pixels : Array[Byte]
+  mut pen_bounds_valid : Bool
+  mut pen_min_x : Int
+  mut pen_min_y : Int
+  mut pen_max_x : Int
+  mut pen_max_y : Int
+  mut backdrop_cache_valid : Bool
+  mut backdrop_cache_pixels : Array[Byte]
+  mut backdrop_cache_width : Int
+  mut backdrop_cache_height : Int
+  mut backdrop_cache_stage_index : Int
+  mut backdrop_cache_stage_costume_index : Int
+  mut backdrop_cache_effect_color : Double
+  mut backdrop_cache_effect_fisheye : Double
+  mut backdrop_cache_effect_whirl : Double
+  mut backdrop_cache_effect_pixelate : Double
+  mut backdrop_cache_effect_mosaic : Double
+  mut backdrop_cache_effect_brightness : Double
+  mut backdrop_cache_effect_ghost : Double
   mut threads : Array[Thread]
   mut next_thread_id : Int
   mut run_id : Int
@@ -43,6 +81,12 @@ pub(all) struct Vm {
   mut mathop_cos_cache_valid : Bool
   mut mathop_cos_cache_input : Double
   mut mathop_cos_cache_output : Double
+  mut aot_commands : Array[AotCommand]
+  mut aot_pending : Bool
+  mut aot_full_green_flag_starts : Map[Int, Array[Int]]
+  mut aot_use_full_exec : Bool
+  mut aot_wasm_only : Bool
+  mut frame_override : FrameReport?
 }
 
 ///|
@@ -54,4 +98,12 @@ pub(all) struct FrameReport {
   stop_reason : String
   should_render : Bool
   is_in_warp : Bool
+} derive(Show, Eq, ToJson)
+
+///|
+pub(all) enum AotCommand {
+  SetVariable(Int, String, Json)
+  ChangeVariable(Int, String, Double)
+  HostOpcode(Int, Int)
+  HostTail(Int, Int)
 } derive(Show, Eq, ToJson)

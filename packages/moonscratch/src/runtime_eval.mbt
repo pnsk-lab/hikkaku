@@ -1432,6 +1432,33 @@ fn eval_reporter_number_block_depth(
           )
         None => Some(0.0)
       }
+    "data_itemoflist" =>
+      match field_value(block, "LIST") {
+        Some((name, id)) => {
+          let list = read_list(vm, target_index, id, Some(name))
+          let index_value = value_from_input(
+            vm, target_index, block, "INDEX", depth,
+          )
+          match
+            normalize_index(index_value, list.length(), next_random_unit(vm)) {
+            Some(index) =>
+              match list.get(index) {
+                Some(value) => Some(json_to_number_value(value))
+                None => Some(0.0)
+              }
+            None => Some(0.0)
+          }
+        }
+        None => Some(0.0)
+      }
+    "data_lengthoflist" =>
+      match field_value(block, "LIST") {
+        Some((name, id)) => {
+          let list = read_list(vm, target_index, id, Some(name))
+          Some(Double::from_int(list.length()))
+        }
+        None => Some(0.0)
+      }
     "argument_reporter_string_number" | "argument_reporter_boolean" => {
       let arg_name = block_input_or_field_string(
         vm, target_index, block, "VALUE", "VALUE", depth,
@@ -1526,26 +1553,48 @@ fn normalize_index(
   length : Int,
   random_unit : Double,
 ) -> Int? {
-  let raw = json_to_string_value(index_value).trim().to_lower()
-  if raw == "last" {
-    if length <= 0 {
-      None
-    } else {
-      Some(length - 1)
+  match index_value {
+    Number(n, ..) => {
+      let index = n.to_int() - 1
+      if index < 0 || index >= length {
+        None
+      } else {
+        Some(index)
+      }
     }
-  } else if raw == "random" || raw == "any" {
-    if length <= 0 {
-      None
-    } else {
-      let sampled = (random_unit * Double::from_int(length)).floor().to_int()
-      Some(sampled.clamp(min=0, max=length - 1))
+    String(raw_input) => {
+      let raw = raw_input.trim().to_lower()
+      if raw == "last" {
+        if length <= 0 {
+          None
+        } else {
+          Some(length - 1)
+        }
+      } else if raw == "random" || raw == "any" {
+        if length <= 0 {
+          None
+        } else {
+          let sampled = (random_unit * Double::from_int(length))
+            .floor()
+            .to_int()
+          Some(sampled.clamp(min=0, max=length - 1))
+        }
+      } else {
+        let index = json_to_number_value(index_value).to_int() - 1
+        if index < 0 || index >= length {
+          None
+        } else {
+          Some(index)
+        }
+      }
     }
-  } else {
-    let n = json_to_number_value(index_value).to_int() - 1
-    if n < 0 || n >= length {
-      None
-    } else {
-      Some(n)
+    _ => {
+      let index = json_to_number_value(index_value).to_int() - 1
+      if index < 0 || index >= length {
+        None
+      } else {
+        Some(index)
+      }
     }
   }
 }

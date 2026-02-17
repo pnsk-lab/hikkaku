@@ -1,4 +1,4 @@
-import { fromPrimitiveSource } from '../core/block-helper'
+import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
 
@@ -14,7 +14,7 @@ import type { PrimitiveSource } from '../core/types'
  * ```ts
  * import { moveSteps } from 'hikkaku/blocks'
  *
- * moveSteps(undefined as any)
+ * moveSteps(10)
  * ```
  */
 export const moveSteps = (steps: PrimitiveSource<number>) => {
@@ -160,11 +160,20 @@ export const setY = (y: PrimitiveSource<number>) => {
  * goTo('mouse-pointer')
  * ```
  */
-export const goTo = (target: string) => {
+export const goTo = (target: PrimitiveSource<string>) => {
   return block('motion_goto', {
+    inputs: {
+      TO: menuInput(target, menuOfGoTo),
+    },
+  })
+}
+export const GOTO_RANDOM = '_random_'
+export const menuOfGoTo = (target: string = GOTO_RANDOM) => {
+  return valueBlock('motion_goto_menu', {
     fields: {
       TO: [target, null],
     },
+    isShadow: true,
   })
 }
 
@@ -252,11 +261,20 @@ export const pointInDirection = (direction: PrimitiveSource<number>) => {
  * pointTowards('mouse-pointer')
  * ```
  */
-export const pointTowards = (target: string) => {
+export const pointTowards = (target: PrimitiveSource<string>) => {
   return block('motion_pointtowards', {
+    inputs: {
+      TOWARDS: menuInput(target, menuOfPointTowards),
+    },
+  })
+}
+const TOWARDS_MOUSE_POINTER = '_mouse_'
+export const menuOfPointTowards = (target: string = TOWARDS_MOUSE_POINTER) => {
+  return valueBlock('motion_pointtowards_menu', {
     fields: {
       TOWARDS: [target, null],
     },
+    isShadow: true,
   })
 }
 
@@ -307,14 +325,24 @@ export const glide = (
  * glideTo(10, 'mouse-pointer')
  * ```
  */
-export const glideTo = (seconds: PrimitiveSource<number>, target: string) => {
+export const glideTo = (
+  seconds: PrimitiveSource<number>,
+  target: PrimitiveSource<string>,
+) => {
   return block('motion_glideto', {
     inputs: {
       SECS: fromPrimitiveSource(seconds),
+      TO: menuInput(target, menuOfGlideTo),
     },
+  })
+}
+
+export const menuOfGlideTo = (target: string = GOTO_RANDOM) => {
+  return valueBlock('motion_glideto_menu', {
     fields: {
       TO: [target, null],
     },
+    isShadow: true,
   })
 }
 

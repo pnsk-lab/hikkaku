@@ -886,5 +886,5 @@ fn compile_project(bundle : ProjectBundle) -> PrecompiledProject raise VmError {
     bundle.project_json,
     bundle.assets,
   )
-  { targets, stage_index, assets: bundle.assets }
+  { targets, stage_index, assets: bundle.assets, initial_opaque_backdrops: {} }
 }

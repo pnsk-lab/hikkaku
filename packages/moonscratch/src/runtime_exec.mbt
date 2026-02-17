@@ -1704,6 +1704,26 @@ fn spawn_hats_for_message(
 }
 
 ///|
+fn spawn_aot_green_flag_hats(vm : Vm) -> Int {
+  let mut count = 0
+  for target_index, target in vm.targets {
+    if target.deleted {
+      continue
+    }
+    match vm.aot_full_green_flag_starts.get(target_index) {
+      Some(start_pcs) =>
+        for start_pc in start_pcs {
+          if spawn_thread_pc(vm, target_index, start_pc, None) {
+            count += 1
+          }
+        }
+      None => ()
+    }
+  }
+  count
+}
+
+///|
 fn spawn_green_flag_hats(vm : Vm) -> Int {
   let mut count = 0
   for target_index, target in vm.targets {
@@ -1809,7 +1829,11 @@ fn is_current_thread_in_warp_context(vm : Vm) -> Bool {
 
 ///|
 fn request_redraw(vm : Vm) -> Unit {
+  if !vm.redraw_requested {
+    vm.render_revision += 1
+  }
   vm.redraw_requested = true
+  vm.render_cache_valid = false
   if is_current_thread_in_warp_context(vm) {
     vm.redraw_requested_while_warp = true
   }
@@ -2918,7 +2942,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
           let limit = json_to_number_value(
             value_from_input(vm, target_index, block, "VALUE", 0),
           )
-          let key = "for_each:\{block.id}"
+          let key = block.id
           let index = thread.loop_counters.get_or_default(key, 0)
           if Double::from_int(index) < limit {
             let next_index = index + 1
@@ -3130,8 +3154,429 @@ fn start_vm_runtime(vm : Vm) -> Unit {
 }
 
 ///|
+fn exec_script_tail_runtime(vm : Vm, target_index : Int, start_pc : Int) -> Int {
+  vm.frame_override = None
+  if !spawn_thread_pc(vm, target_index, start_pc, None) {
+    return 0
+  }
+  vm.running = true
+  let frame = step_frame_runtime(vm)
+  vm.frame_override = Some(frame)
+  frame.op_count
+}
+
+///|
+fn try_exec_host_opcode_fast(vm : Vm, target_index : Int, pc : Int) -> Bool {
+  let block = vm.targets[target_index].blocks_by_pc[pc]
+  match block.opcode {
+    "data_addtolist" =>
+      match field_value(block, "LIST") {
+        Some((list_name, list_id)) =>
+          match with_list_mut(vm, target_index, list_id, Some(list_name)) {
+            Some((owner, id, slot)) => {
+              let list = read_list_by_ref(vm, owner, id, slot)
+              list.push(value_from_input(vm, target_index, block, "ITEM", 0))
+              write_list_by_ref(vm, owner, id, slot, list)
+              true
+            }
+            None => true
+          }
+        None => true
+      }
+    _ => false
+  }
+}
+
+///|
+fn draw_effect_name_from_id(effect_id : Int) -> String? {
+  match effect_id {
+    1 => Some("color")
+    2 => Some("fisheye")
+    3 => Some("whirl")
+    4 => Some("pixelate")
+    5 => Some("mosaic")
+    6 => Some("brightness")
+    7 => Some("ghost")
+    _ => None
+  }
+}
+
+///|
+fn draw_pen_param_name_from_id(param_id : Int) -> String? {
+  match param_id {
+    1 => Some("color")
+    2 => Some("saturation")
+    3 => Some("brightness")
+    4 => Some("transparency")
+    _ => None
+  }
+}
+
+///|
+fn finite_or_zero(value : Double) -> Double {
+  if value.is_nan() || value.is_inf() {
+    0.0
+  } else {
+    value
+  }
+}
+
+///|
+fn exec_draw_opcode_runtime(
+  vm : Vm,
+  target_index : Int,
+  opcode : String,
+  arg0 : Double,
+  arg1 : Double,
+  extra : Int,
+) -> Int {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return 0
+  }
+  let value0 = finite_or_zero(arg0)
+  let value1 = finite_or_zero(arg1)
+  match opcode {
+    "motion_movesteps" => {
+      let steps = value0
+      let radians = (90.0 - vm.targets[target_index].direction) *
+        @math.PI /
+        180.0
+      move_target_with_pen(
+        vm,
+        target_index,
+        vm.targets[target_index].x + @math.cos(radians) * steps,
+        vm.targets[target_index].y + @math.sin(radians) * steps,
+      )
+      1
+    }
+    "motion_turnright" => {
+      let old_direction = vm.targets[target_index].direction
+      vm.targets[target_index].direction += value0
+      if old_direction != vm.targets[target_index].direction {
+        request_redraw(vm)
+      }
+      1
+    }
+    "motion_turnleft" => {
+      let old_direction = vm.targets[target_index].direction
+      vm.targets[target_index].direction -= value0
+      if old_direction != vm.targets[target_index].direction {
+        request_redraw(vm)
+      }
+      1
+    }
+    "motion_pointindirection" => {
+      let old_direction = vm.targets[target_index].direction
+      vm.targets[target_index].direction = normalized_scratch_direction(value0)
+      if old_direction != vm.targets[target_index].direction {
+        request_redraw(vm)
+      }
+      1
+    }
+    "motion_changexby" => {
+      move_target_with_pen(
+        vm,
+        target_index,
+        vm.targets[target_index].x + value0,
+        vm.targets[target_index].y,
+      )
+      1
+    }
+    "motion_changeyby" => {
+      move_target_with_pen(
+        vm,
+        target_index,
+        vm.targets[target_index].x,
+        vm.targets[target_index].y + value0,
+      )
+      1
+    }
+    "motion_setx" => {
+      move_target_with_pen(vm, target_index, value0, vm.targets[target_index].y)
+      1
+    }
+    "motion_sety" => {
+      move_target_with_pen(vm, target_index, vm.targets[target_index].x, value0)
+      1
+    }
+    "motion_gotoxy" => {
+      move_target_with_pen(vm, target_index, value0, value1)
+      1
+    }
+    "motion_ifonedgebounce" => {
+      apply_if_on_edge_bounce(vm, target_index)
+      1
+    }
+    "looks_show" => {
+      let was_visible = vm.targets[target_index].visible
+      vm.targets[target_index].visible = true
+      if !was_visible {
+        request_redraw(vm)
+      }
+      1
+    }
+    "looks_hide" => {
+      let was_visible = vm.targets[target_index].visible
+      vm.targets[target_index].visible = false
+      if was_visible {
+        request_redraw(vm)
+      }
+      1
+    }
+    "looks_hideallsprites" => {
+      let mut changed = false
+      for i, candidate in vm.targets {
+        if !candidate.deleted && !candidate.is_stage {
+          if vm.targets[i].visible {
+            changed = true
+          }
+          vm.targets[i].visible = false
+        }
+      }
+      if changed {
+        request_redraw(vm)
+      }
+      1
+    }
+    "looks_nextcostume" => {
+      let target = vm.targets[target_index]
+      let before = target.current_costume
+      vm.targets[target_index].current_costume = normalized_target_costume_index(
+        target,
+        target.current_costume + 1,
+      )
+      if before != vm.targets[target_index].current_costume {
+        request_redraw(vm)
+      }
+      1
+    }
+    "looks_changeeffectby" =>
+      match draw_effect_name_from_id(extra) {
+        Some(effect_name) => {
+          set_target_looks_effect(vm, target_index, effect_name, value0, true)
+          request_redraw(vm)
+          1
+        }
+        None => 0
+      }
+    "looks_seteffectto" =>
+      match draw_effect_name_from_id(extra) {
+        Some(effect_name) => {
+          set_target_looks_effect(vm, target_index, effect_name, value0, false)
+          request_redraw(vm)
+          1
+        }
+        None => 0
+      }
+    "looks_cleargraphiceffects" => {
+      clear_target_looks_effect(vm, target_index)
+      request_redraw(vm)
+      1
+    }
+    "looks_changesizeby" => {
+      vm.targets[target_index].size += value0
+      request_redraw(vm)
+      1
+    }
+    "looks_setsizeto" => {
+      vm.targets[target_index].size = value0
+      request_redraw(vm)
+      1
+    }
+    "pen_clear" => {
+      vm_clear_pen_pixels(vm)
+      request_redraw(vm)
+      1
+    }
+    "pen_stamp" =>
+      if target_index >= 0 &&
+        target_index < vm.targets.length() &&
+        !vm.targets[target_index].is_stage &&
+        !vm.targets[target_index].deleted {
+        render_stamp_sprite_to_pen(vm, target_index)
+        request_redraw(vm)
+        1
+      } else {
+        0
+      }
+    "pen_penDown" => {
+      vm.targets[target_index].pen_down = true
+      render_draw_pen_point(vm, target_index)
+      request_redraw(vm)
+      1
+    }
+    "pen_penUp" => {
+      vm.targets[target_index].pen_down = false
+      1
+    }
+    "pen_changePenColorParamBy" =>
+      match draw_pen_param_name_from_id(extra) {
+        Some(param_name) => {
+          set_target_pen_color_param(vm, target_index, param_name, value0, true)
+          1
+        }
+        None => 0
+      }
+    "pen_setPenColorParamTo" =>
+      match draw_pen_param_name_from_id(extra) {
+        Some(param_name) => {
+          set_target_pen_color_param(
+            vm, target_index, param_name, value0, false,
+          )
+          1
+        }
+        None => 0
+      }
+    "pen_changePenSizeBy" => {
+      vm.targets[target_index].pen_size = clamp_double(
+        vm.targets[target_index].pen_size + value0,
+        1.0,
+        1200.0,
+      )
+      1
+    }
+    "pen_setPenSizeTo" => {
+      vm.targets[target_index].pen_size = clamp_double(value0, 1.0, 1200.0)
+      1
+    }
+    "pen_setPenHueToNumber" => {
+      set_target_pen_color_param(vm, target_index, "color", value0 / 2.0, false)
+      set_target_pen_color_param(vm, target_index, "transparency", 0.0, false)
+      apply_target_legacy_pen_shade(vm, target_index)
+      1
+    }
+    "pen_changePenHueBy" => {
+      set_target_pen_color_param(vm, target_index, "color", value0 / 2.0, true)
+      apply_target_legacy_pen_shade(vm, target_index)
+      1
+    }
+    "pen_setPenShadeToNumber" => {
+      let mut shade = value0.mod(200.0)
+      if shade < 0.0 {
+        shade += 200.0
+      }
+      vm.targets[target_index].pen_legacy_shade = shade
+      apply_target_legacy_pen_shade(vm, target_index)
+      1
+    }
+    "pen_changePenShadeBy" => {
+      let mut shade = (vm.targets[target_index].pen_legacy_shade + value0).mod(
+        200.0,
+      )
+      if shade < 0.0 {
+        shade += 200.0
+      }
+      vm.targets[target_index].pen_legacy_shade = shade
+      apply_target_legacy_pen_shade(vm, target_index)
+      1
+    }
+    _ => 0
+  }
+}
+
+///|
+fn exec_opcode_once_runtime(vm : Vm, target_index : Int, pc : Int) -> Int {
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return 0
+  }
+  if pc < 0 || pc >= vm.targets[target_index].blocks_by_pc.length() {
+    return 0
+  }
+  if try_exec_host_opcode_fast(vm, target_index, pc) {
+    return 1
+  }
+
+  // Execute exactly one opcode in an ephemeral thread context.
+  let thread_id = -1
+  ignore(
+    execute_thread_once(vm, {
+      id: thread_id,
+      target_index,
+      pc: Some(pc),
+      wait_until_ms: None,
+      wait_for_input: None,
+      done: false,
+      warp_mode: false,
+      warp_started_ms: 0,
+      stack: [],
+      loop_counters: {},
+      parent_waiter: None,
+    }),
+  )
+  vm.waiting_children.remove(thread_id)
+  vm.procedure_frames.remove(thread_id)
+  vm.current_thread_id = None
+  if !vm.threads.is_empty() {
+    vm.running = true
+  }
+  1
+}
+
+///|
+fn apply_aot_commands_frame(vm : Vm) -> FrameReport {
+  let effect_count_before = vm.effects.length()
+  let mut op_count = 0
+  let mut has_host_tail = false
+  vm.aot_pending = false
+  for command in vm.aot_commands {
+    match command {
+      AotCommand::SetVariable(target_index, variable_id, value) =>
+        if target_index >= 0 && target_index < vm.targets.length() {
+          write_variable(vm, target_index, Some(variable_id), None, value)
+          op_count += 1
+        }
+      AotCommand::ChangeVariable(target_index, variable_id, delta) =>
+        if target_index >= 0 && target_index < vm.targets.length() {
+          let current = read_variable(vm, target_index, Some(variable_id), None)
+          let next_value = json_number(json_to_number_value(current) + delta)
+          write_variable(vm, target_index, Some(variable_id), None, next_value)
+          op_count += 1
+        }
+      AotCommand::HostOpcode(target_index, pc) =>
+        op_count += exec_opcode_once_runtime(vm, target_index, pc)
+      AotCommand::HostTail(target_index, start_pc) =>
+        if spawn_thread_pc(vm, target_index, start_pc, None) {
+          has_host_tail = true
+        }
+    }
+  }
+  if has_host_tail {
+    vm.running = true
+    let host_frame = step_frame_runtime(vm)
+    return {
+      active_threads: host_frame.active_threads,
+      tick_count: host_frame.tick_count,
+      op_count: op_count + host_frame.op_count,
+      emitted_effects: vm.effects.length() - effect_count_before,
+      stop_reason: host_frame.stop_reason,
+      should_render: host_frame.should_render,
+      is_in_warp: host_frame.is_in_warp,
+    }
+  }
+  let active_threads = vm.threads.length()
+  if active_threads <= 0 {
+    vm.running = false
+    vm.redraw_requested = false
+    vm.redraw_requested_while_warp = false
+  } else {
+    vm.running = true
+  }
+  let stop_reason = if active_threads <= 0 { "finished" } else { "timeout" }
+  {
+    active_threads,
+    tick_count: 1,
+    op_count,
+    emitted_effects: vm.effects.length() - effect_count_before,
+    stop_reason,
+    should_render: true,
+    is_in_warp: has_active_warp_thread(vm),
+  }
+}
+
+///|
 fn green_flag_runtime(vm : Vm) -> Unit {
   clear_threads(vm)
+  vm.frame_override = None
   reset_targets_for_green_flag(vm)
   vm_clear_pen_pixels(vm)
   for i, target in vm.targets {
@@ -3156,6 +3601,22 @@ fn green_flag_runtime(vm : Vm) -> Unit {
   vm.redraw_requested = false
   vm.redraw_requested_while_warp = false
   vm.running = true
+  if vm.aot_wasm_only {
+    vm.aot_pending = false
+    vm.running = false
+    return
+  }
+  if vm.aot_use_full_exec {
+    let spawned = spawn_aot_green_flag_hats(vm)
+    if spawned == 0 {
+      vm.running = false
+    }
+    return
+  }
+  if !vm.aot_commands.is_empty() {
+    vm.aot_pending = true
+    return
+  }
   let spawned = spawn_green_flag_hats(vm)
   if spawned == 0 {
     vm.running = false
@@ -3199,6 +3660,17 @@ fn set_time_runtime(vm : Vm, now_ms : Int) -> Unit {
 
 ///|
 fn step_frame_runtime(vm : Vm) -> FrameReport {
+  match vm.frame_override {
+    Some(report) => {
+      vm.frame_override = None
+      return report
+    }
+    None => ()
+  }
+  if vm.aot_pending {
+    return apply_aot_commands_frame(vm)
+  }
+
   let spawned_io = dispatch_io_event_hats(vm)
   let spawned_predicates = spawn_predicate_hats(vm)
   if spawned_io > 0 || spawned_predicates > 0 {

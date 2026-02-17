@@ -1,6 +1,6 @@
 {
   "name": "hikkaku",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "type": "module",
   "private": false,
   "exports": {
