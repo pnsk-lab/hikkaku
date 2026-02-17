@@ -33,6 +33,16 @@ const flushPendingInputs = (): void => {
   pendingInputs.length = 0
 }
 
+const waitForNextFrame = async (): Promise<void> => {
+  await new Promise<void>((resolve) => {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => resolve())
+      return
+    }
+    setTimeout(() => resolve(), FRAME_FORCE_TIMEOUT_OUT_OF_WARP)
+  })
+}
+
 const playbackLoop = async (token: number): Promise<void> => {
   let workerFpsFrames = 0
   let workerOps = 0
@@ -46,32 +56,28 @@ const playbackLoop = async (token: number): Promise<void> => {
     flushPendingInputs()
 
     const frameStart = performance.now()
+    vm.setTime(frameStart)
     let frameOps = 0
+    let shouldRender = false
+    let isFinished = false
     while (true) {
       const frameInfo = vm.stepFrame()
       frameOps += frameInfo.ops
       if (frameInfo.stopReason === 'finished') {
+        shouldRender = frameInfo.shouldRender
+        isFinished = true
         break
-      } else if (frameInfo.stopReason === 'rerender') {
-        break
-      } else if (frameInfo.stopReason === 'timeout') {
-        // no-op
-        //console.log('Frame timeout')
-      } else if (frameInfo.stopReason === 'warp-exit') {
-        //postMessage({ type: 'warp-exit', isInWarp: frameInfo.isInWarp })
-        //console.log('warp-exit')
       }
-      //console.log(frameInfo.isInWarp)
-      if (frameInfo.isInWarp) {
-        if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_IN_WARP) {
-          console.log('FRAME: warp timeout')
-          break
-        }
-      } else {
-        if (performance.now() - frameStart > FRAME_FORCE_TIMEOUT_OUT_OF_WARP) {
-          console.log('FRAME: normal timeout')
-          break
-        }
+      if (frameInfo.shouldRender) {
+        shouldRender = true
+        break
+      }
+
+      const frameBudget = frameInfo.isInWarp
+        ? FRAME_FORCE_TIMEOUT_IN_WARP
+        : FRAME_FORCE_TIMEOUT_OUT_OF_WARP
+      if (performance.now() - frameStart > frameBudget) {
+        break
       }
     }
 
@@ -91,16 +97,22 @@ const playbackLoop = async (token: number): Promise<void> => {
       }
     }
 
-    // 描画する
-    const frame = vm.renderFrame()
-    postMessage({
-      type: 'frame',
-      frame,
-      workerFps: currentWorkerFps,
-      workerOpsPerSecond: currentWorkerOpsPerSecond,
-    })
+    if (shouldRender) {
+      const frame = vm.renderFrame()
+      postMessage({
+        type: 'frame',
+        frame,
+        workerFps: currentWorkerFps,
+        workerOpsPerSecond: currentWorkerOpsPerSecond,
+      })
+    }
 
-    await new Promise(requestAnimationFrame)
+    if (isFinished) {
+      postMessage({ type: 'finished' })
+      return
+    }
+
+    await waitForNextFrame()
   }
 }
 
