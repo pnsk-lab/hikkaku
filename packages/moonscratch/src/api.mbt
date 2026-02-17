@@ -122,6 +122,18 @@ pub fn vm_exec_opcode_once_by_pc(vm : Vm, target_index : Int, pc : Int) -> Int {
 }
 
 ///|
+pub fn vm_exec_draw_opcode(
+  vm : Vm,
+  target_index : Int,
+  opcode : String,
+  arg0 : Double,
+  arg1 : Double,
+  extra : Int,
+) -> Int {
+  exec_draw_opcode_runtime(vm, target_index, opcode, arg0, arg1, extra)
+}
+
+///|
 pub fn vm_broadcast(vm : Vm, message : String) -> Unit {
   broadcast_runtime(vm, message)
 }

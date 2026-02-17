@@ -17,6 +17,9 @@ const IMPORT_EXEC_OPCODE_INDEX : Int = 4
 const IMPORT_EXEC_TAIL_INDEX : Int = 5
 
 ///|
+const IMPORT_EXEC_DRAW_OPCODE_INDEX : Int = 6
+
+///|
 const LOOP_COUNTER_LOCAL : Int = 0
 
 ///|
@@ -76,6 +79,7 @@ priv enum RunnerCommand {
   SetNumExpr(Int, String, RunnerNumExpr)
   SetJsonConst(Int, String, String)
   ChangeNumExpr(Int, String, RunnerNumExpr)
+  DrawOpcode(Int, String, RunnerNumExpr, RunnerNumExpr, Int)
   If(RunnerBoolExpr, Array[RunnerCommand])
   IfElse(RunnerBoolExpr, Array[RunnerCommand], Array[RunnerCommand])
   Repeat(RunnerNumExpr, Array[RunnerCommand])
@@ -470,6 +474,43 @@ fn parse_runner_command(raw : Json, depth : Int) -> RunnerCommand? {
         }
       _ => None
     }
+  } else if op == "draw_opcode" {
+    match target {
+      Some(target_value) => {
+        let draw_opcode = object_get_string_or(obj, "opcode", "")
+        let extra = match obj.get("extra") {
+          Some(Number(value, ..)) if !value.is_nan() && !value.is_inf() =>
+            value.to_int()
+          _ => 0
+        }
+        if draw_opcode == "" {
+          None
+        } else {
+          let arg0 = match
+            parse_runner_num_expr(
+              object_get_or(obj, "arg0", Json::null()),
+              depth + 1,
+            ) {
+            Some(value) => value
+            None => RunnerNumExpr::Num(0.0)
+          }
+          let arg1 = match
+            parse_runner_num_expr(
+              object_get_or(obj, "arg1", Json::null()),
+              depth + 1,
+            ) {
+            Some(value) => value
+            None => RunnerNumExpr::Num(0.0)
+          }
+          Some(
+            RunnerCommand::DrawOpcode(
+              target_value, draw_opcode, arg0, arg1, extra,
+            ),
+          )
+        }
+      }
+      None => None
+    }
   } else if op == "if" {
     match
       (
@@ -702,6 +743,11 @@ fn runner_collect_usage_from_commands(
           usage, order, target, variable_id, current_weight,
         )
         runner_collect_num_expr_usage(expr, usage, order, current_weight)
+        0
+      }
+      DrawOpcode(_, _, arg0, arg1, _) => {
+        runner_collect_num_expr_usage(arg0, usage, order, current_weight)
+        runner_collect_num_expr_usage(arg1, usage, order, current_weight)
         0
       }
       If(cond, then_commands) => {
@@ -984,6 +1030,11 @@ fn collect_command_literals(
       )
       collect_num_expr_literals(expr, refs, bytes, base_ptr)
     }
+    DrawOpcode(_, opcode, arg0, arg1, _) => {
+      runner_register_literal(refs, bytes, base_ptr, "opcode:\{opcode}", opcode)
+      collect_num_expr_literals(arg0, refs, bytes, base_ptr)
+      collect_num_expr_literals(arg1, refs, bytes, base_ptr)
+    }
     If(cond, then_commands) => {
       collect_bool_expr_literals(cond, refs, bytes, base_ptr)
       for child in then_commands {
@@ -1222,6 +1273,22 @@ fn emit_runner_commands(
               None => return false
             }
         }
+      DrawOpcode(target, opcode, arg0, arg1, extra) =>
+        match refs.get("opcode:\{opcode}") {
+          Some(opcode_ref) => {
+            push_i32_const(out, target)
+            push_i32_const(out, opcode_ref.ptr)
+            push_i32_const(out, opcode_ref.len)
+            if !emit_runner_num_expr(arg0, refs, cached_by_key, out) ||
+              !emit_runner_num_expr(arg1, refs, cached_by_key, out) {
+              return false
+            }
+            push_i32_const(out, extra)
+            push_call(out, IMPORT_EXEC_DRAW_OPCODE_INDEX)
+            out.push((0x1a).to_byte())
+          }
+          None => return false
+        }
       If(cond, then_commands) => {
         if !emit_runner_bool_expr(cond, refs, cached_by_key, out) {
           return false
@@ -1453,14 +1520,15 @@ fn build_program_wasm_binary(
   ])
 
   let type_payload = bytes_from_ints([
-    0x06, 0x60, 0x00, 0x01, 0x7f, 0x60, 0x03, 0x7f, 0x7f, 0x7f, 0x01, 0x7c, 0x60,
+    0x07, 0x60, 0x00, 0x01, 0x7f, 0x60, 0x03, 0x7f, 0x7f, 0x7f, 0x01, 0x7c, 0x60,
     0x04, 0x7f, 0x7f, 0x7f, 0x7c, 0x00, 0x60, 0x05, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
     0x00, 0x60, 0x02, 0x7c, 0x7c, 0x01, 0x7c, 0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,
+    0x60, 0x06, 0x7f, 0x7f, 0x7f, 0x7c, 0x7c, 0x7f, 0x01, 0x7f,
   ])
   append_bytes(module_bytes, encode_section(1, type_payload))
 
   let import_payload = []
-  append_bytes(import_payload, encode_u32_leb(6))
+  append_bytes(import_payload, encode_u32_leb(7))
   let imports : Array[(String, String, Int)] = [
     ("env", "ms_get_var_num", 1),
     ("env", "ms_set_var_num", 2),
@@ -1468,6 +1536,7 @@ fn build_program_wasm_binary(
     ("env", "ms_mod", 4),
     ("env", "ms_exec_opcode", 5),
     ("env", "ms_exec_tail", 5),
+    ("env", "ms_exec_draw_opcode", 6),
   ]
   for item in imports {
     append_bytes(import_payload, encode_name(item.0))
@@ -1487,7 +1556,7 @@ fn build_program_wasm_binary(
   append_bytes(module_bytes, encode_section(5, memory_payload))
 
   let exports_payload = []
-  let defined_function_base = 6
+  let defined_function_base = imports.length()
   let exports : Array[(String, Int, Int)] = [
     ("memory", 0x02, 0),
     ("ms_abi_version", 0x00, defined_function_base + 0),

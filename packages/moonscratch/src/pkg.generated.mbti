@@ -14,6 +14,8 @@ pub fn vm_compile_project_to_wasm(String, assets_json? : String) -> String raise
 
 pub fn vm_compile_project_to_wat(String, assets_json? : String) -> String raise VmError
 
+pub fn vm_exec_draw_opcode(Vm, Int, String, Double, Double, Int) -> Int
+
 pub fn vm_exec_opcode_once_by_pc(Vm, Int, Int) -> Int
 
 pub fn vm_exec_script_tail_by_pc(Vm, Int, Int) -> Int

@@ -71,13 +71,21 @@ type BoundMoonscratchFactory = {
     targetIndex: number,
     pc: number,
   ) => number
+  vm_exec_draw_opcode?: (
+    vmHandle: unknown,
+    targetIndex: number,
+    opcode: string,
+    arg0: number,
+    arg1: number,
+    extra: number,
+  ) => number
   vm_new_from_compiled?: (
     precompiled: unknown,
     optionsJson?: string,
   ) => MoonResult<unknown, unknown>
 }
 
-const OPCODE_SET_VERSION = 1
+const OPCODE_SET_VERSION = 2
 const runtimePrecompiledCacheSymbol = Symbol(
   'moonscratch.runtime_precompiled_cache',
 )
@@ -388,7 +396,8 @@ const hasWasmHostBridgeApi = (binding: BoundMoonscratchFactory): boolean => {
     typeof binding.vm_set_variable_number_by_id === 'function' &&
     typeof binding.vm_set_variable_json_by_id === 'function' &&
     typeof binding.vm_exec_opcode_once_by_pc === 'function' &&
-    typeof binding.vm_exec_script_tail_by_pc === 'function'
+    typeof binding.vm_exec_script_tail_by_pc === 'function' &&
+    typeof binding.vm_exec_draw_opcode === 'function'
   )
 }
 
@@ -483,6 +492,18 @@ export const createHeadlessVM = ({
           },
           execHostOpcode: (targetIndex, pc) => {
             return binding.vm_exec_opcode_once_by_pc?.(vm, targetIndex, pc) ?? 0
+          },
+          execDrawOpcode: (targetIndex, opcode, arg0, arg1, extra) => {
+            return (
+              binding.vm_exec_draw_opcode?.(
+                vm,
+                targetIndex,
+                opcode,
+                arg0,
+                arg1,
+                extra,
+              ) ?? 0
+            )
           },
         })
         if (runner) {

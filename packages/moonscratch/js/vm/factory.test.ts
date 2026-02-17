@@ -27,6 +27,62 @@ import {
   precompileProgramForRuntime,
 } from './factory.ts'
 
+const DRAW_OPCODE_PROJECT = JSON.stringify({
+  targets: [
+    {
+      isStage: true,
+      name: 'Stage',
+      variables: {},
+      lists: {},
+      blocks: {},
+    },
+    {
+      isStage: false,
+      name: 'Sprite1',
+      variables: {},
+      lists: {},
+      blocks: {
+        hat: {
+          opcode: 'event_whenflagclicked',
+          next: 'pen_clear',
+          parent: null,
+          inputs: {},
+          fields: {},
+          topLevel: true,
+        },
+        pen_clear: {
+          opcode: 'pen_clear',
+          next: 'move_x',
+          parent: 'hat',
+          inputs: {},
+          fields: {},
+          topLevel: false,
+        },
+        move_x: {
+          opcode: 'motion_changexby',
+          next: 'move_y',
+          parent: 'pen_clear',
+          inputs: {
+            DX: [1, [4, 12]],
+          },
+          fields: {},
+          topLevel: false,
+        },
+        move_y: {
+          opcode: 'motion_changeyby',
+          next: null,
+          parent: 'move_x',
+          inputs: {
+            DY: [1, [4, -8]],
+          },
+          fields: {},
+          topLevel: false,
+        },
+      },
+    },
+  ],
+})
+
 describe('moonscratch/js/vm/factory.ts', () => {
   test('exports createVM aliases', () => {
     expect(createVM).toBe(createHeadlessVM)
@@ -236,6 +292,42 @@ describe('moonscratch/js/vm/factory.ts', () => {
     const vars = getStageVariables(vm)
     expect(vars[WASM_MATHOP_LOOP_COUNT_ID]).toBe(3)
     expect(frame.stopReason).toBe('finished')
+  })
+
+  test('executes motion/pen draw commands through draw-opcode bridge', () => {
+    const program = createProgramModuleFromProject({
+      projectJson: DRAW_OPCODE_PROJECT,
+    })
+    const commandsJson = program.readPayload().commandsJson ?? ''
+    expect(commandsJson).toContain('"op":"draw_opcode"')
+    expect(commandsJson).not.toContain('"op":"host_tail"')
+
+    const execDrawSpy = vi.spyOn(
+      moonscratch as unknown as {
+        vm_exec_draw_opcode: (...args: unknown[]) => number
+      },
+      'vm_exec_draw_opcode',
+    )
+    const execOpcodeSpy = vi.spyOn(
+      moonscratch as unknown as {
+        vm_exec_opcode_once_by_pc: (...args: unknown[]) => number
+      },
+      'vm_exec_opcode_once_by_pc',
+    )
+
+    const vm = createHeadlessVM({ program, initialNowMs: 0 })
+    vm.greenFlag()
+    const frame = vm.stepFrame()
+
+    const sprite = vm.snapshot().targets.find((target) => target.name === 'Sprite1')
+    expect(frame.stopReason).toBe('finished')
+    expect(sprite?.x).toBe(12)
+    expect(sprite?.y).toBe(-8)
+    expect(execDrawSpy).toHaveBeenCalled()
+    expect(execOpcodeSpy).toHaveBeenCalledTimes(0)
+
+    execDrawSpy.mockRestore()
+    execOpcodeSpy.mockRestore()
   })
 
   test('delegates unsupported opcode to moonbit host during wasm exec', () => {

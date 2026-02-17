@@ -7,7 +7,7 @@ import type {
   ProgramWasmExecRunner,
 } from './types.ts'
 
-const OPCODE_SET_VERSION = 1
+const OPCODE_SET_VERSION = 2
 
 const utf8Encoder = new TextEncoder()
 const utf8Decoder = new TextDecoder()
@@ -98,6 +98,7 @@ const defaultProgramImports = {
     },
     ms_exec_opcode: () => 0,
     ms_exec_tail: () => 0,
+    ms_exec_draw_opcode: () => 0,
   },
 }
 
@@ -270,6 +271,27 @@ export const instantiateProgramModule = (
           },
           ms_exec_tail: (targetIndex: number, startPc: number) => {
             return host.execHostTail(targetIndex | 0, startPc | 0) | 0
+          },
+          ms_exec_draw_opcode: (
+            targetIndex: number,
+            opcodePtr: number,
+            opcodeLen: number,
+            arg0: number,
+            arg1: number,
+            extra: number,
+          ) => {
+            const opcode = readCachedLiteral(opcodePtr, opcodeLen)
+            const normalizedArg0 = Number.isFinite(arg0) ? arg0 : 0
+            const normalizedArg1 = Number.isFinite(arg1) ? arg1 : 0
+            return (
+              host.execDrawOpcode(
+                targetIndex | 0,
+                opcode,
+                normalizedArg0,
+                normalizedArg1,
+                extra | 0,
+              ) | 0
+            )
           },
         },
       })

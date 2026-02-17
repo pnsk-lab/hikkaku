@@ -277,6 +277,13 @@ export interface ProgramWasmExecHost {
   ) => void
   execHostOpcode: (targetIndex: number, pc: number) => number
   execHostTail: (targetIndex: number, startPc: number) => number
+  execDrawOpcode: (
+    targetIndex: number,
+    opcode: string,
+    arg0: number,
+    arg1: number,
+    extra: number,
+  ) => number
 }
 
 export type ProgramWasmExecRunner = () => number

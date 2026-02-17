@@ -1,5 +1,5 @@
 ///|
-const PROGRAM_ABI_VERSION : Int = 1
+const PROGRAM_ABI_VERSION : Int = 2
 
 ///|
 fn page_count_for_bytes(total_bytes : Int) -> Int {
@@ -254,6 +254,95 @@ fn command_json_host_opcode(target_index : Int, pc : Int) -> Json {
 }
 
 ///|
+fn command_json_draw_opcode(
+  target_index : Int,
+  opcode : String,
+  arg0 : Json,
+  arg1 : Json,
+  extra : Int,
+) -> Json {
+  json_object({
+    "op": json_string("draw_opcode"),
+    "target": json_number(Double::from_int(target_index)),
+    "opcode": json_string(opcode),
+    "arg0": arg0,
+    "arg1": arg1,
+    "extra": json_number(Double::from_int(extra)),
+  })
+}
+
+///|
+fn normalize_looks_effect_name_for_draw(raw : String) -> Int? {
+  match raw.trim().to_lower() {
+    "color" => Some(1)
+    "fisheye" => Some(2)
+    "whirl" => Some(3)
+    "pixelate" => Some(4)
+    "mosaic" => Some(5)
+    "brightness" => Some(6)
+    "ghost" => Some(7)
+    _ => None
+  }
+}
+
+///|
+fn normalize_pen_color_param_for_draw(raw : String) -> Int? {
+  match raw.trim().to_lower() {
+    "color" => Some(1)
+    "saturation" => Some(2)
+    "brightness" => Some(3)
+    "transparency" => Some(4)
+    _ => None
+  }
+}
+
+///|
+fn literal_string_from_input_or_field(
+  block : ScratchBlock,
+  input_name : String,
+  field_name : String,
+) -> String? {
+  let from_input = match block.input_block_ids.get(input_name) {
+    Some(_) => None
+    None =>
+      match block.inputs.get(input_name) {
+        Some(raw_input) =>
+          match input_payload(raw_input) {
+            Some(payload) =>
+              match literal_value_from_payload(payload) {
+                Some(value) => {
+                  let text = json_to_string_value(value).trim().to_string()
+                  if text == "" {
+                    None
+                  } else {
+                    Some(text)
+                  }
+                }
+                None => None
+              }
+            None => None
+          }
+        None => None
+      }
+  }
+  match from_input {
+    Some(value) => Some(value)
+    None =>
+      match field_value(block, field_name) {
+        Some((raw, _)) => {
+          let text = raw.trim().to_string()
+          if text == "" {
+            None
+          } else {
+            Some(text)
+          }
+        }
+        None => None
+      }
+  }
+}
+
+///|
 fn command_is_host_tail(command : Json) -> Bool {
   match command {
     Object(obj) =>
@@ -326,7 +415,54 @@ fn opcode_uses_safe_host_opcode(opcode : String) -> Bool {
     | "sensing_resettimer"
     | "sensing_setdragmode"
     | "control_clear_counter"
-    | "control_incr_counter" => true
+    | "control_incr_counter"
+    | "motion_movesteps"
+    | "motion_turnright"
+    | "motion_turnleft"
+    | "motion_pointindirection"
+    | "motion_pointtowards"
+    | "motion_changexby"
+    | "motion_changeyby"
+    | "motion_setx"
+    | "motion_sety"
+    | "motion_gotoxy"
+    | "motion_goto"
+    | "motion_ifonedgebounce"
+    | "motion_setrotationstyle"
+    | "motion_align_scene"
+    | "motion_scroll_right"
+    | "motion_scroll_up"
+    | "looks_show"
+    | "looks_hide"
+    | "looks_hideallsprites"
+    | "looks_switchcostumeto"
+    | "looks_nextcostume"
+    | "looks_switchbackdropto"
+    | "looks_nextbackdrop"
+    | "looks_changeeffectby"
+    | "looks_seteffectto"
+    | "looks_cleargraphiceffects"
+    | "looks_changestretchby"
+    | "looks_setstretchto"
+    | "looks_gotofrontback"
+    | "looks_goforwardbackwardlayers"
+    | "looks_changesizeby"
+    | "looks_setsizeto"
+    | "looks_say"
+    | "looks_think"
+    | "pen_clear"
+    | "pen_stamp"
+    | "pen_penDown"
+    | "pen_penUp"
+    | "pen_setPenColorToColor"
+    | "pen_changePenColorParamBy"
+    | "pen_setPenColorParamTo"
+    | "pen_changePenSizeBy"
+    | "pen_setPenSizeTo"
+    | "pen_setPenHueToNumber"
+    | "pen_changePenHueBy"
+    | "pen_setPenShadeToNumber"
+    | "pen_changePenShadeBy" => true
     _ => false
   }
 }
@@ -1132,6 +1268,606 @@ fn compile_sequence_from_pc(
                     )
                   None => host_fallback_stmt
                 }
+              None => host_fallback_stmt
+            }
+          "motion_movesteps" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "STEPS",
+                depth + 1,
+                true,
+              ) {
+              Some(steps_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_movesteps",
+                    steps_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_turnright" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "DEGREES",
+                depth + 1,
+                true,
+              ) {
+              Some(degrees_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_turnright",
+                    degrees_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_turnleft" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "DEGREES",
+                depth + 1,
+                true,
+              ) {
+              Some(degrees_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_turnleft",
+                    degrees_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_pointindirection" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "DIRECTION",
+                depth + 1,
+                true,
+              ) {
+              Some(direction_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_pointindirection",
+                    direction_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_changexby" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "DX",
+                depth + 1,
+                true,
+              ) {
+              Some(dx_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_changexby",
+                    dx_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_changeyby" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "DY",
+                depth + 1,
+                true,
+              ) {
+              Some(dy_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_changeyby",
+                    dy_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_setx" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "X",
+                depth + 1,
+                true,
+              ) {
+              Some(x_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_setx",
+                    x_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_sety" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "Y",
+                depth + 1,
+                true,
+              ) {
+              Some(y_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "motion_sety",
+                    y_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "motion_gotoxy" =>
+            match
+              (
+                compile_number_expr_from_input(
+                  target,
+                  target_index,
+                  block,
+                  "X",
+                  depth + 1,
+                  true,
+                ),
+                compile_number_expr_from_input(
+                  target,
+                  target_index,
+                  block,
+                  "Y",
+                  depth + 1,
+                  true,
+                ),
+              ) {
+              (Some(x_expr), Some(y_expr)) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index, "motion_gotoxy", x_expr, y_expr, 0,
+                  ),
+                )
+              _ => host_fallback_stmt
+            }
+          "motion_ifonedgebounce" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "motion_ifonedgebounce",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "looks_show" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "looks_show",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "looks_hide" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "looks_hide",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "looks_hideallsprites" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "looks_hideallsprites",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "looks_nextcostume" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "looks_nextcostume",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "looks_changesizeby" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "CHANGE",
+                depth + 1,
+                true,
+              ) {
+              Some(delta_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "looks_changesizeby",
+                    delta_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "looks_setsizeto" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "SIZE",
+                depth + 1,
+                true,
+              ) {
+              Some(size_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "looks_setsizeto",
+                    size_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "looks_changeeffectby" =>
+            match
+              (
+                literal_string_from_input_or_field(block, "EFFECT", "EFFECT"),
+                compile_number_expr_from_input(
+                  target,
+                  target_index,
+                  block,
+                  "CHANGE",
+                  depth + 1,
+                  true,
+                ),
+              ) {
+              (Some(effect_name), Some(amount_expr)) =>
+                match normalize_looks_effect_name_for_draw(effect_name) {
+                  Some(effect_id) =>
+                    AotCompileStmtResult::Emit(
+                      command_json_draw_opcode(
+                        target_index,
+                        "looks_changeeffectby",
+                        amount_expr,
+                        expr_json_num(0.0),
+                        effect_id,
+                      ),
+                    )
+                  None => host_fallback_stmt
+                }
+              _ => host_fallback_stmt
+            }
+          "looks_seteffectto" =>
+            match
+              (
+                literal_string_from_input_or_field(block, "EFFECT", "EFFECT"),
+                compile_number_expr_from_input(
+                  target,
+                  target_index,
+                  block,
+                  "VALUE",
+                  depth + 1,
+                  true,
+                ),
+              ) {
+              (Some(effect_name), Some(amount_expr)) =>
+                match normalize_looks_effect_name_for_draw(effect_name) {
+                  Some(effect_id) =>
+                    AotCompileStmtResult::Emit(
+                      command_json_draw_opcode(
+                        target_index,
+                        "looks_seteffectto",
+                        amount_expr,
+                        expr_json_num(0.0),
+                        effect_id,
+                      ),
+                    )
+                  None => host_fallback_stmt
+                }
+              _ => host_fallback_stmt
+            }
+          "looks_cleargraphiceffects" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "looks_cleargraphiceffects",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "pen_clear" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "pen_clear",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "pen_stamp" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "pen_stamp",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "pen_penDown" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "pen_penDown",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "pen_penUp" =>
+            AotCompileStmtResult::Emit(
+              command_json_draw_opcode(
+                target_index,
+                "pen_penUp",
+                expr_json_num(0.0),
+                expr_json_num(0.0),
+                0,
+              ),
+            )
+          "pen_changePenColorParamBy" =>
+            match
+              (
+                literal_string_from_input_or_field(
+                  block, "COLOR_PARAM", "COLOR_PARAM",
+                ),
+                compile_number_expr_from_input(
+                  target,
+                  target_index,
+                  block,
+                  "VALUE",
+                  depth + 1,
+                  true,
+                ),
+              ) {
+              (Some(param_name), Some(value_expr)) =>
+                match normalize_pen_color_param_for_draw(param_name) {
+                  Some(param_id) =>
+                    AotCompileStmtResult::Emit(
+                      command_json_draw_opcode(
+                        target_index,
+                        "pen_changePenColorParamBy",
+                        value_expr,
+                        expr_json_num(0.0),
+                        param_id,
+                      ),
+                    )
+                  None => host_fallback_stmt
+                }
+              _ => host_fallback_stmt
+            }
+          "pen_setPenColorParamTo" =>
+            match
+              (
+                literal_string_from_input_or_field(
+                  block, "COLOR_PARAM", "COLOR_PARAM",
+                ),
+                compile_number_expr_from_input(
+                  target,
+                  target_index,
+                  block,
+                  "VALUE",
+                  depth + 1,
+                  true,
+                ),
+              ) {
+              (Some(param_name), Some(value_expr)) =>
+                match normalize_pen_color_param_for_draw(param_name) {
+                  Some(param_id) =>
+                    AotCompileStmtResult::Emit(
+                      command_json_draw_opcode(
+                        target_index,
+                        "pen_setPenColorParamTo",
+                        value_expr,
+                        expr_json_num(0.0),
+                        param_id,
+                      ),
+                    )
+                  None => host_fallback_stmt
+                }
+              _ => host_fallback_stmt
+            }
+          "pen_changePenSizeBy" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "SIZE",
+                depth + 1,
+                true,
+              ) {
+              Some(delta_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "pen_changePenSizeBy",
+                    delta_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "pen_setPenSizeTo" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "SIZE",
+                depth + 1,
+                true,
+              ) {
+              Some(size_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "pen_setPenSizeTo",
+                    size_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "pen_setPenHueToNumber" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "HUE",
+                depth + 1,
+                true,
+              ) {
+              Some(hue_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "pen_setPenHueToNumber",
+                    hue_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "pen_changePenHueBy" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "HUE",
+                depth + 1,
+                true,
+              ) {
+              Some(hue_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "pen_changePenHueBy",
+                    hue_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "pen_setPenShadeToNumber" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "SHADE",
+                depth + 1,
+                true,
+              ) {
+              Some(shade_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "pen_setPenShadeToNumber",
+                    shade_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
+              None => host_fallback_stmt
+            }
+          "pen_changePenShadeBy" =>
+            match
+              compile_number_expr_from_input(
+                target,
+                target_index,
+                block,
+                "SHADE",
+                depth + 1,
+                true,
+              ) {
+              Some(shade_expr) =>
+                AotCompileStmtResult::Emit(
+                  command_json_draw_opcode(
+                    target_index,
+                    "pen_changePenShadeBy",
+                    shade_expr,
+                    expr_json_num(0.0),
+                    0,
+                  ),
+                )
               None => host_fallback_stmt
             }
           "control_if" =>
