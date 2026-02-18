@@ -77,6 +77,23 @@ export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
   return [Shadow.SameBlockShadow, source.id]
 }
 
+// Special helper for boolean conditions - no primitive shadow support in Scratch
+export function fromBooleanSource(source: PrimitiveSource<boolean>): sb3.Input {
+  if (typeof source === 'boolean') {
+    // Primitive boolean values are represented as PositiveInteger
+    return [Shadow.SameBlockShadow, [InputType.PositiveInteger, source ? 1 : 0]]
+  }
+
+  // Boolean blocks should NOT have shadow primitives
+  // Use SameBlockShadow without fallback
+  if (isHikkakuBlock(source)) {
+    return [Shadow.SameBlockShadow, source.id]
+  }
+
+  // Fallback
+  return [Shadow.SameBlockShadow, source.id]
+}
+
 export const fromPrimitiveSourceColor = (
   color: PrimitiveSource<`#${string}` | (string & {})>,
 ): sb3.Input => {

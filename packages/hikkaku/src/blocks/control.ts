@@ -1,5 +1,9 @@
 import { InputType, Shadow } from 'sb3-types/enum'
-import { fromPrimitiveSource, menuInput } from '../core/block-helper'
+import {
+  fromBooleanSource,
+  fromPrimitiveSource,
+  menuInput,
+} from '../core/block-helper'
 import { attachStack, block, substack, valueBlock } from '../core/composer'
 import type { PrimitiveSource, VariableReference } from '../core/types'
 
@@ -58,8 +62,7 @@ export const repeatUntil = (
   const substackId = substack(handler)
   return block('control_repeat_until', {
     inputs: {
-      // Boolean conditions use Number type as fallback (no primitive boolean shadows in Scratch)
-      CONDITION: fromPrimitiveSource(InputType.Number, condition, 0),
+      CONDITION: fromBooleanSource(condition),
       ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
@@ -88,8 +91,7 @@ export const repeatWhile = (
   const substackId = substack(handler)
   return block('control_while', {
     inputs: {
-      // Boolean conditions use Number type as fallback (no primitive boolean shadows in Scratch)
-      CONDITION: fromPrimitiveSource(InputType.Number, condition, 0),
+      CONDITION: fromBooleanSource(condition),
       ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
@@ -196,8 +198,7 @@ export const wait = (seconds: PrimitiveSource<number>) => {
 export const waitUntil = (condition: PrimitiveSource<boolean>) => {
   return block('control_wait_until', {
     inputs: {
-      // Boolean conditions use Number type as fallback (no primitive boolean shadows in Scratch)
-      CONDITION: fromPrimitiveSource(InputType.Number, condition, 0),
+      CONDITION: fromBooleanSource(condition),
     },
   })
 }
@@ -225,8 +226,7 @@ export const ifThen = (
   const substackId = substack(handler)
   return block('control_if', {
     inputs: {
-      // Boolean conditions use Number type as fallback (no primitive boolean shadows in Scratch)
-      CONDITION: fromPrimitiveSource(InputType.Number, condition, 0),
+      CONDITION: fromBooleanSource(condition),
       ...(substackId ? { SUBSTACK: [Shadow.NoShadow, substackId] } : {}),
     },
   })
@@ -258,8 +258,7 @@ export const ifElse = (
   const elseSubstackId = substack(elseHandler)
   return block('control_if_else', {
     inputs: {
-      // Boolean conditions use Number type as fallback (no primitive boolean shadows in Scratch)
-      CONDITION: fromPrimitiveSource(InputType.Number, condition, 0),
+      CONDITION: fromBooleanSource(condition),
       ...(thenSubstackId
         ? { SUBSTACK: [Shadow.NoShadow, thenSubstackId] }
         : {}),
