@@ -1,5 +1,5 @@
 import { InputType, Shadow } from 'sb3-types/enum'
-import { fromPrimitiveSource } from '../core/block-helper'
+import { fromBooleanSource, fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, valueBlock } from '../core/composer'
 import type { HikkakuBlock, PrimitiveSource } from '../core/types'
 
@@ -323,6 +323,7 @@ export const callProcedure = (
   let proccode = ''
   let argumentIds: string[] = []
   let inputs: Record<string, PrimitiveSource<string | number | boolean>> = {}
+  let procedureReference: ProcedureDefinitionReference | null = null
 
   if (typeof proccodeOrReference === 'string') {
     proccode = proccodeOrReference
@@ -330,7 +331,7 @@ export const callProcedure = (
     inputs = (typeof inputsOrWarp === 'object' ? inputsOrWarp : undefined) ?? {}
     warp = typeof inputsOrWarp === 'boolean' ? inputsOrWarp : warp
   } else {
-    const procedureReference =
+    procedureReference =
       'reference' in proccodeOrReference
         ? proccodeOrReference.reference
         : proccodeOrReference
@@ -358,14 +359,24 @@ export const callProcedure = (
     }
   }
 
+  // Build argument type map for proper input conversion
+  const argumentTypeMap: Record<string, 'boolean' | 'stringOrNumber'> = {}
+  if (procedureReference) {
+    for (const arg of Object.values(procedureReference.arguments)) {
+      argumentTypeMap[arg.id] = arg.type
+    }
+  }
+
   const resolvedInputs: Record<
     string,
     ReturnType<typeof fromPrimitiveSource>
   > = {}
   for (const [key, value] of Object.entries(inputs)) {
-    // Dynamic procedure arguments default to String type
-    // TODO: Track argument types in procedure definition for proper InputType
-    resolvedInputs[key] = fromPrimitiveSource(InputType.String, value, '')
+    if (argumentTypeMap[key] === 'boolean') {
+      resolvedInputs[key] = fromBooleanSource(value as PrimitiveSource<boolean>)
+    } else {
+      resolvedInputs[key] = fromPrimitiveSource(InputType.String, value, '')
+    }
   }
   return block('procedures_call', {
     inputs: resolvedInputs,
