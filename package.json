@@ -19,7 +19,7 @@
     "build": "turbo run build"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.0",
+    "@biomejs/biome": "^2.4.2",
     "@changesets/cli": "^2.29.8",
     "turbo": "^2.8.9",
     "@types/bun": "latest"

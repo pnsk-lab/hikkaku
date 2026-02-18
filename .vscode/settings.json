@@ -17,5 +17,6 @@
   },
   "[vue]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "vitest.disableWorkspaceWarning": true
 }

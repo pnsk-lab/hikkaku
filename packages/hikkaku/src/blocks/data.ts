@@ -8,7 +8,7 @@ import type {
   VariableReference,
 } from '../core/types'
 
-export type ListIndex = PrimitiveSource<number>
+export type ListIndex = PrimitiveSource<number | string>
 
 const toField = (field: VariableReference | ListReference): Fields => [
   field.name,
@@ -216,7 +216,7 @@ export const addToList = (
 export const deleteOfList = (list: ListReference, index: ListIndex) => {
   return block('data_deleteoflist', {
     inputs: {
-      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
+      INDEX: fromPrimitiveSource(InputType.String, index, 1),
     },
     fields: {
       LIST: toField(list),
@@ -271,7 +271,7 @@ export const insertAtList = (
 ) => {
   return block('data_insertatlist', {
     inputs: {
-      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
+      INDEX: fromPrimitiveSource(InputType.String, index, 1),
       ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
@@ -304,7 +304,7 @@ export const replaceItemOfList = (
 ) => {
   return block('data_replaceitemoflist', {
     inputs: {
-      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
+      INDEX: fromPrimitiveSource(InputType.String, index, 1),
       ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
@@ -332,7 +332,7 @@ export const replaceItemOfList = (
 export const getItemOfList = (list: ListReference, index: ListIndex) => {
   return valueBlock('data_itemoflist', {
     inputs: {
-      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
+      INDEX: fromPrimitiveSource(InputType.String, index, 1),
     },
     fields: {
       LIST: toField(list),
