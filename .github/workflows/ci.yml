@@ -58,6 +58,8 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          name: hikkaku-ci
+          flags: tests
           files: |
             packages/hikkaku/coverage/lcov.info
             packages/testing/coverage/lcov.info
