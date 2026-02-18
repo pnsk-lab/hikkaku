@@ -1,3 +1,4 @@
+import { InputType } from 'sb3-types/enum'
 import {
   fromPrimitiveSource,
   fromPrimitiveSourceColor,
@@ -404,7 +405,11 @@ export const isLoud = () => {
 export const askAndWait = (question: PrimitiveSource<string>) => {
   return block('sensing_askandwait', {
     inputs: {
-      QUESTION: fromPrimitiveSource(question),
+      QUESTION: fromPrimitiveSource(
+        InputType.String,
+        question,
+        "What's your name?",
+      ),
     },
   })
 }

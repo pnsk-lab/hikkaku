@@ -1,3 +1,4 @@
+import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
@@ -21,8 +22,8 @@ import type { PrimitiveSource } from '../core/types'
 export const add = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
   return valueBlock('operator_add', {
     inputs: {
-      NUM1: fromPrimitiveSource(a),
-      NUM2: fromPrimitiveSource(b),
+      NUM1: fromPrimitiveSource(InputType.Number, a, 0),
+      NUM2: fromPrimitiveSource(InputType.Number, b, 0),
     },
   })
 }
@@ -49,8 +50,8 @@ export const subtract = (
 ) => {
   return valueBlock('operator_subtract', {
     inputs: {
-      NUM1: fromPrimitiveSource(a),
-      NUM2: fromPrimitiveSource(b),
+      NUM1: fromPrimitiveSource(InputType.Number, a, 0),
+      NUM2: fromPrimitiveSource(InputType.Number, b, 0),
     },
   })
 }
@@ -77,8 +78,8 @@ export const multiply = (
 ) => {
   return valueBlock('operator_multiply', {
     inputs: {
-      NUM1: fromPrimitiveSource(a),
-      NUM2: fromPrimitiveSource(b),
+      NUM1: fromPrimitiveSource(InputType.Number, a, 0),
+      NUM2: fromPrimitiveSource(InputType.Number, b, 0),
     },
   })
 }
@@ -105,8 +106,8 @@ export const divide = (
 ) => {
   return valueBlock('operator_divide', {
     inputs: {
-      NUM1: fromPrimitiveSource(a),
-      NUM2: fromPrimitiveSource(b),
+      NUM1: fromPrimitiveSource(InputType.Number, a, 0),
+      NUM2: fromPrimitiveSource(InputType.Number, b, 0),
     },
   })
 }
@@ -133,8 +134,8 @@ export const lt = (
 ) => {
   return valueBlock('operator_lt', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(a),
-      OPERAND2: fromPrimitiveSource(b),
+      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
+      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
     },
   })
 }
@@ -161,8 +162,8 @@ export const equals = (
 ) => {
   return valueBlock('operator_equals', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(a),
-      OPERAND2: fromPrimitiveSource(b),
+      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
+      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
     },
   })
 }
@@ -189,8 +190,8 @@ export const gt = (
 ) => {
   return valueBlock('operator_gt', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(a),
-      OPERAND2: fromPrimitiveSource(b),
+      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
+      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
     },
   })
 }
@@ -217,8 +218,8 @@ export const and = (
 ) => {
   return valueBlock('operator_and', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(a),
-      OPERAND2: fromPrimitiveSource(b),
+      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
+      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
     },
   })
 }
@@ -245,8 +246,8 @@ export const or = (
 ) => {
   return valueBlock('operator_or', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(a),
-      OPERAND2: fromPrimitiveSource(b),
+      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
+      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
     },
   })
 }
@@ -269,7 +270,7 @@ export const or = (
 export const not = (operand: PrimitiveSource<boolean>) => {
   return valueBlock('operator_not', {
     inputs: {
-      OPERAND: fromPrimitiveSource(operand),
+      OPERAND: fromPrimitiveSource(InputType.Number, operand, 0),
     },
   })
 }
@@ -296,8 +297,8 @@ export const random = (
 ) => {
   return valueBlock('operator_random', {
     inputs: {
-      FROM: fromPrimitiveSource(from),
-      TO: fromPrimitiveSource(to),
+      FROM: fromPrimitiveSource(InputType.Number, from, 1),
+      TO: fromPrimitiveSource(InputType.Number, to, 10),
     },
   })
 }
@@ -324,8 +325,8 @@ export const join = (
 ) => {
   return valueBlock('operator_join', {
     inputs: {
-      STRING1: fromPrimitiveSource(a),
-      STRING2: fromPrimitiveSource(b),
+      STRING1: fromPrimitiveSource(InputType.String, a, 'apple'),
+      STRING2: fromPrimitiveSource(InputType.String, b, 'banana'),
     },
   })
 }
@@ -352,8 +353,8 @@ export const letterOf = (
 ) => {
   return valueBlock('operator_letter_of', {
     inputs: {
-      LETTER: fromPrimitiveSource(letter),
-      STRING: fromPrimitiveSource(text),
+      LETTER: fromPrimitiveSource(InputType.PositiveInteger, letter, 1),
+      STRING: fromPrimitiveSource(InputType.String, text, 'apple'),
     },
   })
 }
@@ -376,7 +377,7 @@ export const letterOf = (
 export const length = (text: PrimitiveSource<string>) => {
   return valueBlock('operator_length', {
     inputs: {
-      STRING: fromPrimitiveSource(text),
+      STRING: fromPrimitiveSource(InputType.String, text, 'apple'),
     },
   })
 }
@@ -403,8 +404,8 @@ export const contains = (
 ) => {
   return valueBlock('operator_contains', {
     inputs: {
-      STRING1: fromPrimitiveSource(text),
-      STRING2: fromPrimitiveSource(substring),
+      STRING1: fromPrimitiveSource(InputType.String, text, 'apple'),
+      STRING2: fromPrimitiveSource(InputType.String, substring, 'a'),
     },
   })
 }
@@ -428,8 +429,8 @@ export const contains = (
 export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
   return valueBlock('operator_mod', {
     inputs: {
-      NUM1: fromPrimitiveSource(a),
-      NUM2: fromPrimitiveSource(b),
+      NUM1: fromPrimitiveSource(InputType.Number, a, 0),
+      NUM2: fromPrimitiveSource(InputType.Number, b, 0),
     },
   })
 }
@@ -452,7 +453,7 @@ export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
 export const round = (value: PrimitiveSource<number>) => {
   return valueBlock('operator_round', {
     inputs: {
-      NUM: fromPrimitiveSource(value),
+      NUM: fromPrimitiveSource(InputType.Number, value, 0),
     },
   })
 }
@@ -495,7 +496,7 @@ export const mathop = (
 ) => {
   return valueBlock('operator_mathop', {
     inputs: {
-      NUM: fromPrimitiveSource(value),
+      NUM: fromPrimitiveSource(InputType.Number, value, 0),
     },
     fields: {
       OPERATOR: [operator, null],

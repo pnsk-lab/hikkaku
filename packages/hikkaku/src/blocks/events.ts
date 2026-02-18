@@ -212,7 +212,7 @@ export const whenGreaterThan = (
   const res = block('event_whengreaterthan', {
     topLevel: true,
     inputs: {
-      VALUE: fromPrimitiveSource(value),
+      VALUE: fromPrimitiveSource(InputType.Number, value, 10),
     },
     fields: {
       WHENGREATERTHANMENU: [menu, null],
@@ -246,7 +246,7 @@ export const broadcast = (message: PrimitiveSource<string>) => {
               Shadow.SameBlockShadow,
               [InputType.Broadcast, message, message /* id */],
             ] as Input)
-          : fromPrimitiveSource(message),
+          : fromPrimitiveSource(InputType.Broadcast, message, 'message1'),
     },
   })
 }
@@ -275,7 +275,7 @@ export const broadcastAndWait = (message: PrimitiveSource<string>) => {
               Shadow.SameBlockShadow,
               [InputType.Broadcast, message, message /* id */],
             ] as Input)
-          : fromPrimitiveSource(message),
+          : fromPrimitiveSource(InputType.Broadcast, message, 'message1'),
     },
   })
 }

@@ -1,3 +1,4 @@
+import { InputType } from 'sb3-types/enum'
 import {
   fromPrimitiveSource,
   menuInput,
@@ -120,7 +121,7 @@ export const setSoundEffectTo = (
 ) => {
   return block('sound_seteffectto', {
     inputs: {
-      VALUE: fromPrimitiveSource(value),
+      VALUE: fromPrimitiveSource(InputType.Number, value, 10),
     },
     fields: {
       EFFECT: [effect, null],
@@ -150,7 +151,7 @@ export const changeSoundEffectBy = (
 ) => {
   return block('sound_changeeffectby', {
     inputs: {
-      VALUE: fromPrimitiveSource(value),
+      VALUE: fromPrimitiveSource(InputType.Number, value, 10),
     },
     fields: {
       EFFECT: [effect, null],
@@ -194,7 +195,7 @@ export const clearEffects = () => {
 export const setVolumeTo = (value: PrimitiveSource<number>) => {
   return block('sound_setvolumeto', {
     inputs: {
-      VOLUME: fromPrimitiveSource(value),
+      VOLUME: fromPrimitiveSource(InputType.Number, value, 10),
     },
   })
 }
@@ -217,7 +218,7 @@ export const setVolumeTo = (value: PrimitiveSource<number>) => {
 export const changeVolumeBy = (value: PrimitiveSource<number>) => {
   return block('sound_changevolumeby', {
     inputs: {
-      VOLUME: fromPrimitiveSource(value),
+      VOLUME: fromPrimitiveSource(InputType.Number, value, 10),
     },
   })
 }

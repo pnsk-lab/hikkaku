@@ -1,3 +1,4 @@
+import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
@@ -24,8 +25,8 @@ export const playDrumForBeats = (
 ) => {
   return block('music_playDrumForBeats', {
     inputs: {
-      DRUM: fromPrimitiveSource(drum),
-      BEATS: fromPrimitiveSource(beats),
+      DRUM: fromPrimitiveSource(InputType.Number, drum, 1),
+      BEATS: fromPrimitiveSource(InputType.Number, beats, 0.25),
     },
   })
 }
@@ -52,8 +53,8 @@ export const midiPlayDrumForBeats = (
 ) => {
   return block('music_midiPlayDrumForBeats', {
     inputs: {
-      DRUM: fromPrimitiveSource(drum),
-      BEATS: fromPrimitiveSource(beats),
+      DRUM: fromPrimitiveSource(InputType.Number, drum, 1),
+      BEATS: fromPrimitiveSource(InputType.Number, beats, 0.25),
     },
   })
 }
@@ -76,7 +77,7 @@ export const midiPlayDrumForBeats = (
 export const restForBeats = (beats: PrimitiveSource<number>) => {
   return block('music_restForBeats', {
     inputs: {
-      BEATS: fromPrimitiveSource(beats),
+      BEATS: fromPrimitiveSource(InputType.Number, beats, 0.25),
     },
   })
 }
@@ -103,8 +104,8 @@ export const playNoteForBeats = (
 ) => {
   return block('music_playNoteForBeats', {
     inputs: {
-      NOTE: fromPrimitiveSource(note),
-      BEATS: fromPrimitiveSource(beats),
+      NOTE: fromPrimitiveSource(InputType.Number, note, 60),
+      BEATS: fromPrimitiveSource(InputType.Number, beats, 0.25),
     },
   })
 }
@@ -127,7 +128,7 @@ export const playNoteForBeats = (
 export const setInstrument = (instrument: PrimitiveSource<number>) => {
   return block('music_setInstrument', {
     inputs: {
-      INSTRUMENT: fromPrimitiveSource(instrument),
+      INSTRUMENT: fromPrimitiveSource(InputType.Number, instrument, 1),
     },
   })
 }
@@ -150,7 +151,7 @@ export const setInstrument = (instrument: PrimitiveSource<number>) => {
 export const midiSetInstrument = (instrument: PrimitiveSource<number>) => {
   return block('music_midiSetInstrument', {
     inputs: {
-      INSTRUMENT: fromPrimitiveSource(instrument),
+      INSTRUMENT: fromPrimitiveSource(InputType.Number, instrument, 1),
     },
   })
 }
@@ -173,7 +174,7 @@ export const midiSetInstrument = (instrument: PrimitiveSource<number>) => {
 export const setTempo = (tempo: PrimitiveSource<number>) => {
   return block('music_setTempo', {
     inputs: {
-      TEMPO: fromPrimitiveSource(tempo),
+      TEMPO: fromPrimitiveSource(InputType.Number, tempo, 20),
     },
   })
 }
@@ -196,7 +197,7 @@ export const setTempo = (tempo: PrimitiveSource<number>) => {
 export const changeTempo = (tempo: PrimitiveSource<number>) => {
   return block('music_changeTempo', {
     inputs: {
-      TEMPO: fromPrimitiveSource(tempo),
+      TEMPO: fromPrimitiveSource(InputType.Number, tempo, 20),
     },
   })
 }

@@ -1,4 +1,5 @@
 import type { Fields } from 'sb3-types'
+import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type {
@@ -59,7 +60,7 @@ export const setVariableTo = (
 ) => {
   return block('data_setvariableto', {
     inputs: {
-      VALUE: fromPrimitiveSource(value),
+      VALUE: fromPrimitiveSource(InputType.String, value, '0'),
     },
     fields: {
       VARIABLE: toField(variable),
@@ -89,7 +90,7 @@ export const changeVariableBy = (
 ) => {
   return block('data_changevariableby', {
     inputs: {
-      VALUE: fromPrimitiveSource(value),
+      VALUE: fromPrimitiveSource(InputType.String, value, '0'),
     },
     fields: {
       VARIABLE: toField(variable),
@@ -188,7 +189,7 @@ export const addToList = (
 ) => {
   return block('data_addtolist', {
     inputs: {
-      ITEM: fromPrimitiveSource(item),
+      ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
       LIST: toField(list),
@@ -215,7 +216,7 @@ export const addToList = (
 export const deleteOfList = (list: ListReference, index: ListIndex) => {
   return block('data_deleteoflist', {
     inputs: {
-      INDEX: fromPrimitiveSource(index),
+      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
     },
     fields: {
       LIST: toField(list),
@@ -270,8 +271,8 @@ export const insertAtList = (
 ) => {
   return block('data_insertatlist', {
     inputs: {
-      INDEX: fromPrimitiveSource(index),
-      ITEM: fromPrimitiveSource(item),
+      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
+      ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
       LIST: toField(list),
@@ -303,8 +304,8 @@ export const replaceItemOfList = (
 ) => {
   return block('data_replaceitemoflist', {
     inputs: {
-      INDEX: fromPrimitiveSource(index),
-      ITEM: fromPrimitiveSource(item),
+      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
+      ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
       LIST: toField(list),
@@ -331,7 +332,7 @@ export const replaceItemOfList = (
 export const getItemOfList = (list: ListReference, index: ListIndex) => {
   return valueBlock('data_itemoflist', {
     inputs: {
-      INDEX: fromPrimitiveSource(index),
+      INDEX: fromPrimitiveSource(InputType.PositiveInteger, index, 1),
     },
     fields: {
       LIST: toField(list),
@@ -361,7 +362,7 @@ export const getItemNumOfList = (
 ) => {
   return valueBlock('data_itemnumoflist', {
     inputs: {
-      ITEM: fromPrimitiveSource(item),
+      ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
       LIST: toField(list),
@@ -414,7 +415,7 @@ export const listContainsItem = (
 ) => {
   return valueBlock('data_listcontainsitem', {
     inputs: {
-      ITEM: fromPrimitiveSource(item),
+      ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
     fields: {
       LIST: toField(list),
