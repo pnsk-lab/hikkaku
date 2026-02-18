@@ -41,7 +41,19 @@ export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
   defaultValue?: T,
 ): sb3.Input {
   // Determine if we're using the new signature or old signature
-  const isNewSignature = typeof inputTypeOrSource === 'number'
+  // New signature: first param is InputType (one of the specific values) AND second param is provided
+  const validInputTypes = [
+    InputType.Number,
+    InputType.PositiveInteger,
+    InputType.String,
+    InputType.Broadcast,
+    InputType.Color,
+  ]
+  const isNewSignature =
+    typeof inputTypeOrSource === 'number' &&
+    validInputTypes.includes(inputTypeOrSource as number) &&
+    sourceOrUndefined !== undefined
+
   const inputType = isNewSignature ? inputTypeOrSource : undefined
   const source = isNewSignature
     ? (sourceOrUndefined as PrimitiveSource<T>)
