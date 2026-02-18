@@ -35,7 +35,7 @@ Example:
 ```ts
 import { procedureBoolean } from 'hikkaku/blocks'
 
-procedureBoolean(undefined as any)
+procedureBoolean('flag')
 ```
 
 ## procedureStringOrNumber(name)
@@ -50,7 +50,7 @@ Example:
 ```ts
 import { procedureStringOrNumber } from 'hikkaku/blocks'
 
-procedureStringOrNumber(undefined as any)
+procedureStringOrNumber('value')
 ```
 
 ## defineProcedure(proclist)
@@ -112,7 +112,13 @@ Example:
 ```ts
 import { argumentReporterStringNumber } from 'hikkaku/blocks'
 
-argumentReporterStringNumber(reference as any)
+argumentReporterStringNumber({
+isProcedureArgument: true,
+name: 'value',
+type: 'stringOrNumber',
+id: 'var-id',
+getter: () => valueBlock('argument_reporter_string_number', { fields: { VALUE: ['value', null] } }),
+})
 ```
 
 ## argumentReporterBoolean(reference)
@@ -127,5 +133,11 @@ Example:
 ```ts
 import { argumentReporterBoolean } from 'hikkaku/blocks'
 
-argumentReporterBoolean(reference as any)
+argumentReporterBoolean({
+isProcedureArgument: true,
+name: 'flag',
+type: 'boolean',
+id: 'flag-id',
+getter: () => valueBlock('argument_reporter_boolean', { fields: { VALUE: ['flag', null] } }),
+})
 ```
