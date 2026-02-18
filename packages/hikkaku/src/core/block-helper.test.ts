@@ -17,6 +17,10 @@ describe('core/block-helper', () => {
       Shadow.SameBlockShadow,
       [InputType.Number, 10],
     ])
+    expect(fromPrimitiveSource(InputType.String, 42)).toEqual([
+      Shadow.SameBlockShadow,
+      [InputType.Number, 42],
+    ])
     expect(fromPrimitiveSource(InputType.String, 'hello')).toEqual([
       Shadow.SameBlockShadow,
       [InputType.String, 'hello'],
