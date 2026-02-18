@@ -32,7 +32,7 @@ jobs:
             ~/.bun/install
             ~/.moon
             ~/.turbo
-            .turbo
+            **/.turbo
           key: ${{ runner.os }}-bun-moonbit-turbo-${{ hashFiles('bun.lock', 'turbo.json', 'package.json') }}
           restore-keys: |
             ${{ runner.os }}-bun-moonbit-turbo-
