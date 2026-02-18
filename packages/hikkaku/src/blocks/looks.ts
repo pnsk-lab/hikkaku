@@ -66,7 +66,7 @@ export const sayForSecs = (
   return block('looks_sayforsecs', {
     inputs: {
       MESSAGE: fromPrimitiveSource(InputType.String, message, 'Hello!'),
-      SECS: fromPrimitiveSource(seconds),
+      SECS: fromPrimitiveSource(InputType.Number, seconds, 2),
     },
   })
 }
@@ -117,7 +117,7 @@ export const thinkForSecs = (
   return block('looks_thinkforsecs', {
     inputs: {
       MESSAGE: fromPrimitiveSource(InputType.String, message, 'Hello!'),
-      SECS: fromPrimitiveSource(seconds),
+      SECS: fromPrimitiveSource(InputType.Number, seconds, 2),
     },
   })
 }
@@ -332,7 +332,7 @@ export const setLooksEffectTo = (
 ) => {
   return block('looks_seteffectto', {
     inputs: {
-      VALUE: fromPrimitiveSource(value),
+      VALUE: fromPrimitiveSource(InputType.Number, value, 100),
     },
     fields: {
       EFFECT: [effect, null],

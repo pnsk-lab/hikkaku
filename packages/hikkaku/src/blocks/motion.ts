@@ -48,8 +48,8 @@ export const gotoXY = (
 ) => {
   return block('motion_gotoxy', {
     inputs: {
-      X: fromPrimitiveSource(x),
-      Y: fromPrimitiveSource(y),
+      X: fromPrimitiveSource(InputType.Number, x, 0),
+      Y: fromPrimitiveSource(InputType.Number, y, 0),
     },
   })
 }
@@ -118,7 +118,7 @@ export const changeYBy = (dy: PrimitiveSource<number>) => {
 export const setX = (x: PrimitiveSource<number>) => {
   return block('motion_setx', {
     inputs: {
-      X: fromPrimitiveSource(x),
+      X: fromPrimitiveSource(InputType.Number, x, 0),
     },
   })
 }
@@ -141,7 +141,7 @@ export const setX = (x: PrimitiveSource<number>) => {
 export const setY = (y: PrimitiveSource<number>) => {
   return block('motion_sety', {
     inputs: {
-      Y: fromPrimitiveSource(y),
+      Y: fromPrimitiveSource(InputType.Number, y, 0),
     },
   })
 }
@@ -196,7 +196,7 @@ export const menuOfGoTo = (target: string = GOTO_RANDOM) => {
 export const turnRight = (degrees: PrimitiveSource<number>) => {
   return block('motion_turnright', {
     inputs: {
-      DEGREES: fromPrimitiveSource(degrees),
+      DEGREES: fromPrimitiveSource(InputType.Number, degrees, 15),
     },
   })
 }
@@ -219,7 +219,7 @@ export const turnRight = (degrees: PrimitiveSource<number>) => {
 export const turnLeft = (degrees: PrimitiveSource<number>) => {
   return block('motion_turnleft', {
     inputs: {
-      DEGREES: fromPrimitiveSource(degrees),
+      DEGREES: fromPrimitiveSource(InputType.Number, degrees, 15),
     },
   })
 }
@@ -303,9 +303,9 @@ export const glide = (
 ) => {
   return block('motion_glidesecstoxy', {
     inputs: {
-      SECS: fromPrimitiveSource(seconds),
-      X: fromPrimitiveSource(x),
-      Y: fromPrimitiveSource(y),
+      SECS: fromPrimitiveSource(InputType.Number, seconds, 1),
+      X: fromPrimitiveSource(InputType.Number, x, 0),
+      Y: fromPrimitiveSource(InputType.Number, y, 0),
     },
   })
 }
@@ -332,7 +332,7 @@ export const glideTo = (
 ) => {
   return block('motion_glideto', {
     inputs: {
-      SECS: fromPrimitiveSource(seconds),
+      SECS: fromPrimitiveSource(InputType.Number, seconds, 1),
       TO: menuInput(target, menuOfGlideTo),
     },
   })
