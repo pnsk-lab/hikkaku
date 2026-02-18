@@ -375,7 +375,11 @@ export const callProcedure = (
     if (argumentTypeMap[key] === 'boolean') {
       resolvedInputs[key] = fromBooleanSource(value as PrimitiveSource<boolean>)
     } else {
-      resolvedInputs[key] = fromPrimitiveSource(InputType.String, value, '')
+      resolvedInputs[key] = fromPrimitiveSource(
+        InputType.String,
+        value as PrimitiveSource<string | number>,
+        '',
+      )
     }
   }
   return block('procedures_call', {

@@ -1,3 +1,4 @@
+import { InputType, Shadow } from 'sb3-types/enum'
 import { describe, expect, test } from 'vite-plus/test'
 import {
   fromPrimitiveSource,
@@ -9,19 +10,14 @@ import {
   unwrapCostumeSource,
   unwrapSoundSource,
 } from './block-helper'
-import { InputType, Shadow } from './sb3-enum'
 
 describe('core/block-helper', () => {
   test('converts primitives into Scratch inputs', () => {
-    expect(fromPrimitiveSource(10)).toEqual([
+    expect(fromPrimitiveSource(InputType.Number, 10)).toEqual([
       Shadow.SameBlockShadow,
       [InputType.Number, 10],
     ])
-    expect(fromPrimitiveSource(true)).toEqual([
-      Shadow.SameBlockShadow,
-      [InputType.PositiveInteger, 1],
-    ])
-    expect(fromPrimitiveSource('hello')).toEqual([
+    expect(fromPrimitiveSource(InputType.String, 'hello')).toEqual([
       Shadow.SameBlockShadow,
       [InputType.String, 'hello'],
     ])
@@ -29,7 +25,11 @@ describe('core/block-helper', () => {
 
   test('supports block and color inputs', () => {
     const block = { isBlock: true, id: 'abc' } as const
-    expect(fromPrimitiveSource(block)).toEqual([Shadow.SameBlockShadow, 'abc'])
+    expect(fromPrimitiveSource(InputType.String, block, 'fallback')).toEqual([
+      Shadow.DiffBlockShadow,
+      'abc',
+      [InputType.String, 'fallback'],
+    ])
     expect(fromPrimitiveSourceColor('#ff00ff')).toEqual([
       Shadow.SameBlockShadow,
       [InputType.Color, '#ff00ff'],

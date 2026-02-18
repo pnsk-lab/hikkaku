@@ -1,4 +1,5 @@
 import type * as sb3 from 'sb3-types'
+import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from './block-helper'
 import { block, createBlocks, valueBlock } from './composer'
 import type { Monitor } from './monitors'
@@ -140,7 +141,7 @@ export class Target<IsStage extends boolean = boolean> {
       set: (value) =>
         block('data_setvariableto', {
           inputs: {
-            VALUE: fromPrimitiveSource(value),
+            VALUE: fromPrimitiveSource(InputType.String, value),
           },
           fields: {
             VARIABLE: [name, id],

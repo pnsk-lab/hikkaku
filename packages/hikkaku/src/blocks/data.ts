@@ -8,7 +8,7 @@ import type {
   VariableReference,
 } from '../core/types'
 
-export type ListIndex = PrimitiveSource<number | string>
+export type ListIndex = PrimitiveSource<number>
 
 const toField = (field: VariableReference | ListReference): Fields => [
   field.name,

@@ -1,3 +1,4 @@
+import { Shadow } from 'sb3-types/enum'
 import { describe, expect, test } from 'vite-plus/test'
 import {
   attachStack,
@@ -6,7 +7,6 @@ import {
   substack,
   valueBlock,
 } from './composer'
-import { Shadow } from './sb3-enum'
 
 describe('core/composer', () => {
   test('links statement blocks and layouts top-level blocks', () => {
