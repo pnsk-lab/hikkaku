@@ -1,5 +1,4 @@
-import type { Input } from 'sb3-types'
-import { InputType, Shadow } from 'sb3-types/enum'
+import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
@@ -240,13 +239,11 @@ export const whenGreaterThan = (
 export const broadcast = (message: PrimitiveSource<string>) => {
   return block('event_broadcast', {
     inputs: {
-      BROADCAST_INPUT:
-        typeof message === 'string'
-          ? ([
-              Shadow.SameBlockShadow,
-              [InputType.Broadcast, message, message /* id */],
-            ] as Input)
-          : fromPrimitiveSource(InputType.Broadcast, message, 'message1'),
+      BROADCAST_INPUT: fromPrimitiveSource(
+        InputType.Broadcast,
+        message,
+        'message1',
+      ),
     },
   })
 }
@@ -269,13 +266,11 @@ export const broadcast = (message: PrimitiveSource<string>) => {
 export const broadcastAndWait = (message: PrimitiveSource<string>) => {
   return block('event_broadcastandwait', {
     inputs: {
-      BROADCAST_INPUT:
-        typeof message === 'string'
-          ? ([
-              Shadow.SameBlockShadow,
-              [InputType.Broadcast, message, message /* id */],
-            ] as Input)
-          : fromPrimitiveSource(InputType.Broadcast, message, 'message1'),
+      BROADCAST_INPUT: fromPrimitiveSource(
+        InputType.Broadcast,
+        message,
+        'message1',
+      ),
     },
   })
 }

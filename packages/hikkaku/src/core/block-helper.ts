@@ -25,7 +25,7 @@ function isShadowBlock(blockId: string): boolean {
 
 // Helper function to get default values for each InputType
 function getDefaultValue(
-  inputType: InputType.All,
+  inputType: PrimitiveInputType,
 ): PrimitiveAvailableOnScratch {
   switch (inputType) {
     case InputType.Number:
@@ -45,26 +45,26 @@ function getDefaultValue(
       return 0
   }
 }
-type MappingToPrimitive<T extends InputType.All> = T extends InputType.Number
-  ? number
-  : T extends InputType.PositiveNumber
+type MappingToPrimitive<T extends PrimitiveInputType> =
+  T extends InputType.Number
     ? number
-    : T extends InputType.Integer
+    : T extends InputType.PositiveNumber
       ? number
-      : T extends InputType.Angle
+      : T extends InputType.Integer
         ? number
-        : T extends InputType.PositiveInteger
+        : T extends InputType.Angle
           ? number
-          : T extends InputType.String
-            ? string | number
-            : T extends InputType.Broadcast
-              ? string
-              : T extends InputType.Color
+          : T extends InputType.PositiveInteger
+            ? number
+            : T extends InputType.String
+              ? string | number
+              : T extends InputType.Broadcast
                 ? string
-                : never
-export function fromPrimitiveSource<
-  T extends InputType.All & sb3.InputPrimitive['0'],
->(
+                : T extends InputType.Color
+                  ? string
+                  : never
+type PrimitiveInputType = sb3.InputPrimitive['0']
+export function fromPrimitiveSource<T extends PrimitiveInputType>(
   inputType: T,
   source: PrimitiveSource<MappingToPrimitive<T>>,
   defaultValue?: MappingToPrimitive<T>,
@@ -84,10 +84,36 @@ export function fromPrimitiveSource<
     return [
       Shadow.DiffBlockShadow,
       source.id,
-      [inputType, defaultValue] as sb3.InputPrimitive,
+      createInput(inputType, defaultValue),
     ]
   }
-  return [Shadow.SameBlockShadow, [inputType, source] as sb3.InputPrimitive]
+  return [Shadow.SameBlockShadow, createInput(inputType, source)]
+}
+
+function createInput(
+  inputType: PrimitiveInputType,
+  value: string | number,
+): sb3.InputPrimitive {
+  switch (inputType) {
+    case InputType.Number:
+    case InputType.PositiveNumber:
+    case InputType.Integer:
+    case InputType.Angle:
+    case InputType.PositiveInteger:
+      return [inputType, Number(value)]
+    case InputType.String:
+      return [inputType, String(value)]
+    case InputType.Broadcast:
+      return [inputType, String(value), String(value) /* id */]
+    case InputType.Color:
+      return [inputType, String(value) as `#${string}`]
+    case InputType.Variable:
+    case InputType.List:
+      throw new Error('unimplemented')
+    default:
+      inputType satisfies never
+      throw new Error(`Unsupported input type: ${inputType}`)
+  }
 }
 
 // Special helper for boolean conditions - no primitive shadow support in Scratch
