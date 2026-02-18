@@ -43,51 +43,11 @@ function getDefaultValue(inputType: InputType): PrimitiveAvailableOnScratch {
   }
 }
 
-// New signature (preferred)
 export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
   inputType: InputType,
   source: PrimitiveSource<T>,
   defaultValue?: T,
-): sb3.Input
-/**
- * @deprecated Use fromPrimitiveSource(inputType, source, defaultValue?) instead
- */
-export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
-  source: PrimitiveSource<T>,
-): sb3.Input
-
-// Implementation
-export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
-  inputTypeOrSource: InputType | PrimitiveSource<T>,
-  sourceOrUndefined?: PrimitiveSource<T>,
-  defaultValue?: T,
 ): sb3.Input {
-  // Determine if we're using the new signature or old (deprecated) signature
-  // New signature: first param is InputType (number) AND second param is provided
-  const validInputTypes = [
-    InputType.Number,
-    InputType.PositiveNumber,
-    InputType.WholeNumber,
-    InputType.Integer,
-    InputType.Angle,
-    InputType.PositiveInteger,
-    InputType.String,
-    InputType.Broadcast,
-    InputType.Color,
-  ]
-
-  const isNewSignature =
-    typeof inputTypeOrSource === 'number' &&
-    validInputTypes.includes(inputTypeOrSource as InputType) &&
-    sourceOrUndefined !== undefined
-
-  const inputType = isNewSignature
-    ? (inputTypeOrSource as InputType)
-    : undefined
-  const source = isNewSignature
-    ? (sourceOrUndefined as PrimitiveSource<T>)
-    : (inputTypeOrSource as PrimitiveSource<T>)
-
   if (typeof source === 'number') {
     return [Shadow.SameBlockShadow, [InputType.Number, source]]
   }
@@ -107,16 +67,10 @@ export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
       return [Shadow.SameBlockShadow, source.id]
     }
 
-    // If inputType is provided (new signature), use it to create proper shadow
-    if (inputType !== undefined) {
-      const def =
-        defaultValue !== undefined ? defaultValue : getDefaultValue(inputType)
-      return [Shadow.DiffBlockShadow, source.id, [inputType, def]]
-    }
-
-    // Old signature with non-shadow block: use Number as default
-    // This provides backward compatibility while fixing the bug block issue
-    return [Shadow.DiffBlockShadow, source.id, [InputType.Number, 0]]
+    // Create proper shadow with specified InputType
+    const def =
+      defaultValue !== undefined ? defaultValue : getDefaultValue(inputType)
+    return [Shadow.DiffBlockShadow, source.id, [inputType, def]]
   }
 
   // Fallback

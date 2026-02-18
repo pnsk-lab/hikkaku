@@ -363,9 +363,9 @@ export const callProcedure = (
     ReturnType<typeof fromPrimitiveSource>
   > = {}
   for (const [key, value] of Object.entries(inputs)) {
-    // TODO: Cannot infer InputType for dynamic procedure arguments
-    // Each argument type should be tracked in procedure definition
-    resolvedInputs[key] = fromPrimitiveSource(value)
+    // Dynamic procedure arguments default to String type
+    // TODO: Track argument types in procedure definition for proper InputType
+    resolvedInputs[key] = fromPrimitiveSource(InputType.String, value, '')
   }
   return block('procedures_call', {
     inputs: resolvedInputs,
