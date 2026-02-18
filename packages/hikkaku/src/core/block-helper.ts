@@ -24,7 +24,11 @@ export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
     return [Shadow.SameBlockShadow, [InputType.String, source]]
   }
 
-  return [Shadow.SameBlockShadow, source.id]
+  // When source is a HikkakuBlock, create a shadow with default value
+  // This prevents "bug blocks" when the value block is removed in Scratch GUI
+  // Default to numeric input type with 0 as the shadow value
+  // This matches the most common case for value blocks (numbers)
+  return [Shadow.DiffBlockShadow, source.id, [InputType.Number, 0]]
 }
 //TODO ちゃんとやる fromPrimitiveSourceごとリファクタする。fromPrimitiveSource(InputType.Color,source)みたいな感じで
 export const fromPrimitiveSourceColor = (
@@ -33,6 +37,10 @@ export const fromPrimitiveSourceColor = (
   if (typeof color === 'string') {
     //TODO sb3-typesが厳密すぎる からなんとかする
     return [Shadow.SameBlockShadow, [InputType.Color, color as `#${string}`]]
+  }
+  // When source is a HikkakuBlock, create a color shadow with default black color
+  if (isHikkakuBlock(color)) {
+    return [Shadow.DiffBlockShadow, color.id, [InputType.Color, '#000000']]
   }
   return fromPrimitiveSource(color)
 }
