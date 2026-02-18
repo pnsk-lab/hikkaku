@@ -28,15 +28,18 @@ describe('client/fiber', () => {
       id: 'app',
     } as unknown as TestElement
     const originalDocument = globalThis.document
-    Object.assign(globalThis, {
-      document: {
-        getElementById: (id: string) => (id === 'app' ? root : null),
-        querySelector: () => null,
-      },
-    })
+    try {
+      Object.assign(globalThis, {
+        document: {
+          getElementById: (id: string) => (id === 'app' ? root : null),
+          querySelector: () => null,
+        },
+      })
 
-    expect(findDOMAppRoot()).toBe(root)
-    Object.assign(globalThis, { document: originalDocument })
+      expect(findDOMAppRoot()).toBe(root)
+    } finally {
+      Object.assign(globalThis, { document: originalDocument })
+    }
   })
 
   test('finds matching fiber node', () => {
