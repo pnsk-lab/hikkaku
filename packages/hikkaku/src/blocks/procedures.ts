@@ -1,4 +1,4 @@
-import { Shadow } from 'sb3-types/enum'
+import { InputType, Shadow } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, valueBlock } from '../core/composer'
 import type { HikkakuBlock, PrimitiveSource } from '../core/types'
