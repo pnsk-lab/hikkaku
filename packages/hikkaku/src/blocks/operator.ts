@@ -1,5 +1,5 @@
 import { InputType } from 'sb3-types/enum'
-import { fromPrimitiveSource } from '../core/block-helper'
+import { fromBooleanSource, fromPrimitiveSource } from '../core/block-helper'
 import { valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
 
@@ -218,8 +218,8 @@ export const and = (
 ) => {
   return valueBlock('operator_and', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
-      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
+      OPERAND1: fromBooleanSource(a),
+      OPERAND2: fromBooleanSource(b),
     },
   })
 }
@@ -246,8 +246,8 @@ export const or = (
 ) => {
   return valueBlock('operator_or', {
     inputs: {
-      OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
-      OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
+      OPERAND1: fromBooleanSource(a),
+      OPERAND2: fromBooleanSource(b),
     },
   })
 }
@@ -270,7 +270,7 @@ export const or = (
 export const not = (operand: PrimitiveSource<boolean>) => {
   return valueBlock('operator_not', {
     inputs: {
-      OPERAND: fromPrimitiveSource(InputType.Number, operand, 0),
+      OPERAND: fromBooleanSource(operand),
     },
   })
 }
