@@ -1,6 +1,6 @@
+import { Shadow } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, valueBlock } from '../core/composer'
-import { Shadow } from '../core/sb3-enum'
 import type { HikkakuBlock, PrimitiveSource } from '../core/types'
 
 export type ProcedureArgumentDefault = string | boolean

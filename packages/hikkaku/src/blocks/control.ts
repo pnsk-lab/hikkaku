@@ -1,6 +1,6 @@
+import { InputType, Shadow } from 'sb3-types/enum'
 import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { attachStack, block, substack, valueBlock } from '../core/composer'
-import { InputType, Shadow } from '../core/sb3-enum'
 import type { PrimitiveSource, VariableReference } from '../core/types'
 
 export type StopOption =

@@ -1,6 +1,6 @@
 import type * as sb3 from 'sb3-types'
+import { InputType, Shadow } from 'sb3-types/enum'
 import { getRootContext } from './composer'
-import { InputType, Shadow } from './sb3-enum'
 import type {
   CostumeReference,
   CostumeSource,
@@ -22,39 +22,68 @@ function isShadowBlock(blockId: string): boolean {
   }
 }
 
-// Overload signatures
+// Helper function to get default values for each InputType
+function getDefaultValue(inputType: InputType): PrimitiveAvailableOnScratch {
+  switch (inputType) {
+    case InputType.Number:
+    case InputType.PositiveNumber:
+    case InputType.WholeNumber:
+    case InputType.Integer:
+    case InputType.Angle:
+      return 0
+    case InputType.PositiveInteger:
+      return 1
+    case InputType.String:
+    case InputType.Broadcast:
+      return ''
+    case InputType.Color:
+      return '#000000'
+    default:
+      return 0
+  }
+}
+
+// New signature (preferred)
 export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
-  inputType: (typeof InputType)[keyof typeof InputType],
+  inputType: InputType,
   source: PrimitiveSource<T>,
   defaultValue?: T,
 ): sb3.Input
+/**
+ * @deprecated Use fromPrimitiveSource(inputType, source, defaultValue?) instead
+ */
 export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
   source: PrimitiveSource<T>,
 ): sb3.Input
 
 // Implementation
 export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
-  inputTypeOrSource:
-    | (typeof InputType)[keyof typeof InputType]
-    | PrimitiveSource<T>,
+  inputTypeOrSource: InputType | PrimitiveSource<T>,
   sourceOrUndefined?: PrimitiveSource<T>,
   defaultValue?: T,
 ): sb3.Input {
-  // Determine if we're using the new signature or old signature
-  // New signature: first param is InputType (one of the specific values) AND second param is provided
+  // Determine if we're using the new signature or old (deprecated) signature
+  // New signature: first param is InputType (number) AND second param is provided
   const validInputTypes = [
     InputType.Number,
+    InputType.PositiveNumber,
+    InputType.WholeNumber,
+    InputType.Integer,
+    InputType.Angle,
     InputType.PositiveInteger,
     InputType.String,
     InputType.Broadcast,
     InputType.Color,
   ]
+
   const isNewSignature =
     typeof inputTypeOrSource === 'number' &&
-    validInputTypes.includes(inputTypeOrSource as number) &&
+    validInputTypes.includes(inputTypeOrSource as InputType) &&
     sourceOrUndefined !== undefined
 
-  const inputType = isNewSignature ? inputTypeOrSource : undefined
+  const inputType = isNewSignature
+    ? (inputTypeOrSource as InputType)
+    : undefined
   const source = isNewSignature
     ? (sourceOrUndefined as PrimitiveSource<T>)
     : (inputTypeOrSource as PrimitiveSource<T>)
@@ -92,24 +121,6 @@ export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
 
   // Fallback
   return [Shadow.SameBlockShadow, source.id]
-}
-
-// Helper function to get default values for each InputType
-function getDefaultValue(
-  inputType: (typeof InputType)[keyof typeof InputType],
-): PrimitiveAvailableOnScratch {
-  switch (inputType) {
-    case InputType.Number:
-    case InputType.PositiveInteger:
-      return 0
-    case InputType.String:
-    case InputType.Broadcast:
-      return ''
-    case InputType.Color:
-      return '#000000'
-    default:
-      return 0
-  }
 }
 
 export const fromPrimitiveSourceColor = (
