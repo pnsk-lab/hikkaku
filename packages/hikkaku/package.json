@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "bun --bun tsdown",
+    "test": "vp test run",
     "typecheck": "tsgo"
   },
   "devDependencies": {
@@ -20,7 +21,8 @@
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20260127.1",
     "rolldown": "1.0.0-rc.4",
-    "tsdown": "^0.20.0-beta.4"
+    "tsdown": "^0.20.0-beta.4",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
   },
   "peerDependencies": {
     "typescript": "^5"

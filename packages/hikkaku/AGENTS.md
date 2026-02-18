@@ -6,3 +6,5 @@ Package scope: `packages/hikkaku/**`
 - Keep block APIs grouped by domain files under `src/blocks/` and keep core compiler logic under `src/core/`.
 - Run `bun run typecheck` after TypeScript API changes; run `bun run build` when build output behavior changes.
 - When exports, entrypoints, or package boundaries change, update this file and `README.md` in the same change.
+
+- Run `bun run test` after changing public APIs or block helper behavior.

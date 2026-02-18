@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "hikkaku-workspace",
@@ -207,6 +206,7 @@
         "@typescript/native-preview": "^7.0.0-dev.20260127.1",
         "rolldown": "1.0.0-rc.4",
         "tsdown": "^0.20.0-beta.4",
+        "vite-plus": "^0.0.0-3262bda4.20260210-0221",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -214,7 +214,7 @@
     },
     "packages/moonscratch": {
       "name": "moonscratch",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "devDependencies": {
         "@scratch/scratch-render": "^12.6.2",
         "@scratch/scratch-vm": "^12.6.2",
@@ -247,7 +247,7 @@
     },
     "packages/testing": {
       "name": "@hikkaku/testing",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "hikkaku": "workspace:*",
         "moonscratch": "workspace:*",
