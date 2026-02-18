@@ -1658,11 +1658,66 @@ fn block_input_or_field_string(
   field_name : String,
   depth : Int,
 ) -> String {
-  let from_input = json_to_string_value(
-      value_from_input(vm, target_index, block, input_name, depth),
-    )
-    .trim()
-    .to_string()
+  let mut from_input = ""
+
+  if target_index >= 0 && target_index < vm.targets.length() {
+    match block.input_block_ids.get(input_name) {
+      Some(input_block_id) =>
+        match vm.targets[target_index].blocks.get(input_block_id) {
+          Some(input_block) =>
+            match field_value(input_block, field_name) {
+              Some((value, _)) =>
+                if value.trim() != "" {
+                  from_input = value
+                }
+              None => ()
+            }
+          None => ()
+        }
+      None => ()
+    }
+  }
+
+  if from_input == "" {
+    match block_input_payload(block, input_name) {
+      Some(String(raw)) =>
+        if target_index >= 0 && target_index < vm.targets.length() {
+          match vm.targets[target_index].blocks.get(raw) {
+            Some(input_block) =>
+              match field_value(input_block, field_name) {
+                Some((value, _)) =>
+                  if value.trim() != "" {
+                    from_input = value
+                  } else if raw.trim() != "" {
+                    from_input = raw
+                  }
+                None =>
+                  if raw.trim() != "" {
+                    from_input = raw
+                  }
+              }
+            None =>
+              if raw.trim() != "" {
+                from_input = raw
+              }
+          }
+        } else if raw.trim() != "" {
+          from_input = raw
+        }
+      Some(_) => {
+        let resolved = json_to_string_value(
+            value_from_input(vm, target_index, block, input_name, depth),
+          )
+          .trim()
+          .to_string()
+        if resolved != "" {
+          from_input = resolved
+        }
+      }
+      None => ()
+    }
+  }
+
   if from_input != "" {
     from_input
   } else {
@@ -2411,6 +2466,11 @@ fn eval_reporter_block_depth(
         Some((value, _)) => json_string(value)
         None => json_string("")
       }
+    "sensing_keyoptions" =>
+      match field_value(block, "KEY_OPTION") {
+        Some((value, _)) => json_string(value)
+        None => json_string("")
+      }
     "pen_menu_colorParam" =>
       match field_value(block, "colorParam") {
         Some((value, _)) => json_string(value)
@@ -2621,9 +2681,32 @@ fn eval_reporter_block_depth(
     }
     "sensing_mousedown" => json_bool(read_mouse_down(vm))
     "sensing_keypressed" => {
-      let option = block_input_or_field_string(
+      let raw_option = block_input_or_field_string(
         vm, target_index, block, "KEY_OPTION", "KEY_OPTION", depth,
       )
+      let option = if raw_option != "" &&
+          target_index >= 0 &&
+          target_index < vm.targets.length() {
+          match vm.targets[target_index].blocks.get(raw_option) {
+            Some(menu_block) =>
+              if menu_block.opcode == "sensing_keyoptions" {
+                match field_value(menu_block, "KEY_OPTION") {
+                  Some((value, _)) =>
+                    if value.trim() != "" {
+                      value
+                    } else {
+                      raw_option
+                    }
+                  None => raw_option
+                }
+              } else {
+                raw_option
+              }
+            None => raw_option
+          }
+        } else {
+          raw_option
+        }
       json_bool(key_is_pressed(vm, option))
     }
     "sensing_touchingobject" => {

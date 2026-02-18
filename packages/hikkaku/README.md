@@ -1,8 +1,9 @@
 <img src="https://raw.githubusercontent.com/pnsk-lab/hikkaku/refs/heads/main/docs/assets/logo.svg" alt="Hikkaku Logo" width="128" height="128" align="right" />
 
+
 # Hikkaku
 
-[![NPM Version](https://img.shields.io/npm/v/hikkaku)](https://www.npmjs.com/package/hikkaku)
+[![NPM Version](https://img.shields.io/npm/v/hikkaku)](https://www.npmjs.com/package/hikkaku) [![codecov](https://codecov.io/gh/pnsk-lab/hikkaku/graph/badge.svg)](https://codecov.io/gh/pnsk-lab/hikkaku)
 
 [Docs](https://pnsk-lab.github.io/hikkaku/) | [Playground](https://pnsk-lab.github.io/playground/)
 

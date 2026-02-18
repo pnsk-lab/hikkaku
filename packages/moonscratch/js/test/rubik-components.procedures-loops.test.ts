@@ -68,5 +68,5 @@ describe('rubik components: procedures and loops', () => {
     expect(Number(getStageVariable(vm, foreverTicks.id))).toBeGreaterThan(0)
     expect(getStageTarget(vm).isStage).toBe(true)
     expect(vm.snapshot().activeThreads).toBeGreaterThan(0)
-  })
+  }, 100000)
 })

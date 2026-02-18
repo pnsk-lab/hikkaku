@@ -25,8 +25,8 @@
 - Prefer descriptive, domain-based names (`blocks`, `compiler`, `client`) and keep file names lower-case.
 
 ## Testing Guidelines
-- No automated test runner is configured in this repo yet.
-- If you add tests, place them near the code (e.g., `packages/hikkaku/src/**/__tests__/*.test.ts`) and document the command in `package.json`.
+- JS/TS package tests are run with `vite-plus` (`vp test run`).
+- Place tests near the code (e.g., `packages/hikkaku/src/**/*.test.ts`) and keep package-level `test` scripts up to date in `package.json`.
 
 ## Configuration & Security Notes
 - Keep dependency changes minimal and pinned to workspace scope.
