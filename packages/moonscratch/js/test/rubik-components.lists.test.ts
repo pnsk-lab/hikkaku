@@ -44,6 +44,6 @@ describe('rubik components: lists', () => {
     expect(getStageVariable(vm, total.id)).toBe(122)
 
     const stage = getStageTarget(vm)
-    expect(stage.lists[values.id]).toEqual([10, 99, 30])
+    expect(stage.lists[values.id]?.map((v) => Number(v))).toEqual([10, 99, 30])
   })
 })

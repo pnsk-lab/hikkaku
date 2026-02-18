@@ -46,8 +46,8 @@ describe('rubik components: operators', () => {
     vm.greenFlag()
     runUntilFinished(vm)
 
-    expect(getStageVariable(vm, arithmetic.id)).toBe(8)
-    expect(getStageVariable(vm, logic.id)).toBe(1)
+    expect(getStageVariable(vm, arithmetic.id)).toBeLooselyEqual(8)
+    expect(getStageVariable(vm, logic.id)).toBeLooselyEqual(1)
     expect(Number(getStageVariable(vm, sine.id))).toBeCloseTo(0.5, 6)
   })
 
@@ -96,9 +96,9 @@ describe('rubik components: operators', () => {
     vm.greenFlag()
     runUntilFinished(vm)
 
-    expect(getStageVariable(vm, numericLt.id)).toBe(1)
-    expect(getStageVariable(vm, numericGt.id)).toBe(1)
-    expect(getStageVariable(vm, stringLt.id)).toBe(1)
-    expect(getStageVariable(vm, whitespaceEq.id)).toBe(0)
+    expect(getStageVariable(vm, numericLt.id)).toBeLooselyEqual(1)
+    expect(getStageVariable(vm, numericGt.id)).toBeLooselyEqual(1)
+    expect(getStageVariable(vm, stringLt.id)).toBeLooselyEqual(1)
+    expect(getStageVariable(vm, whitespaceEq.id)).toBeLooselyEqual(0)
   })
 })

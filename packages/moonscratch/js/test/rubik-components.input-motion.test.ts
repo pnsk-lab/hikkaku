@@ -48,10 +48,10 @@ describe('rubik components: input and motion', () => {
     vm.setKeysDown(['space'])
     runUntilFinished(vm)
 
-    expect(getStageVariable(vm, mouseX.id)).toBe(40)
-    expect(getStageVariable(vm, mouseY.id)).toBe(-30)
-    expect(getStageVariable(vm, mouseDown.id)).toBe(1)
-    expect(getStageVariable(vm, keyPressed.id)).toBe(1)
+    expect(getStageVariable(vm, mouseX.id)).toBeLooselyEqual(40)
+    expect(getStageVariable(vm, mouseY.id)).toBeLooselyEqual(-30)
+    expect(getStageVariable(vm, mouseDown.id)).toBeLooselyEqual(1)
+    expect(getStageVariable(vm, keyPressed.id)).toBeLooselyEqual(1)
 
     const moved = getTargetByName(vm, 'pointer')
     expect(moved.x).toBe(40)

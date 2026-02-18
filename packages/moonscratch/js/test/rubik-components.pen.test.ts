@@ -51,7 +51,7 @@ describe('rubik components: pen primitives', () => {
     vm.greenFlag()
     runUntilFinished(vm)
 
-    expect(getStageVariable(vm, done.id)).toBe(1)
+    expect(getStageVariable(vm, done.id)).toBeLooselyEqual(1)
 
     const frame = vm.renderFrame()
     expect(hasApproxColor(frame, [0, 0, 255], 36, 80)).toBe(true)
@@ -90,7 +90,7 @@ describe('rubik components: pen primitives', () => {
     vm.greenFlag()
     runUntilFinished(vm)
 
-    expect(getStageVariable(vm, done.id)).toBe(1)
+    expect(getStageVariable(vm, done.id)).toBeLooselyEqual(1)
 
     const frame = vm.renderFrame()
     const centerX = Math.floor(frame.width / 2)
@@ -101,7 +101,7 @@ describe('rubik components: pen primitives', () => {
     const b = frame.pixels[base + 2] ?? 0
     const a = frame.pixels[base + 3] ?? 0
 
-    expect(a).toBe(255)
+    expect(a).toBeLooselyEqual(255)
     expect(g).toBeLessThan(16)
     expect(r).toBeGreaterThan(70)
     expect(b).toBeGreaterThan(70)

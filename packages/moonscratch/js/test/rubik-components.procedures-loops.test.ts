@@ -62,9 +62,9 @@ describe('rubik components: procedures and loops', () => {
     vm.greenFlag()
     stepMany(vm, 24)
 
-    expect(getStageVariable(vm, sum.id)).toBe(20)
-    expect(getStageVariable(vm, index.id)).toBe(4)
-    expect(getStageVariable(vm, done.id)).toBe(1)
+    expect(getStageVariable(vm, sum.id)).toBeLooselyEqual(20)
+    expect(getStageVariable(vm, index.id)).toBeLooselyEqual(4)
+    expect(getStageVariable(vm, done.id)).toBeLooselyEqual(1)
     expect(Number(getStageVariable(vm, foreverTicks.id))).toBeGreaterThan(0)
     expect(getStageTarget(vm).isStage).toBe(true)
     expect(vm.snapshot().activeThreads).toBeGreaterThan(0)

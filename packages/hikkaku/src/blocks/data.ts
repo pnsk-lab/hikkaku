@@ -90,7 +90,7 @@ export const changeVariableBy = (
 ) => {
   return block('data_changevariableby', {
     inputs: {
-      VALUE: fromPrimitiveSource(InputType.String, value, '0'),
+      VALUE: fromPrimitiveSource(InputType.Number, value, 0),
     },
     fields: {
       VARIABLE: toField(variable),

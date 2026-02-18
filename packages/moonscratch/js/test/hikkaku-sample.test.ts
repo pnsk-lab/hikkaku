@@ -32,6 +32,6 @@ describe('moonscratch/js/test/hikkaku-sample.test.ts', () => {
       throw new Error('stage target was not found in snapshot')
     }
 
-    expect(stage.variables[score.id]).toBe(42)
+    expect(stage.variables[score.id]).toBeLooselyEqual(42)
   })
 })

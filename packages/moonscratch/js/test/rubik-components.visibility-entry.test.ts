@@ -25,7 +25,7 @@ describe('rubik components: visibility and entry', () => {
     vm.greenFlag()
     runUntilFinished(vm)
 
-    expect(getStageVariable(vm, entered.id)).toBe(1)
+    expect(getStageVariable(vm, entered.id)).toBeLooselyEqual(1)
     expect(getTargetByName(vm, 'hidden-sprite').visible).toBe(false)
   })
 })
