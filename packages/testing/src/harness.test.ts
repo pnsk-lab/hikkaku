@@ -46,7 +46,7 @@ describe('createProjectHarness', () => {
 
     harness.start()
     harness.runUntilIdle()
-    expect(harness.snapshotVariable('Stage', 'score')).toBe(42)
+    expect(Number(harness.snapshotVariable('Stage', 'score'))).toBe(42)
   })
 })
 
@@ -59,7 +59,9 @@ describe('run helpers', () => {
     expect(result.report).toBeTruthy()
     expect(result.snapshot).toBeTruthy()
     expect(
-      getSnapshotVariable(result.snapshot, result.project, 'Stage', 'score'),
+      Number(
+        getSnapshotVariable(result.snapshot, result.project, 'Stage', 'score'),
+      ),
     ).toBe(42)
   })
 
