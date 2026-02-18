@@ -2,7 +2,6 @@ import { InputType, Shadow } from 'sb3-types/enum'
 import { describe, expect, test } from 'vite-plus/test'
 import {
   fromPrimitiveSource,
-  fromPrimitiveSourceColor,
   isCostumeReference,
   isHikkakuBlock,
   isSoundReference,
@@ -31,7 +30,7 @@ describe('core/block-helper', () => {
       'abc',
       [InputType.String, 'fallback'],
     ])
-    expect(fromPrimitiveSourceColor('#ff00ff')).toEqual([
+    expect(fromPrimitiveSource(InputType.Color, '#ff00ff')).toEqual([
       Shadow.SameBlockShadow,
       [InputType.Color, '#ff00ff'],
     ])

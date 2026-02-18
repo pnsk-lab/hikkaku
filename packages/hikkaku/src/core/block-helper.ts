@@ -132,12 +132,6 @@ export function fromBooleanSource(source: PrimitiveSource<boolean>): sb3.Input {
   return [Shadow.SameBlockShadow, source.id]
 }
 
-export const fromPrimitiveSourceColor = (
-  color: PrimitiveSource<`#${string}` | (string & {})>,
-): sb3.Input => {
-  return fromPrimitiveSource(InputType.Color, color, '#000000')
-}
-
 export const unwrapCostumeSource = (
   source: CostumeSource,
 ): PrimitiveSource<string> => {

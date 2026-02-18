@@ -1,9 +1,5 @@
 import { InputType } from 'sb3-types/enum'
-import {
-  fromPrimitiveSource,
-  fromPrimitiveSourceColor,
-  menuInput,
-} from '../core/block-helper'
+import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { PrimitiveSource } from '../core/types'
 
@@ -120,7 +116,7 @@ export const setPenColorTo = (
 ) => {
   return block('pen_setPenColorToColor', {
     inputs: {
-      COLOR: fromPrimitiveSourceColor(color),
+      COLOR: fromPrimitiveSource(InputType.Color, color),
     },
   })
 }
