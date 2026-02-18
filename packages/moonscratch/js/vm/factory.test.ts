@@ -238,7 +238,7 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(frame.stopReason).toBe('finished')
   })
 
-  test('runs control/operator/data command graph through program wasm', () => {
+  test('runs control/operator/data command graph through wasm with host-tail bridge when needed', () => {
     const program = createProgramModuleFromProject({
       projectJson: WASM_ONLY_HIKKAKU_PROJECT,
     })
@@ -246,7 +246,7 @@ describe('moonscratch/js/vm/factory.ts', () => {
     expect(program.readPayload().commandsJson).not.toContain(
       '"op":"host_opcode"',
     )
-    expect(program.readPayload().commandsJson).not.toContain('"op":"host_tail"')
+    expect(program.readPayload().commandsJson).toContain('"op":"host_tail"')
 
     const execOpcodeSpy = vi.spyOn(
       moonscratch as unknown as {
@@ -263,12 +263,14 @@ describe('moonscratch/js/vm/factory.ts', () => {
 
     const vm = createHeadlessVM({ program, initialNowMs: 0 })
     vm.greenFlag()
+    const frame = vm.stepFrame()
 
     const vars = getStageVariables(vm)
-    expect(vars[WASM_ONLY_HIKKAKU_RESULT_ID]).toBe(18)
-    expect(vars[WASM_ONLY_HIKKAKU_BRANCH_ID]).toBe(1)
+    expect(vars[WASM_ONLY_HIKKAKU_RESULT_ID]).toBeLooselyEqual(18)
+    expect(vars[WASM_ONLY_HIKKAKU_BRANCH_ID]).toBeLooselyEqual(1)
+    expect(frame.stopReason).toBe('finished')
     expect(execOpcodeSpy).toHaveBeenCalledTimes(0)
-    expect(execTailSpy).toHaveBeenCalledTimes(0)
+    expect(execTailSpy).toHaveBeenCalled()
     execOpcodeSpy.mockRestore()
     execTailSpy.mockRestore()
   })
