@@ -43,7 +43,9 @@ describe('core/project', () => {
       _data: bytes,
     })
 
-    const projectJson = project.toScratch() as unknown as { monitors: unknown[] }
+    const projectJson = project.toScratch() as unknown as {
+      monitors: unknown[]
+    }
     expect(variable.id).toBeTruthy()
     expect(list.id).toBeTruthy()
     expect(projectJson.monitors.length).toBe(2)

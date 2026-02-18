@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "hikkaku-workspace",
@@ -251,11 +252,11 @@
       "dependencies": {
         "hikkaku": "workspace:*",
         "moonscratch": "workspace:*",
+        "sb3-types": "^0.1.16",
       },
       "devDependencies": {
         "@types/bun": "latest",
         "@typescript/native-preview": "^7.0.0-dev.20260213.1",
-        "sb3-types": "^0.1.16",
         "vite-plus": "^0.0.0-3262bda4.20260210-0221",
       },
       "peerDependencies": {

@@ -50,7 +50,7 @@ export const procedureLabel = (text: string): ProcedureProcLabel => {
  * ```ts
  * import { procedureBoolean } from 'hikkaku/blocks'
  *
- * procedureBoolean(undefined as any)
+ * procedureBoolean('flag')
  * ```
  */
 export const procedureBoolean = <T extends string>(
@@ -71,7 +71,7 @@ export const procedureBoolean = <T extends string>(
  * ```ts
  * import { procedureStringOrNumber } from 'hikkaku/blocks'
  *
- * procedureStringOrNumber(undefined as any)
+ * procedureStringOrNumber('value')
  * ```
  */
 export const procedureStringOrNumber = <T extends string>(
@@ -386,7 +386,13 @@ export const callProcedure = (
  * ```ts
  * import { argumentReporterStringNumber } from 'hikkaku/blocks'
  *
- * argumentReporterStringNumber(reference as any)
+ * argumentReporterStringNumber({
+ *   isProcedureArgument: true,
+ *   name: 'value',
+ *   type: 'stringOrNumber',
+ *   id: 'var-id',
+ *   getter: () => valueBlock('argument_reporter_string_number', { fields: { VALUE: ['value', null] } }),
+ * })
  * ```
  */
 export const argumentReporterStringNumber = (
@@ -408,7 +414,13 @@ export const argumentReporterStringNumber = (
  * ```ts
  * import { argumentReporterBoolean } from 'hikkaku/blocks'
  *
- * argumentReporterBoolean(reference as any)
+ * argumentReporterBoolean({
+ *   isProcedureArgument: true,
+ *   name: 'flag',
+ *   type: 'boolean',
+ *   id: 'flag-id',
+ *   getter: () => valueBlock('argument_reporter_boolean', { fields: { VALUE: ['flag', null] } }),
+ * })
  * ```
  */
 export const argumentReporterBoolean = (

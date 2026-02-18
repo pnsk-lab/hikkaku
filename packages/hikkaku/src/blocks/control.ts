@@ -277,7 +277,7 @@ export const ifElse = (
  * ```ts
  * import { match } from 'hikkaku/blocks'
  *
- * match(...[[true, () => {}]] as any)
+ * match([true, () => {}], () => {})
  * ```
  */
 export const match = (
