@@ -20,7 +20,7 @@
     "directory": "packages/moonscratch"
   },
   "scripts": {
-    "test": "moon build --target js && moon test && vp test run",
+    "test": "moon build --target js --release && moon test && vp test run",
     "bench": "bun benchmarks/run.bench.ts",
     "build": "moon build --target js --release && vp pack",
     "typecheck": "tsgo",

@@ -49,9 +49,25 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Restore Bun/MoonBit/Turbo caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install
+            ~/.moon
+            ~/.turbo
+            **/.turbo
+          key: ${{ runner.os }}-bun-moonbit-turbo-${{ hashFiles('bun.lock', 'turbo.json', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-moonbit-turbo-
+
       - name: Set up MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          if [ ! -x "$HOME/.moon/bin/moon" ]; then
+            curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          else
+            echo "MoonBit is already available from cache."
+          fi
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
 
       - name: Update MoonBit dependencies

@@ -13,6 +13,7 @@
     "lint": "biome check",
     "fmt": "biome check --fix --unsafe",
     "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
     "ref:build": "bun run --cwd packages/skill build-blocks",
     "ref:check": "bun run --cwd packages/skill build-blocks:check",
     "build": "turbo run build"

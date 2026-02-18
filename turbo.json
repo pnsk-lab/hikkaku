@@ -3,11 +3,15 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".vitepress/dist/**"],
+      "outputs": ["dist/**", "build/**", ".vitepress/dist/**", "_build/**"],
       "cache": true
     },
     "typecheck": {
       "dependsOn": ["moonscratch#build", "@hikkaku/testing#build"],
+      "outputs": []
+    },
+    "test": {
+      "cache": false,
       "outputs": []
     },
     "build-blocks": {

@@ -22,3 +22,12 @@ declare module '*.mp3?scratch' {
   const content: sb3.Sound
   export default content
 }
+
+declare module 'vite-plus' {
+  export function defineConfig<T>(config: T): T
+}
+
+declare module 'vite-plus/test' {
+  export { describe, expect, it, test } from 'bun:test'
+  export type { TestInterface } from 'bun:test'
+}

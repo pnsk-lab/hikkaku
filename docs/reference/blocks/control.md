@@ -183,7 +183,7 @@ Example:
 ```ts
 import { match } from 'hikkaku/blocks'
 
-match(...[[true, () => {}]] as any)
+match([true, () => {}], () => {})
 ```
 
 ## stop(option)
