@@ -72,6 +72,21 @@ export function fromPrimitiveSource<
   defaultValue =
     defaultValue ?? (getDefaultValue(inputType) as MappingToPrimitive<T>)
 
+  // Primitive literals should preserve their runtime value type.
+  // This keeps numeric literals as numeric inputs even for String-typed slots.
+  if (typeof source === 'number') {
+    return [Shadow.SameBlockShadow, [InputType.Number, source]]
+  }
+  if (typeof source === 'boolean') {
+    return [Shadow.SameBlockShadow, [InputType.PositiveInteger, source ? 1 : 0]]
+  }
+  if (typeof source === 'string') {
+    if (inputType === InputType.String) {
+      return [Shadow.SameBlockShadow, [InputType.String, source]]
+    }
+    return [Shadow.SameBlockShadow, [inputType, source] as sb3.InputPrimitive]
+  }
+
   // When source is a HikkakuBlock
   if (isHikkakuBlock(source)) {
     // Check if this is a shadow block (like menu blocks)
