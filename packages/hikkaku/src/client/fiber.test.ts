@@ -3,7 +3,30 @@ import { findDOMAppRoot, getSpecifiedFiber } from './fiber'
 
 describe('client/fiber', () => {
   test('finds root element from document', () => {
-    const root = { _reactRootContainer: {}, id: 'app' }
+    type TestElement = Element & {
+      _reactRootContainer: {
+        _internalRoot: {
+          current: {
+            child: null
+            sibling: null
+            type: null
+          }
+        }
+      }
+    }
+
+    const root = {
+      _reactRootContainer: {
+        _internalRoot: {
+          current: {
+            child: null,
+            sibling: null,
+            type: null,
+          },
+        },
+      },
+      id: 'app',
+    } as unknown as TestElement
     const originalDocument = globalThis.document
     Object.assign(globalThis, {
       document: {

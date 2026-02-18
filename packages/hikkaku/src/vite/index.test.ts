@@ -5,6 +5,8 @@ describe('vite/index', () => {
   test('creates vite plugins', () => {
     const plugins = hikkaku({ entry: '/tmp/project.ts' })
     expect(Array.isArray(plugins)).toBe(true)
-    expect(plugins.length).toBeGreaterThan(0)
+    if (Array.isArray(plugins)) {
+      expect(plugins.length).toBeGreaterThan(0)
+    }
   })
 })

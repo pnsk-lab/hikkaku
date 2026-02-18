@@ -13,13 +13,41 @@ describe('vite/plugin-scratch-import', () => {
     await writeFile(importer, '')
     await writeFile(asset, '<svg></svg>')
 
-    const resolved = plugin.resolveId?.('./cat.svg?scratch', importer, {})
+    const callHook = <T extends (...args: any[]) => any>(
+      hook:
+        | T
+        | ({
+            handler: T
+          } & Record<string, unknown>)
+        | undefined,
+      ...args: Parameters<T>
+    ) => {
+      const fn =
+        typeof hook === 'function'
+          ? hook
+          : hook && 'handler' in hook
+            ? hook.handler
+            : undefined
+      return fn?.(...args)
+    }
+
+    const resolveIdResult = await callHook(
+      plugin.resolveId,
+      './cat.svg?scratch',
+      importer,
+      { isEntry: false },
+    )
+    const resolved = resolveIdResult
     expect(typeof resolved).toBe('object')
-    if (!resolved || typeof resolved === 'string') {
+    if (!resolved || typeof resolved === 'string' || 'id' in resolved === false) {
       throw new Error('expected resolved object')
     }
 
-    const loaded = await plugin.load?.(resolved.id, {})
+    const loadedResult = await callHook(plugin.load, resolved.id, {})
+    const loaded =
+      typeof loadedResult === 'string'
+        ? loadedResult
+        : loadedResult?.code ?? null
     expect(typeof loaded).toBe('string')
     expect(loaded).toContain('export default data')
     expect(loaded).toContain('md5ext')
