@@ -14,7 +14,7 @@ interface RootContext {
   blockToId: WeakMap<sb3.Block, string>
 }
 let rootContext: RootContext | null = null
-const getRootContext = () => {
+export const getRootContext = () => {
   if (!rootContext) {
     throw new Error('Root context is not initialized. Call createBlocks first.')
   }

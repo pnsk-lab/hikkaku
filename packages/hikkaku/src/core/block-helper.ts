@@ -1,4 +1,5 @@
 import type * as sb3 from 'sb3-types'
+import { getRootContext } from './composer'
 import { InputType, Shadow } from './sb3-enum'
 import type {
   CostumeReference,
@@ -10,9 +11,42 @@ import type {
   SoundSource,
 } from './types'
 
-export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
+// Helper function to check if a block is a shadow block
+function isShadowBlock(blockId: string): boolean {
+  try {
+    const ctx = getRootContext()
+    const block = ctx.blocks[blockId]
+    return block ? block.shadow : false
+  } catch {
+    return false
+  }
+}
+
+// Overload signatures
+export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
+  inputType: (typeof InputType)[keyof typeof InputType],
   source: PrimitiveSource<T>,
-): sb3.Input => {
+  defaultValue?: T,
+): sb3.Input
+export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
+  source: PrimitiveSource<T>,
+): sb3.Input
+
+// Implementation
+export function fromPrimitiveSource<T extends PrimitiveAvailableOnScratch>(
+  inputTypeOrSource:
+    | (typeof InputType)[keyof typeof InputType]
+    | PrimitiveSource<T>,
+  sourceOrUndefined?: PrimitiveSource<T>,
+  defaultValue?: T,
+): sb3.Input {
+  // Determine if we're using the new signature or old signature
+  const isNewSignature = typeof inputTypeOrSource === 'number'
+  const inputType = isNewSignature ? inputTypeOrSource : undefined
+  const source = isNewSignature
+    ? (sourceOrUndefined as PrimitiveSource<T>)
+    : (inputTypeOrSource as PrimitiveSource<T>)
+
   if (typeof source === 'number') {
     return [Shadow.SameBlockShadow, [InputType.Number, source]]
   }
@@ -24,26 +58,54 @@ export const fromPrimitiveSource = <T extends PrimitiveAvailableOnScratch>(
     return [Shadow.SameBlockShadow, [InputType.String, source]]
   }
 
-  // When source is a HikkakuBlock, create a shadow with default value
-  // This prevents "bug blocks" when the value block is removed in Scratch GUI
-  // Default to numeric input type with 0 as the shadow value
-  // This matches the most common case for value blocks (numbers)
-  return [Shadow.DiffBlockShadow, source.id, [InputType.Number, 0]]
+  // When source is a HikkakuBlock
+  if (isHikkakuBlock(source)) {
+    // Check if this is a shadow block (like menu blocks)
+    if (isShadowBlock(source.id)) {
+      // Shadow blocks should use SameBlockShadow (preserve existing behavior for menus)
+      return [Shadow.SameBlockShadow, source.id]
+    }
+
+    // If inputType is provided (new signature), use it to create proper shadow
+    if (inputType !== undefined) {
+      const def =
+        defaultValue !== undefined ? defaultValue : getDefaultValue(inputType)
+      return [Shadow.DiffBlockShadow, source.id, [inputType, def]]
+    }
+
+    // Old signature with non-shadow block: use Number as default
+    // This provides backward compatibility while fixing the bug block issue
+    return [Shadow.DiffBlockShadow, source.id, [InputType.Number, 0]]
+  }
+
+  // Fallback
+  return [Shadow.SameBlockShadow, source.id]
 }
-//TODO ちゃんとやる fromPrimitiveSourceごとリファクタする。fromPrimitiveSource(InputType.Color,source)みたいな感じで
+
+// Helper function to get default values for each InputType
+function getDefaultValue(
+  inputType: (typeof InputType)[keyof typeof InputType],
+): PrimitiveAvailableOnScratch {
+  switch (inputType) {
+    case InputType.Number:
+    case InputType.PositiveInteger:
+      return 0
+    case InputType.String:
+    case InputType.Broadcast:
+      return ''
+    case InputType.Color:
+      return '#000000'
+    default:
+      return 0
+  }
+}
+
 export const fromPrimitiveSourceColor = (
   color: PrimitiveSource<`#${string}` | (string & {})>,
 ): sb3.Input => {
-  if (typeof color === 'string') {
-    //TODO sb3-typesが厳密すぎる からなんとかする
-    return [Shadow.SameBlockShadow, [InputType.Color, color as `#${string}`]]
-  }
-  // When source is a HikkakuBlock, create a color shadow with default black color
-  if (isHikkakuBlock(color)) {
-    return [Shadow.DiffBlockShadow, color.id, [InputType.Color, '#000000']]
-  }
-  return fromPrimitiveSource(color)
+  return fromPrimitiveSource(InputType.Color, color, '#000000')
 }
+
 export const unwrapCostumeSource = (
   source: CostumeSource,
 ): PrimitiveSource<string> => {
@@ -87,6 +149,7 @@ export const menuInput = <T extends PrimitiveAvailableOnScratch>(
   const menu = createMenu(source)
   return fromPrimitiveSource(menu)
 }
+
 export const isCostumeReference = (
   source: unknown,
 ): source is CostumeReference => {
