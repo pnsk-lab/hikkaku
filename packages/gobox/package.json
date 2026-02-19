@@ -21,6 +21,10 @@
       "types": "./dist/functions.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "test": "vp test run",
     "build": "vp pack",
