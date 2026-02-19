@@ -9,6 +9,10 @@
     "./types": "./src/types.ts",
     "./functions": "./src/functions.ts"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "test": "vp test run",
     "build": "vp pack",
