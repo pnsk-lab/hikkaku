@@ -78,6 +78,17 @@
         "vite": "8.0.0-beta.14",
       },
     },
+    "examples/gobox-counter": {
+      "name": "@repo/example-gobox-counter",
+      "dependencies": {
+        "@hikkaku/gobox": "workspace:*",
+        "hikkaku": "workspace:*",
+      },
+      "devDependencies": {
+        "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+        "vite": "8.0.0-beta.14",
+      },
+    },
     "examples/json-parser": {
       "name": "@repo/example-json-parser",
       "dependencies": {
@@ -177,6 +188,21 @@
         "typescript": "^5",
       },
     },
+    "packages/gobox": {
+      "name": "@hikkaku/gobox",
+      "version": "0.1.0",
+      "dependencies": {
+        "hikkaku": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+        "vite-plus": "^0.0.0-3262bda4.20260210-0221",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/gpts-zip": {
       "name": "gpts-zip",
       "dependencies": {
@@ -216,7 +242,7 @@
     },
     "packages/moonscratch": {
       "name": "moonscratch",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "devDependencies": {
         "@scratch/scratch-render": "^12.6.2",
         "@scratch/scratch-vm": "^12.6.2",
@@ -403,6 +429,8 @@
     "@floating-ui/dom": ["@floating-ui/dom@1.1.1", "", { "dependencies": { "@floating-ui/core": "^1.1.0" } }, "sha512-TpIO93+DIujg3g7SykEAGZMDtbJRrmnYRCNYSjJlvIbGhBjRSNTLVbNeDQBrzy9qDgUbiWdc7KA0uZHZ2tJmiw=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.10", "", {}, "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ=="],
+
+    "@hikkaku/gobox": ["@hikkaku/gobox@workspace:packages/gobox"],
 
     "@hikkaku/testing": ["@hikkaku/testing@workspace:packages/testing"],
 
@@ -611,6 +639,8 @@
     "@repo/example-bullet-hell": ["@repo/example-bullet-hell@workspace:examples/bullet-hell"],
 
     "@repo/example-daw": ["@repo/example-daw@workspace:examples/daw"],
+
+    "@repo/example-gobox-counter": ["@repo/example-gobox-counter@workspace:examples/gobox-counter"],
 
     "@repo/example-json-parser": ["@repo/example-json-parser@workspace:examples/json-parser"],
 

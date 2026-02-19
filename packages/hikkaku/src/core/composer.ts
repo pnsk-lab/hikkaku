@@ -6,12 +6,23 @@ export type Handler = () => void
 let id = 0
 const nextId = () => (++id).toString(16)
 
+export type BuildScopeKind = 'run' | 'stack'
+
+interface BuildScopeFrame {
+  id: number
+  kind: BuildScopeKind
+  forbidStop: boolean
+  onExit: Set<() => void>
+}
+
 interface RootContext {
   blocks: Record<string, sb3.Block>
   adder?: (id: string, block: sb3.Block) => void
   usedAsValueSet: WeakSet<sb3.Block>
   valueBlockSet: WeakSet<sb3.Block>
   blockToId: WeakMap<sb3.Block, string>
+  scopeStack: BuildScopeFrame[]
+  nextScopeId: number
 }
 let rootContext: RootContext | null = null
 export const getRootContext = () => {
@@ -19,6 +30,76 @@ export const getRootContext = () => {
     throw new Error('Root context is not initialized. Call createBlocks first.')
   }
   return rootContext
+}
+
+const getCurrentScope = (ctx: RootContext): BuildScopeFrame | null => {
+  const current = ctx.scopeStack[ctx.scopeStack.length - 1]
+  return current ?? null
+}
+
+export interface BuildScopeFrameSnapshot {
+  id: number
+  kind: BuildScopeKind
+  depth: number
+  forbidStop: boolean
+}
+
+export const __unstable_getBuildScopeFrame =
+  (): BuildScopeFrameSnapshot | null => {
+    if (!rootContext) {
+      return null
+    }
+    const frame = getCurrentScope(rootContext)
+    if (!frame) {
+      return null
+    }
+    return {
+      id: frame.id,
+      kind: frame.kind,
+      depth: rootContext.scopeStack.length,
+      forbidStop: frame.forbidStop,
+    }
+  }
+
+export const __unstable_onBuildScopeExit = (callback: () => void): void => {
+  const ctx = getRootContext()
+  const frame = getCurrentScope(ctx)
+  if (!frame) {
+    throw new Error('Build scope is not initialized.')
+  }
+  frame.onExit.add(callback)
+}
+
+export const __unstable_forbidStopInCurrentScope = (): void => {
+  const ctx = getRootContext()
+  const frame = getCurrentScope(ctx)
+  if (!frame) {
+    throw new Error('Build scope is not initialized.')
+  }
+  frame.forbidStop = true
+}
+
+const withScope = <T>(kind: BuildScopeKind, handler: () => T): T => {
+  const ctx = getRootContext()
+  const frame: BuildScopeFrame = {
+    id: ctx.nextScopeId++,
+    kind,
+    forbidStop: false,
+    onExit: new Set(),
+  }
+  ctx.scopeStack.push(frame)
+  try {
+    return handler()
+  } finally {
+    for (const callback of frame.onExit) {
+      callback()
+    }
+    const current = ctx.scopeStack.pop()
+    if (current !== frame) {
+      console.warn('Build scope stack is corrupted.')
+      ctx.scopeStack.length = 0
+    }
+  }
 }
 
 export interface BlockInit {
@@ -31,6 +112,14 @@ export interface BlockInit {
 }
 export const block = (opcode: string, init: BlockInit): HikkakuBlock => {
   const ctx = getRootContext()
+  if (
+    opcode === 'control_stop' &&
+    ctx.scopeStack.some((scope) => scope.forbidStop)
+  ) {
+    throw new Error(
+      'control_stop is not allowed inside gobox-managed scoped values.',
+    )
+  }
   const id = nextId()
   const block = {
     opcode,
@@ -173,10 +262,13 @@ export const substack = (handler: Handler) => {
   const ctx = getRootContext()
   const blocks: sb3.Block[] = []
 
-  catchNewBlocks(handler, (id, block) => {
-    ctx.blocks[id] = block
-    blocks.push(block)
-  })
+  catchNewBlocks(
+    () => withScope('stack', handler),
+    (id, block) => {
+      ctx.blocks[id] = block
+      blocks.push(block)
+    },
+  )
   applyNextAndParent(blocks)
 
   return firstExecutableBlockId(blocks)
@@ -189,10 +281,13 @@ export const attachStack = (parentId: string, handler?: Handler) => {
 
   const ctx = getRootContext()
   const blocks: sb3.Block[] = []
-  catchNewBlocks(handler, (id, block) => {
-    ctx.blocks[id] = block
-    blocks.push(block)
-  })
+  catchNewBlocks(
+    () => withScope('stack', handler),
+    (id, block) => {
+      ctx.blocks[id] = block
+      blocks.push(block)
+    },
+  )
 
   const stackBlocks = blocks.filter((block) => !block.topLevel)
   applyNextAndParent(stackBlocks)
@@ -214,38 +309,41 @@ export const attachStack = (parentId: string, handler?: Handler) => {
 
 export const createBlocks = (handler: Handler) => {
   const blocks: Record<string, sb3.Block> = {}
-  rootContext = {
+  const ctx: RootContext = {
     blocks: blocks,
     usedAsValueSet: new WeakSet(),
     valueBlockSet: new WeakSet(),
     blockToId: new WeakMap(),
+    scopeStack: [],
+    nextScopeId: 1,
   }
+  rootContext = ctx
+  try {
+    const blocksForAddingNext: sb3.Block[] = []
+    catchNewBlocks(
+      () => withScope('run', handler),
+      (id, block) => {
+        blocks[id] = block
+        blocksForAddingNext.push(block)
+      },
+    )
+    applyNextAndParent(blocksForAddingNext)
+    layoutTopLevelBlocks(blocksForAddingNext)
 
-  const blocksForAddingNext: sb3.Block[] = []
-  catchNewBlocks(handler, (id, block) => {
-    blocks[id] = block
-    blocksForAddingNext.push(block)
-  })
-  applyNextAndParent(blocksForAddingNext)
-  layoutTopLevelBlocks(blocksForAddingNext)
-
-  const unconnectedValueBlocks: Array<{ id: string; opcode: string }> = []
-  for (const [blockId, block] of Object.entries(blocks)) {
-    if (
-      rootContext.valueBlockSet.has(block) &&
-      !rootContext.usedAsValueSet.has(block)
-    ) {
-      unconnectedValueBlocks.push({ id: blockId, opcode: block.opcode })
+    const unconnectedValueBlocks: Array<{ id: string; opcode: string }> = []
+    for (const [blockId, block] of Object.entries(blocks)) {
+      if (ctx.valueBlockSet.has(block) && !ctx.usedAsValueSet.has(block)) {
+        unconnectedValueBlocks.push({ id: blockId, opcode: block.opcode })
+      }
     }
-  }
-  if (unconnectedValueBlocks.length > 0) {
-    const formatted = unconnectedValueBlocks
-      .map(({ id, opcode }) => `${opcode} (${id})`)
-      .join(', ')
+    if (unconnectedValueBlocks.length > 0) {
+      const formatted = unconnectedValueBlocks
+        .map(({ id, opcode }) => `${opcode} (${id})`)
+        .join(', ')
+      throw new Error(`Unconnected value block(s): ${formatted}`)
+    }
+    return blocks
+  } finally {
     rootContext = null
-    throw new Error(`Unconnected value block(s): ${formatted}`)
   }
-
-  rootContext = null
-  return blocks
 }

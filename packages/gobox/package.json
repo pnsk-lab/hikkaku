@@ -1,0 +1,34 @@
+{
+  "name": "@hikkaku/gobox",
+  "version": "0.1.0",
+  "type": "module",
+  "module": "index.ts",
+  "private": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./value": "./src/value.ts",
+    "./types": "./src/types.ts",
+    "./functions": "./src/functions.ts"
+  },
+  "scripts": {
+    "test": "vp test run",
+    "build": "vp pack",
+    "typecheck": "tsgo"
+  },
+  "repository": {
+    "url": "https://github.com/pnsk-lab/hikkaku",
+    "type": "git",
+    "directory": "packages/gobox"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  }
+}

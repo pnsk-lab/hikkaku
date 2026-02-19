@@ -66,6 +66,13 @@ export interface SpriteOptions {
   y?: number
 }
 
+const buildTargetStack: Target[] = []
+
+export const __unstable_getBuildTarget = (): Target | null => {
+  const current = buildTargetStack[buildTargetStack.length - 1]
+  return current ?? null
+}
+
 export class Target<IsStage extends boolean = boolean> {
   readonly isStage: IsStage
   readonly name: IsStage extends true ? 'Stage' : string
@@ -93,9 +100,15 @@ export class Target<IsStage extends boolean = boolean> {
   }
 
   run(handler: (target: Target<IsStage>) => void): void {
-    const blocks = createBlocks(() => {
-      handler(this)
-    })
+    buildTargetStack.push(this)
+    let blocks: Record<string, sb3.Block> = {}
+    try {
+      blocks = createBlocks(() => {
+        handler(this)
+      })
+    } finally {
+      buildTargetStack.pop()
+    }
     this.#blocks = {
       ...this.#blocks,
       ...blocks,

@@ -2,6 +2,7 @@
 
 ## Project Structure & Module Organization
 - `packages/hikkaku/` is the main library package. Source lives in `packages/hikkaku/src/` (e.g., `blocks/`, `core/`, `client/`, `vite/`, `utils/`).
+- `packages/gobox/` provides high-level typed value/signal/function abstractions on top of `hikkaku`.
 - `packages/skill/` contains skill docs and guides (`guides/`, `practices/`).
 - `packages/testing/` provides Vitest-oriented Hikkaku + MoonScratch test helpers.
 - `examples/example1/` is the dev playground app for running the library with Vite.
