@@ -53,6 +53,7 @@ jobs:
           bun run --cwd packages/testing test -- --coverage
           bun run --cwd packages/hikkaku test -- --coverage
           bun run --cwd packages/moonscratch test -- --coverage
+          bun run --cwd packages/gobox test -- --coverage
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
@@ -64,4 +65,5 @@ jobs:
             packages/hikkaku/coverage/lcov.info
             packages/testing/coverage/lcov.info
             packages/moonscratch/coverage/lcov.info
+            packages/gobox/coverage/lcov.info
           fail_ci_if_error: false

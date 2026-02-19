@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "type": "module",
   "module": "index.ts",
-  "private": false,
   "exports": {
     ".": "./src/index.ts",
     "./value": "./src/value.ts",

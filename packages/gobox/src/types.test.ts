@@ -34,6 +34,15 @@ describe('gobox/types', () => {
     expect(pos.defaults).toEqual([1, 2, 'cat'])
   })
 
+  test('validates vector length', () => {
+    expect(() => vector(number(0), -1)).toThrow(
+      /vector length must be a non-negative integer/,
+    )
+    expect(() => vector(number(0), 1.5)).toThrow(
+      /vector length must be a non-negative integer/,
+    )
+  })
+
   test('supports trait contracts on useImpl', () => {
     const counter = struct({
       count: number(0),
@@ -50,6 +59,19 @@ describe('gobox/types', () => {
 
     expect(withTrait.methods.sync).toBeTypeOf('function')
     expect(withTrait.methods.reset).toBeTypeOf('function')
+  })
+
+  test('supports useImpl without a trait', () => {
+    const pos = struct({
+      x: number(0),
+    })
+    const withMethods = useImpl(pos, {
+      reset: () => undefined,
+      scale: 2,
+    })
+
+    expect(withMethods.methods.reset).toBeTypeOf('function')
+    expect(withMethods.methods.scale).toBe(2)
   })
 
   test('throws when required trait methods are missing', () => {

@@ -40,4 +40,33 @@ describe('gobox signal/effect', () => {
     expect(opcodes).not.toContain('event_broadcast')
     expect(out.id).toBeTruthy()
   })
+
+  test('creates only initial procedure call when effect has no signal dependencies', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', -1)
+
+    project.stage.run(() => {
+      useEffect(() => {
+        setVariableTo(out, 1)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const opcodes = Object.values(stage?.blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+
+    expect(opcodes).toContain('procedures_definition')
+    expect(
+      opcodes.filter((opcode) => opcode === 'procedures_call').length,
+    ).toBe(1)
+    expect(opcodes).not.toContain('event_whenbroadcastreceived')
+    expect(opcodes).not.toContain('event_broadcast')
+    expect(out.id).toBeTruthy()
+  })
 })

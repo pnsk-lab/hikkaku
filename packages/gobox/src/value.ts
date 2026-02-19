@@ -397,7 +397,7 @@ export function useSignal(
 ): GoboxSignal<number | string | boolean> {
   assertRunTopLevel('useSignal')
 
-  const runtime = getRuntimeForCurrentTarget()
+  const _runtime = getRuntimeForCurrentTarget()
   const type = toPrimitiveSignalType(initialOrType)
   const value = useScopedValue(type)
 
