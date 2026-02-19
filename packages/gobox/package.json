@@ -1,13 +1,25 @@
 {
   "name": "@hikkaku/gobox",
   "version": "0.1.0",
-  "type": "module",
-  "module": "index.ts",
+  "module": "dist/index.js",
+  "private": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./value": "./src/value.ts",
-    "./types": "./src/types.ts",
-    "./functions": "./src/functions.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./value": {
+      "import": "./dist/value.js",
+      "types": "./dist/value.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./functions": {
+      "import": "./dist/functions.js",
+      "types": "./dist/functions.d.ts"
+    }
   },
   "scripts": {
     "test": "vp test run",
