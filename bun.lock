@@ -216,7 +216,7 @@
     },
     "packages/moonscratch": {
       "name": "moonscratch",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "devDependencies": {
         "@scratch/scratch-render": "^12.6.2",
         "@scratch/scratch-vm": "^12.6.2",
