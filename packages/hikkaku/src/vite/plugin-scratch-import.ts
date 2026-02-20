@@ -35,14 +35,15 @@ export const pluginScratchImport = (): Plugin => ({
         import { fileURLToPath } from 'node:url';
         
         const pathUrl = ${JSON.stringify(url)};
-        const file = await readFile(fileURLToPath(url));
+        const ext = ${JSON.stringify(ext)};
+        const file = await readFile(fileURLToPath(pathUrl));
 
         const hash = crypto.createHash('md5');
         hash.update(file);
         const md5 = hash.digest('hex');
   
         const data = {
-          name: path.basename(url.pathname),
+          name: path.basename(pathUrl.pathname),
           _data: Buffer.from(file).toString('base64'),
           assetId: md5,
           dataFormat: ext,
