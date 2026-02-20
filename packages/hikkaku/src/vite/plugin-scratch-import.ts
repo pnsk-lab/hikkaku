@@ -34,7 +34,7 @@ export const pluginScratchImport = (): Plugin => ({
         import * as path from 'node:path';
         import { fileURLToPath } from 'node:url';
         
-        const pathUrl = ${JSON.stringify(url)};
+        const pathUrl = new URL(${JSON.stringify(url.href)});
         const ext = ${JSON.stringify(ext)};
         const file = await readFile(fileURLToPath(pathUrl));
 
@@ -44,15 +44,12 @@ export const pluginScratchImport = (): Plugin => ({
   
         const data = {
           name: path.basename(pathUrl.pathname),
-          _data: Buffer.from(file).toString('base64'),
+          _data: Uint8Array.from(file),
           assetId: md5,
           dataFormat: ext,
           md5ext: md5 + "." + ext,
         }
         
-        // to Uint8Array
-        data._data = Uint8Array.from(atob(data._data), c => c.charCodeAt(0));
-
         export default data
       `
     }
