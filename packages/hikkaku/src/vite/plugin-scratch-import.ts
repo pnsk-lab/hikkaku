@@ -32,7 +32,7 @@ export const pluginScratchImport = (): Plugin => ({
         import crypto from 'node:crypto';
         import { readFile } from 'node:fs/promises';
         import * as path from 'node:path';
-        import { fileURLToPath } from 'node:path';
+        import { fileURLToPath } from 'node:url';
         
         const pathUrl = ${JSON.stringify(url)};
         const file = await readFile(fileURLToPath(url));
