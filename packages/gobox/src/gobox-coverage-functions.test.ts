@@ -2,7 +2,7 @@ import { Project } from 'hikkaku'
 import { setVariableTo } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
 import { useFunction, useImpl } from './functions'
-import { boolean, number, struct } from './types'
+import { boolean, type GoboxPrimitiveType, number, struct } from './types'
 
 describe('gobox/functions edge cases', () => {
   test('throws when function argument type is unsupported in coercion', () => {
@@ -16,7 +16,7 @@ describe('gobox/functions edge cases', () => {
           length: 2,
           width: 2,
           defaults: [0, 0],
-        } as never
+        } as unknown as GoboxPrimitiveType
         const fn = useFunction({
           name: 'unsupportedArg',
           args: {
@@ -45,7 +45,7 @@ describe('gobox/functions edge cases', () => {
             fieldOffsets: {},
             width: 0,
             defaults: [],
-          } as never,
+          } as unknown as GoboxPrimitiveType,
           body: () => undefined,
         })
         fn.call({})
@@ -114,7 +114,13 @@ describe('gobox/functions edge cases', () => {
         double: {
           args: { value: number(0) },
           returns: number(0),
-          body: ({ args, returning }) => returning(args.value.get() as never),
+          body: ({
+            args,
+            returning,
+          }: {
+            args: { value: { get(): number } }
+            returning: (value: number) => { scopeId: number; value: number }
+          }) => returning(args.value.get() as never),
         },
       })
       const result = counter.methods.double.call({
