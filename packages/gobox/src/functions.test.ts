@@ -235,10 +235,11 @@ describe('gobox/functions', () => {
           },
           returns: Num,
           body: ({ args, returning }) => {
-            if (false) {
+            const assertArgsInference = (inferredArgs: typeof args): void => {
               // @ts-expect-error args should be inferred from args spec.
-              args.missing.get()
+              inferredArgs.missing.get()
             }
+            void assertArgsInference
             return returning(
               add(
                 args.value.get() as never,

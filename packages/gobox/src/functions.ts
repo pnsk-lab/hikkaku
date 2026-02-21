@@ -95,7 +95,7 @@ export interface DefineFunctionOptions<
     returning(
       value: PrimitiveInputForType<NormalizeFunctionReturn<NoInfer<TReturn>>>,
     ): GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>>
-  }) => GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>> | void
+  }) => unknown
 }
 
 export interface GoboxFunctionDefinition<
@@ -150,7 +150,7 @@ type UseImplFunctionInput<
     returning(
       value: PrimitiveInputForType<NormalizeFunctionReturn<NoInfer<TReturn>>>,
     ): GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>>
-  }) => GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>> | void
+  }) => unknown
 }
 
 type UseImplFunctionOptions<
@@ -183,23 +183,13 @@ type ImplConstructorHandler<TFields extends StructFields> =
   | (() => void)
 
 type ImplConstructorInput<TFields extends StructFields> = {
-  constructor?: ImplConstructorHandler<TFields> | Function
+  constructor?: ImplConstructorHandler<TFields> | unknown
 }
 
 type ImplConstructorCompatInput = {
   // Accept Object.prototype.constructor shape for tsgo compatibility.
-  constructor?: Function
+  constructor?: unknown
 }
-
-type ImplFunctionMethodsInput<
-  TFields extends StructFields,
-  TArgsMap extends Record<string, FunctionArgSpec>,
-  TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
-> = {
-  [K in keyof TArgsMap]:
-    | GoboxFunctionDefinition<TArgsMap[K], TReturnMap[K]>
-    | UseImplFunctionInput<TFields, TArgsMap[K], TReturnMap[K]>
-} & ImplConstructorInput<TFields>
 
 type ImplFunctionOptionMethodsInput<
   TFields extends StructFields,
@@ -573,7 +563,7 @@ export const defineFunction = <
             'returning() must be called once at defineFunction body top-level and returned directly',
           )
         }
-        nextReturn = bodyResult.value
+        nextReturn = bodyResult.value as PrimitiveInputForType<NormalizedReturn>
       }
       setScopedPrimitiveValue(returnSlot, nextReturn)
       return undefined
@@ -791,7 +781,7 @@ const useImplFunction = <
             'returning() must be called once at defineFunction body top-level and returned directly',
           )
         }
-        nextReturn = bodyResult.value
+        nextReturn = bodyResult.value as PrimitiveInputForType<NormalizedReturn>
       }
       setScopedPrimitiveValue(returnSlot, nextReturn)
       return undefined
@@ -1025,7 +1015,10 @@ export function useImpl<
   methods: ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>,
 ): ScopedValueFromType<
   StructInstance<TFields> &
-    ImplMethodCarrier<TFields, ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>>
+    ImplMethodCarrier<
+      TFields,
+      ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>
+    >
 >
 
 export function useImpl<
