@@ -1,7 +1,7 @@
 import { Project } from 'hikkaku'
 import { setVariableTo, whenFlagClicked } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { number } from './types'
+import { Num } from './types'
 import { useEffect, useSignal } from './value'
 
 describe('gobox signal/effect', () => {
@@ -10,7 +10,7 @@ describe('gobox signal/effect', () => {
     const out = project.stage.createVariable('out', -1)
 
     project.stage.run(() => {
-      const count = useSignal(number(0))
+      const count = useSignal(new Num(0))
 
       useEffect(() => {
         setVariableTo(out, count.get() as never)

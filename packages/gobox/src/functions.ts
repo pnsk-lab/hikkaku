@@ -14,11 +14,19 @@ import {
 } from './internal/runtime'
 import type {
   GoboxBooleanType,
+  GoboxBooleanTypeFactory,
   GoboxNumberType,
+  GoboxNumberTypeFactory,
   GoboxPrimitiveType,
-  GoboxTrait,
+  GoboxPrimitiveTypeLike,
+  GoboxStringType,
+  GoboxStringTypeFactory,
+  GoboxStructInitial,
+  GoboxStructType,
+  GoboxStructTypeFactory,
   GoboxTypeAny,
 } from './types'
+import { isPrimitiveType } from './types'
 import {
   __unsafe_createScopedValueFromPointer,
   __unsafe_getPointerSource,
@@ -26,7 +34,23 @@ import {
   useScopedValue,
 } from './value'
 
-export type FunctionArgSpec = Record<string, GoboxPrimitiveType>
+export type FunctionArgSpec = Record<string, GoboxPrimitiveTypeLike>
+
+type NormalizeFunctionArgType<TType extends GoboxPrimitiveTypeLike> =
+  TType extends GoboxNumberTypeFactory
+    ? GoboxNumberType
+    : TType extends GoboxStringTypeFactory
+      ? GoboxStringType
+      : TType extends GoboxBooleanTypeFactory
+        ? GoboxBooleanType
+        : TType
+
+type NormalizeFunctionArgs<TArgs extends FunctionArgSpec> = {
+  [K in keyof TArgs]: NormalizeFunctionArgType<TArgs[K]>
+}
+
+type NormalizeFunctionReturn<TReturn extends GoboxPrimitiveTypeLike> =
+  NormalizeFunctionArgType<TReturn>
 
 type PrimitiveInputForType<TType extends GoboxPrimitiveType> =
   TType extends GoboxBooleanType
@@ -35,56 +59,70 @@ type PrimitiveInputForType<TType extends GoboxPrimitiveType> =
       ? PrimitiveSource<number>
       : PrimitiveSource<string | number>
 
-export type FunctionCallArgs<TArgs extends FunctionArgSpec> = {
-  [K in keyof TArgs]: PrimitiveInputForType<TArgs[K]>
-}
+export type FunctionCallArgs<TArgs extends Record<string, GoboxPrimitiveType>> =
+  {
+    [K in keyof TArgs]: PrimitiveInputForType<TArgs[K]>
+  }
 
 type PrimitiveReaderForType<TType extends GoboxPrimitiveType> = {
   get(): PrimitiveInputForType<TType>
 }
 
-export type FunctionReaders<TArgs extends FunctionArgSpec> = {
-  [K in keyof TArgs]: PrimitiveReaderForType<TArgs[K]>
-}
+export type FunctionReaders<TArgs extends Record<string, GoboxPrimitiveType>> =
+  {
+    [K in keyof TArgs]: PrimitiveReaderForType<TArgs[K]>
+  }
 
 export interface UseFunctionOptions<
   TArgs extends FunctionArgSpec,
-  TReturn extends GoboxPrimitiveType,
+  TReturn extends GoboxPrimitiveTypeLike,
 > {
   name: string
   args: TArgs
   returns: TReturn
   warp?: boolean
   body: (ctx: {
-    args: FunctionReaders<TArgs>
+    args: FunctionReaders<NormalizeFunctionArgs<TArgs>>
     returning(
-      value: PrimitiveInputForType<TReturn>,
-    ): GoboxReturningToken<TReturn>
-  }) => GoboxReturningToken<TReturn> | undefined
+      value: PrimitiveInputForType<NormalizeFunctionReturn<TReturn>>,
+    ): GoboxReturningToken<NormalizeFunctionReturn<TReturn>>
+  }) => GoboxReturningToken<NormalizeFunctionReturn<TReturn>> | undefined
 }
 
 export interface GoboxFunctionDefinition<
   TArgs extends FunctionArgSpec,
-  TReturn extends GoboxPrimitiveType,
+  TReturn extends GoboxPrimitiveTypeLike,
 > {
   readonly name: string
   readonly args: TArgs
   readonly returns: TReturn
   readonly procedure: ReturnType<typeof defineProcedure>
-  call(args: FunctionCallArgs<TArgs>): ScopedValueFromType<TReturn>
+  call(
+    args: FunctionCallArgs<NormalizeFunctionArgs<TArgs>>,
+  ): ScopedValueFromType<NormalizeFunctionReturn<TReturn>>
 }
 
 type UseFunctionInput<
   TArgs extends FunctionArgSpec = FunctionArgSpec,
-  TReturn extends GoboxPrimitiveType = GoboxPrimitiveType,
+  TReturn extends GoboxPrimitiveTypeLike = GoboxPrimitiveTypeLike,
 > = Omit<UseFunctionOptions<TArgs, TReturn>, 'name'> & {
   name?: string
+}
+
+type UseFunctionInputLike<
+  TArgs extends FunctionArgSpec = FunctionArgSpec,
+  TReturn extends GoboxPrimitiveTypeLike = GoboxPrimitiveTypeLike,
+> = {
+  name?: string
+  args: TArgs
+  returns: TReturn
+  body: unknown
 }
 
 type NormalizeImplMethod<TMethod> =
   TMethod extends GoboxFunctionDefinition<infer TArgs, infer TReturn>
     ? GoboxFunctionDefinition<TArgs, TReturn>
-    : TMethod extends UseFunctionInput<infer TArgs, infer TReturn>
+    : TMethod extends UseFunctionInputLike<infer TArgs, infer TReturn>
       ? GoboxFunctionDefinition<TArgs, TReturn>
       : TMethod
 
@@ -102,23 +140,32 @@ class GoboxReturningToken<TReturn extends GoboxPrimitiveType> {
   }
 }
 
-type UseImplMethodInputFromTrait<TMethod> =
-  TMethod extends GoboxFunctionDefinition<infer TArgs, infer TReturn>
-    ? GoboxFunctionDefinition<TArgs, TReturn> | UseFunctionInput<TArgs, TReturn>
-    : TMethod
+type StructFieldsFromFactory<TStruct extends GoboxStructTypeFactory<any>> =
+  TStruct extends GoboxStructTypeFactory<infer TFields> ? TFields : never
 
-type UseImplTraitInput<TTraitMethods extends Record<string, unknown>> = {
-  [K in keyof TTraitMethods]: UseImplMethodInputFromTrait<TTraitMethods[K]>
-}
+type StructInitialFromFactory<TStruct extends GoboxStructTypeFactory<any>> =
+  GoboxStructInitial<StructFieldsFromFactory<TStruct>>
 
-interface ImplStructLike {
-  readonly tag: 'struct'
-  readonly fields: Record<string, GoboxTypeAny>
-  readonly fieldOrder: ReadonlyArray<PropertyKey>
-  readonly fieldOffsets: Record<string, number>
-  readonly width: number
-  readonly defaults: Array<number | string>
-}
+type StructInstanceFromFactory<TStruct extends GoboxStructTypeFactory<any>> =
+  GoboxStructType<StructFieldsFromFactory<TStruct>>
+
+export type GoboxImplTypeFactory<
+  TStruct extends GoboxStructTypeFactory<any>,
+  TMethods extends Record<string, unknown>,
+> = {
+  (
+    initial?: StructInitialFromFactory<TStruct>,
+  ): StructInstanceFromFactory<TStruct> & {
+    methods: NormalizeImplMethods<TMethods>
+  }
+  new (
+    initial?: StructInitialFromFactory<TStruct>,
+  ): StructInstanceFromFactory<TStruct> & {
+    methods: NormalizeImplMethods<TMethods>
+  }
+} & StructInstanceFromFactory<TStruct> & {
+    methods: NormalizeImplMethods<TMethods>
+  }
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
   return value !== null && typeof value === 'object'
@@ -126,25 +173,55 @@ const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
 
 const isFunctionDefinitionLike = (
   value: unknown,
-): value is GoboxFunctionDefinition<FunctionArgSpec, GoboxPrimitiveType> => {
+): value is GoboxFunctionDefinition<
+  FunctionArgSpec,
+  GoboxPrimitiveTypeLike
+> => {
   if (!isObjectRecord(value)) {
     return false
   }
   return 'procedure' in value && typeof value.call === 'function'
 }
 
+const isPrimitiveTypeLike = (
+  value: unknown,
+): value is GoboxPrimitiveTypeLike => {
+  return typeof value === 'function' || isPrimitiveType(value as GoboxTypeAny)
+}
+
 const isUseFunctionInput = (
   value: unknown,
-): value is UseFunctionInput<FunctionArgSpec, GoboxPrimitiveType> => {
+): value is UseFunctionInput<FunctionArgSpec, GoboxPrimitiveTypeLike> => {
   if (!isObjectRecord(value)) {
     return false
   }
   return (
     !('procedure' in value) &&
     isObjectRecord(value.args) &&
-    isObjectRecord(value.returns) &&
+    isPrimitiveTypeLike(value.returns) &&
     typeof value.body === 'function'
   )
+}
+
+const normalizePrimitiveType = <TType extends GoboxPrimitiveTypeLike>(
+  type: TType,
+): NormalizeFunctionReturn<TType> => {
+  if (typeof type === 'function') {
+    return type() as NormalizeFunctionReturn<TType>
+  }
+  return type as NormalizeFunctionReturn<TType>
+}
+
+const normalizeFunctionArgs = <TArgs extends FunctionArgSpec>(
+  args: TArgs,
+): NormalizeFunctionArgs<TArgs> => {
+  const normalized = {} as NormalizeFunctionArgs<TArgs>
+  for (const [name, type] of Object.entries(args) as Array<
+    [keyof TArgs, TArgs[keyof TArgs]]
+  >) {
+    normalized[name] = normalizePrimitiveType(type)
+  }
+  return normalized
 }
 
 const normalizeImplMethods = <TMethods extends Record<string, unknown>>(
@@ -228,15 +305,19 @@ const setScopedPrimitiveValue = <TType extends GoboxPrimitiveType>(
 
 export const useFunction = <
   TArgs extends FunctionArgSpec,
-  TReturn extends GoboxPrimitiveType,
+  TReturn extends GoboxPrimitiveTypeLike,
 >(
   options: UseFunctionOptions<TArgs, TReturn>,
 ): GoboxFunctionDefinition<TArgs, TReturn> => {
   assertRunTopLevel('useFunction')
 
   const runtime = getRuntimeForCurrentTarget()
-  const argEntries = Object.entries(options.args) as Array<
-    [keyof TArgs, TArgs[keyof TArgs]]
+  const normalizedArgs = normalizeFunctionArgs(options.args)
+  const normalizedReturn = normalizePrimitiveType(options.returns)
+  type NormalizedArgs = NormalizeFunctionArgs<TArgs>
+  type NormalizedReturn = NormalizeFunctionReturn<TReturn>
+  const argEntries = Object.entries(normalizedArgs) as Array<
+    [keyof NormalizedArgs, NormalizedArgs[keyof NormalizedArgs]]
   >
 
   const proclist: Array<
@@ -264,7 +345,7 @@ export const useFunction = <
         }
       >
 
-      const readers = {} as FunctionReaders<TArgs>
+      const readers = {} as FunctionReaders<NormalizedArgs>
       for (const [name, type] of argEntries) {
         const reference = references[String(name)]
         if (!reference) {
@@ -278,11 +359,11 @@ export const useFunction = <
               type,
               reference.getter(),
             ) as PrimitiveReaderForType<
-              TArgs[typeof name]
+              NormalizedArgs[typeof name]
             >['get'] extends () => infer T
               ? T
               : never,
-        } as FunctionReaders<TArgs>[typeof name]
+        } as FunctionReaders<NormalizedArgs>[typeof name]
       }
 
       const returnPointerReference = references.__ret_ptr
@@ -301,19 +382,19 @@ export const useFunction = <
       }
       const returnSlot = __unsafe_createScopedValueFromPointer(
         runtime,
-        options.returns,
+        normalizedReturn,
         pointer,
       )
       const bodyScope = __unstable_getBuildScopeFrame()
       if (!bodyScope) {
         throw new Error('useFunction body must be built inside a stack scope')
       }
-      let nextReturn = fallbackPrimitiveByType(options.returns)
-      const issuedTokens: Array<GoboxReturningToken<TReturn>> = []
+      let nextReturn = fallbackPrimitiveByType(normalizedReturn)
+      const issuedTokens: Array<GoboxReturningToken<NormalizedReturn>> = []
 
       const returning = (
-        value: PrimitiveInputForType<TReturn>,
-      ): GoboxReturningToken<TReturn> => {
+        value: PrimitiveInputForType<NormalizedReturn>,
+      ): GoboxReturningToken<NormalizedReturn> => {
         const currentScope = __unstable_getBuildScopeFrame()
         const token = new GoboxReturningToken(currentScope?.id ?? -1, value)
         issuedTokens.push(token)
@@ -353,9 +434,9 @@ export const useFunction = <
   )
 
   const call = (
-    args: FunctionCallArgs<TArgs>,
-  ): ScopedValueFromType<TReturn> => {
-    const destination = useScopedValue(options.returns)
+    args: FunctionCallArgs<NormalizedArgs>,
+  ): ScopedValueFromType<NormalizedReturn> => {
+    const destination = useScopedValue(normalizedReturn)
     const pointerSource = __unsafe_getPointerSource(destination)
 
     const inputs: Record<
@@ -406,45 +487,49 @@ export const useFunction = <
   return definition
 }
 
-export function useImpl<
-  TStruct extends ImplStructLike,
+export const defineImpl = <
+  TStruct extends GoboxStructTypeFactory<any>,
   TMethods extends Record<string, unknown>,
 >(
   type: TStruct,
   methods: TMethods,
-): TStruct & { methods: NormalizeImplMethods<TMethods> }
-export function useImpl<
-  TStruct extends ImplStructLike,
-  TTraitMethods extends Record<string, unknown>,
-  TMethods extends UseImplTraitInput<TTraitMethods> & Record<string, unknown>,
->(
-  type: TStruct,
-  traitDef: GoboxTrait<TTraitMethods>,
-  methods: TMethods,
-): TStruct & { methods: NormalizeImplMethods<TMethods> }
-export function useImpl<
-  TStruct extends ImplStructLike,
-  TMethods extends Record<string, unknown>,
->(
-  type: TStruct,
-  methodsOrTrait: TMethods | GoboxTrait<Record<string, unknown>>,
-  maybeMethods?: TMethods,
-): TStruct & { methods: NormalizeImplMethods<TMethods> } {
-  let methods: TMethods
-  if (maybeMethods !== undefined) {
-    const traitDef = methodsOrTrait as GoboxTrait<Record<string, unknown>>
-    methods = maybeMethods
-    for (const methodName of traitDef.methodNames) {
-      if (!(methodName in methods)) {
-        throw new Error(`Missing trait method: ${String(methodName)}`)
-      }
+): GoboxImplTypeFactory<TStruct, TMethods> => {
+  const base = type()
+  let cachedMethods: NormalizeImplMethods<TMethods> | undefined
+  const resolveMethods = (): NormalizeImplMethods<TMethods> => {
+    if (!cachedMethods) {
+      cachedMethods = normalizeImplMethods(methods)
     }
-  } else {
-    methods = methodsOrTrait as TMethods
+    return cachedMethods
   }
+  const implFactory = Object.assign(function Impl(
+    initial?: StructInitialFromFactory<TStruct>,
+  ): StructInstanceFromFactory<TStruct> & {
+    methods: NormalizeImplMethods<TMethods>
+  } {
+    const instance = type(
+      initial,
+    ) as unknown as StructInstanceFromFactory<TStruct>
+    return {
+      ...instance,
+      methods: resolveMethods(),
+    }
+  }, base)
+  Object.defineProperty(implFactory, 'methods', {
+    enumerable: true,
+    get: resolveMethods,
+  })
+  return implFactory as GoboxImplTypeFactory<TStruct, TMethods>
+}
 
-  return {
-    ...type,
-    methods: normalizeImplMethods(methods),
-  }
+export const useImpl = <
+  TStruct extends GoboxStructTypeFactory<any>,
+  TMethods extends Record<string, unknown>,
+>(
+  type: TStruct,
+  methods: TMethods,
+): StructInstanceFromFactory<TStruct> & {
+  methods: NormalizeImplMethods<TMethods>
+} => {
+  return defineImpl(type, methods)()
 }

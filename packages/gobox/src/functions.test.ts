@@ -7,15 +7,8 @@ import {
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { type GoboxFunctionDefinition, useFunction, useImpl } from './functions'
-import {
-  boolean,
-  type GoboxNumberType,
-  number,
-  string,
-  struct,
-  trait,
-} from './types'
+import { defineImpl, useFunction } from './functions'
+import { Bool, defineStruct, type GoboxPrimitiveType, Num, Str } from './types'
 
 type ProcedureBlock = {
   opcode: string
@@ -77,9 +70,9 @@ describe('gobox/functions', () => {
       const plusOne = useFunction({
         name: 'plusOne',
         args: {
-          value: number(0),
+          value: new Num(0),
         },
-        returns: number(0),
+        returns: new Num(0),
         body: ({ args, returning }) =>
           returning(add(args.value.get() as never, 1) as never),
       })
@@ -115,9 +108,9 @@ describe('gobox/functions', () => {
       const isEnabled = useFunction({
         name: 'isEnabled',
         args: {
-          enabled: boolean(false),
+          enabled: new Bool(false),
         },
-        returns: boolean(false),
+        returns: new Bool(false),
         body: ({ args, returning }) => returning(args.enabled.get() as never),
       })
 
@@ -154,9 +147,9 @@ describe('gobox/functions', () => {
       const prefix = useFunction({
         name: 'prefix',
         args: {
-          value: string(''),
+          value: new Str(''),
         },
-        returns: string(''),
+        returns: new Str(''),
         body: ({ args, returning }) => returning(args.value.get() as never),
       })
 
@@ -193,9 +186,9 @@ describe('gobox/functions', () => {
         const plusOne = useFunction({
           name: 'plusOne',
           args: {
-            value: number(0),
+            value: new Num(0),
           },
-          returns: number(0),
+          returns: new Num(0),
           body: ({ args, returning }) =>
             returning(add(args.value.get() as never, 1) as never),
         })
@@ -216,9 +209,9 @@ describe('gobox/functions', () => {
           useFunction({
             name: 'illegal',
             args: {
-              value: number(0),
+              value: new Num(0),
             },
-            returns: number(0),
+            returns: new Num(0),
             body: ({ args, returning }) => returning(args.value.get() as never),
           })
         })
@@ -226,39 +219,36 @@ describe('gobox/functions', () => {
     }).toThrow(/must be defined at run\(\) top-level/)
   })
 
-  test('useImpl accepts function options without useFunction wrapper', () => {
+  test('defineImpl accepts function options without useFunction wrapper', () => {
     const project = new Project()
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
-      const counterTrait = trait<{
-        double: GoboxFunctionDefinition<
-          { value: GoboxNumberType },
-          GoboxNumberType
-        >
-      }>(['double'])
-
-      const counter = useImpl(
-        struct({
-          value: number(0),
-        }),
-        counterTrait,
-        {
-          double: {
-            args: {
-              value: number(0),
-            },
-            returns: number(0),
-            body: ({ args, returning }) =>
-              returning(
-                add(
-                  args.value.get() as never,
-                  args.value.get() as never,
-                ) as never,
-              ),
+      const Counter = defineStruct({
+        value: new Num(0),
+      })
+      const CounterImpl = defineImpl(Counter, {
+        double: {
+          args: {
+            value: new Num(0),
           },
+          returns: new Num(0),
+          body: ({
+            args,
+            returning,
+          }: {
+            args: { value: { get(): number } }
+            returning: (value: number) => { scopeId: number; value: number }
+          }) =>
+            returning(
+              add(
+                args.value.get() as never,
+                args.value.get() as never,
+              ) as never,
+            ),
         },
-      )
+      })
+      const counter = new CounterImpl()
 
       whenFlagClicked(() => {
         const result = counter.methods.double.call({
@@ -283,39 +273,31 @@ describe('gobox/functions', () => {
     expect(out.id).toBeTruthy()
   })
 
-  test('useImpl accepts existing useFunction definitions', () => {
+  test('defineImpl accepts existing useFunction definitions', () => {
     const project = new Project()
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
-      const counterTrait = trait<{
-        double: GoboxFunctionDefinition<
-          { value: GoboxNumberType },
-          GoboxNumberType
-        >
-      }>(['double'])
+      const Counter = defineStruct({
+        value: new Num(0),
+      })
 
       const double = useFunction({
         name: 'double',
         args: {
-          value: number(0),
+          value: new Num(0),
         },
-        returns: number(0),
+        returns: new Num(0),
         body: ({ args, returning }) =>
           returning(
             add(args.value.get() as never, args.value.get() as never) as never,
           ),
       })
 
-      const counter = useImpl(
-        struct({
-          value: number(0),
-        }),
-        counterTrait,
-        {
-          double,
-        },
-      )
+      const CounterImpl = defineImpl(Counter, {
+        double,
+      })
+      const counter = new CounterImpl()
 
       whenFlagClicked(() => {
         const result = counter.methods.double.call({
@@ -340,31 +322,16 @@ describe('gobox/functions', () => {
     expect(out.id).toBeTruthy()
   })
 
-  test('useImpl throws when required trait methods are missing', () => {
-    const project = new Project()
-    expect(() => {
-      project.stage.run(() => {
-        const counterTrait = trait<{
-          double: GoboxFunctionDefinition<
-            { value: GoboxNumberType },
-            GoboxNumberType
-          >
-        }>(['double'])
+  test('defineImpl keeps method normalization result on factory and instances', () => {
+    const Counter = defineStruct({
+      value: new Num(0),
+    })
+    const CounterImpl = defineImpl(Counter, {
+      marker: 'ok',
+    })
 
-        useImpl(
-          struct({
-            value: number(0),
-          }),
-          counterTrait,
-          {} as unknown as {
-            double: GoboxFunctionDefinition<
-              { value: GoboxNumberType },
-              GoboxNumberType
-            >
-          },
-        )
-      })
-    }).toThrow(/Missing trait method: double/)
+    expect(CounterImpl.methods).toHaveProperty('marker', 'ok')
+    expect(new CounterImpl().methods).toHaveProperty('marker', 'ok')
   })
 
   test('falls back to fixed primitive defaults when returning is not called', () => {
@@ -374,19 +341,19 @@ describe('gobox/functions', () => {
       useFunction({
         name: 'noNumber',
         args: {},
-        returns: number(123),
+        returns: new Num(123),
         body: () => {},
       })
       useFunction({
         name: 'noString',
         args: {},
-        returns: string('filled'),
+        returns: new Str('filled'),
         body: () => {},
       })
       useFunction({
         name: 'noBoolean',
         args: {},
-        returns: boolean(true),
+        returns: new Bool(true),
         body: () => {},
       })
     })
@@ -458,9 +425,9 @@ describe('gobox/functions', () => {
         useFunction({
           name: 'badIfThen',
           args: {
-            value: number(0),
+            value: new Num(0),
           },
-          returns: number(0),
+          returns: new Num(0),
           body: ({ args, returning }) => {
             ifThen(true, () => {
               returning(args.value.get() as never)
@@ -478,9 +445,9 @@ describe('gobox/functions', () => {
         useFunction({
           name: 'badRepeat',
           args: {
-            value: number(0),
+            value: new Num(0),
           },
-          returns: number(0),
+          returns: new Num(0),
           body: ({ args, returning }) => {
             repeat(1, () => {
               returning(args.value.get() as never)
@@ -498,14 +465,181 @@ describe('gobox/functions', () => {
         useFunction({
           name: 'missingReturnKeyword',
           args: {
-            value: number(0),
+            value: new Num(0),
           },
-          returns: number(0),
+          returns: new Num(0),
           body: ({ args, returning }) => {
             returning(args.value.get() as never)
           },
         })
       })
     }).toThrow(/returning\(\) must/)
+  })
+
+  test('throws when function argument type is unsupported in coercion', () => {
+    const project = new Project()
+
+    expect(() => {
+      project.stage.run(() => {
+        const unsupportedType = {
+          tag: 'vector',
+          element: new Num(0),
+          length: 2,
+          width: 2,
+          defaults: [0, 0],
+        } as unknown as GoboxPrimitiveType
+        const fn = useFunction({
+          name: 'unsupportedArg',
+          args: {
+            value: unsupportedType,
+          },
+          returns: new Num(0),
+          body: ({ args, returning }) => returning(args.value.get() as never),
+        })
+        fn.call({} as { value: number })
+      })
+    }).toThrow(/unsupported primitive type/)
+  })
+
+  test('throws when return type is unsupported in fallback conversion', () => {
+    const project = new Project()
+
+    expect(() => {
+      project.stage.run(() => {
+        const fn = useFunction({
+          name: 'unsupportedReturn',
+          args: {},
+          returns: {
+            tag: 'struct',
+            fields: {},
+            fieldOrder: [],
+            fieldOffsets: {},
+            width: 0,
+            defaults: [],
+          } as unknown as GoboxPrimitiveType,
+          body: () => undefined,
+        })
+        fn.call({})
+      })
+    }).toThrow(/unsupported primitive type/)
+  })
+
+  test('throws when internal return pointer argument is missing', () => {
+    const project = new Project()
+
+    expect(() => {
+      project.stage.run(() => {
+        const fn = useFunction({
+          name: 'missingRetPtr',
+          args: {
+            value: new Num(0),
+          },
+          returns: new Num(0),
+          body: ({ args, returning }) => returning(args.value.get() as never),
+        })
+
+        const definition = fn as {
+          procedure: {
+            reference: { arguments: Record<string, { id: string }> }
+          }
+        }
+        definition.procedure.reference.arguments.__ret_ptr = undefined as never
+        fn.call({
+          value: 10,
+        } as { value: number })
+      })
+    }).toThrow(/internal return pointer argument is missing/)
+  })
+
+  test('throws when body returns non-token value', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', 0)
+
+    expect(() => {
+      project.stage.run(() => {
+        const fn = useFunction({
+          name: 'badReturning',
+          args: {
+            value: new Num(0),
+          },
+          returns: new Num(0),
+          body: ({ args, returning }) => {
+            const next = returning(args.value.get() as never)
+            setVariableTo(out, next.value as never)
+            return returning(args.value.get() as never)
+          },
+        })
+        fn.call({
+          value: 3,
+        } as { value: number })
+      })
+    }).toThrow(/returning\(\) must/)
+  })
+
+  test('normalizes methods through defineImpl', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', 0)
+
+    project.stage.run(() => {
+      const Counter = defineStruct({ value: new Num(0) })
+      const CounterImpl = defineImpl(Counter, {
+        double: {
+          args: { value: new Num(0) },
+          returns: new Num(0),
+          body: ({
+            args,
+            returning,
+          }: {
+            args: { value: { get(): number } }
+            returning: (value: number) => { scopeId: number; value: number }
+          }) => returning(args.value.get() as never),
+        },
+      })
+      const counter = new CounterImpl()
+      const result = counter.methods.double.call({
+        value: 4,
+      })
+      setVariableTo(out, result.get() as never)
+    })
+
+    expect(out.id).toBeTruthy()
+  })
+
+  test('keeps primitive method values unchanged during defineImpl normalization', () => {
+    const project = new Project()
+    project.stage.run(() => {
+      const Model = defineStruct({ value: new Num(0) })
+      const ModelImpl = defineImpl(Model, {
+        marker: 'ok',
+      } as {
+        marker: string
+      })
+      const model = new ModelImpl()
+      expect((model.methods as { marker: string }).marker).toBe('ok')
+      expect(model.methods).toHaveProperty('marker', 'ok')
+    })
+  })
+
+  test('supports boolean function signatures', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', false)
+
+    project.stage.run(() => {
+      const isReady = useFunction({
+        name: 'isReady',
+        args: {
+          ready: new Bool(false),
+        },
+        returns: new Bool(false),
+        body: ({ args, returning }) => returning(args.ready.get() as never),
+      })
+
+      const result = isReady.call({
+        ready: true,
+      })
+      setVariableTo(out, result.get() as never)
+    })
+
+    expect(out.id).toBeTruthy()
   })
 })

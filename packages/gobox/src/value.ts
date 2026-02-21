@@ -20,7 +20,7 @@ import {
   withPointerOffset,
 } from './internal/runtime'
 import {
-  boolean as booleanType,
+  Bool as boolType,
   type GoboxBooleanType,
   type GoboxNumberType,
   type GoboxPrimitiveType,
@@ -30,8 +30,8 @@ import {
   type GoboxValueOf,
   type GoboxVectorType,
   isPrimitiveType,
-  number as numberType,
-  string as stringType,
+  Num as numType,
+  Str as strType,
 } from './types'
 
 const POINTER_SYMBOL = Symbol('gobox.pointer')
@@ -362,13 +362,13 @@ const toPrimitiveSignalType = (
   input: GoboxPrimitiveType | number | string | boolean,
 ): GoboxPrimitiveType => {
   if (typeof input === 'number') {
-    return numberType(input)
+    return new numType(input)
   }
   if (typeof input === 'string') {
-    return stringType(input)
+    return new strType(input)
   }
   if (typeof input === 'boolean') {
-    return booleanType(input)
+    return new boolType(input)
   }
   if (!isPrimitiveType(input)) {
     throw new Error('useSignal only supports primitive gobox types')

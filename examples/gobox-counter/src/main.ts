@@ -1,10 +1,5 @@
-import { type GoboxFunctionDefinition, useImpl } from '@hikkaku/gobox/functions'
-import {
-  type GoboxNumberType,
-  number,
-  struct,
-  trait,
-} from '@hikkaku/gobox/types'
+import { defineImpl } from '@hikkaku/gobox/functions'
+import { defineStruct, Num } from '@hikkaku/gobox/types'
 import { useEffect, useScopedValue, useSignal } from '@hikkaku/gobox/value'
 import { Project } from 'hikkaku'
 import { IMAGES } from 'hikkaku/assets'
@@ -45,28 +40,32 @@ cat.addCostume({
   name: 'cat-a',
 })
 
-const counterLayout = struct({
-  count: number(0),
-  doubled: number(0),
+const Counter = defineStruct({
+  count: new Num(0),
+  doubled: new Num(0),
 })
 
-const counterTrait = trait<{
-  double: GoboxFunctionDefinition<{ value: GoboxNumberType }, GoboxNumberType>
-}>(['double'])
+const CounterImpl = defineImpl(Counter, {
+  double: {
+    args: {
+      value: Num,
+    },
+    returns: Num,
+    body: ({
+      args,
+      returning,
+    }: {
+      args: { value: { get(): number } }
+      returning: (value: number) => { scopeId: number; value: number }
+    }) => {
+      return returning(add(args.value.get(), args.value.get()) as never)
+    },
+  },
+})
 
 cat.run(() => {
-  const count = useSignal(number(0))
-  const counter = useImpl(counterLayout, counterTrait, {
-    double: {
-      args: {
-        value: number(0),
-      },
-      returns: number(0),
-      body: ({ args, returning }) => {
-        return returning(add(args.value.get(), args.value.get()))
-      },
-    },
-  })
+  const count = useSignal(new Num(0))
+  const counter = new CounterImpl()
   const state = useScopedValue(counter)
 
   useEffect(() => {

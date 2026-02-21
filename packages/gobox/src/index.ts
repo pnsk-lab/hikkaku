@@ -1,23 +1,29 @@
 export * from './functions'
 export type {
   GoboxBooleanType,
+  GoboxBooleanTypeFactory,
   GoboxMemoryAtom,
   GoboxNumberType,
+  GoboxNumberTypeFactory,
   GoboxPrimitiveType,
+  GoboxPrimitiveTypeLike,
   GoboxStringType,
+  GoboxStringTypeFactory,
+  GoboxStructInitial,
   GoboxStructType,
-  GoboxTrait,
+  GoboxStructTypeFactory,
+  GoboxType,
   GoboxTypeAny,
   GoboxValueOf,
   GoboxVectorType,
 } from './types'
 export {
-  boolean,
+  Bool,
+  defineStruct,
   isPrimitiveType,
-  number,
-  string,
+  Num,
+  Str,
   struct,
-  trait,
   vector,
 } from './types'
 export * from './value'

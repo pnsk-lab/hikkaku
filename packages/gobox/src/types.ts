@@ -1,10 +1,12 @@
 export type GoboxMemoryAtom = number | string
 
-interface GoboxTypeBase<TValue> {
+export interface GoboxType<TValue> {
   readonly width: number
   readonly defaults: GoboxMemoryAtom[]
   readonly __gobox_value?: TValue
 }
+
+interface GoboxTypeBase<TValue> extends GoboxType<TValue> {}
 
 export interface GoboxNumberType extends GoboxTypeBase<number> {
   readonly tag: 'number'
@@ -32,26 +34,27 @@ export interface GoboxStructType<TFields extends Record<string, GoboxTypeAny>>
   extends GoboxTypeBase<{ [K in keyof TFields]: GoboxValueOf<TFields[K]> }> {
   readonly tag: 'struct'
   readonly fields: TFields
-  readonly fieldOrder: Array<keyof TFields>
+  readonly fieldOrder: Array<Extract<keyof TFields, string>>
   readonly fieldOffsets: { [K in keyof TFields]: number }
 }
 
-export interface GoboxTrait<TMethods extends Record<string, unknown>> {
-  readonly tag: 'trait'
-  readonly methodNames: Array<keyof TMethods>
-}
-
-interface GoboxStructLike extends GoboxTypeBase<unknown> {
-  readonly tag: 'struct'
-  readonly fields: Record<string, GoboxTypeAny>
-  readonly fieldOrder: ReadonlyArray<PropertyKey>
-  readonly fieldOffsets: Record<string, number>
-}
-
-interface GoboxTraitLike {
-  readonly tag: 'trait'
-  readonly methodNames: ReadonlyArray<PropertyKey>
-}
+export type GoboxNumberTypeFactory = {
+  (initial?: number): GoboxNumberType
+  new (initial?: number): GoboxNumberType
+} & GoboxNumberType
+export type GoboxStringTypeFactory = {
+  (initial?: string): GoboxStringType
+  new (initial?: string): GoboxStringType
+} & GoboxStringType
+export type GoboxBooleanTypeFactory = {
+  (initial?: boolean): GoboxBooleanType
+  new (initial?: boolean): GoboxBooleanType
+} & GoboxBooleanType
+export type GoboxPrimitiveTypeLike =
+  | GoboxPrimitiveType
+  | GoboxNumberTypeFactory
+  | GoboxStringTypeFactory
+  | GoboxBooleanTypeFactory
 
 export type GoboxTypeAny =
   | GoboxNumberType
@@ -64,6 +67,30 @@ export type GoboxPrimitiveType =
   | GoboxNumberType
   | GoboxStringType
   | GoboxBooleanType
+
+export type GoboxTypeInitial<TType extends GoboxTypeAny> =
+  TType extends GoboxNumberType
+    ? number
+    : TType extends GoboxStringType
+      ? string
+      : TType extends GoboxBooleanType
+        ? boolean
+        : TType extends GoboxVectorType<infer TElement>
+          ? Array<GoboxTypeInitial<TElement>>
+          : TType extends GoboxStructType<infer TFields>
+            ? { [K in keyof TFields]?: GoboxTypeInitial<TFields[K]> }
+            : never
+
+export type GoboxStructInitial<TFields extends Record<string, GoboxTypeAny>> = {
+  [K in keyof TFields]?: GoboxTypeInitial<TFields[K]>
+}
+
+export type GoboxStructTypeFactory<
+  TFields extends Record<string, GoboxTypeAny>,
+> = {
+  (initial?: GoboxStructInitial<TFields>): GoboxStructType<TFields>
+  new (initial?: GoboxStructInitial<TFields>): GoboxStructType<TFields>
+} & GoboxStructType<TFields>
 
 export type GoboxValueOf<TType extends GoboxTypeAny> =
   TType extends GoboxNumberType
@@ -78,32 +105,56 @@ export type GoboxValueOf<TType extends GoboxTypeAny> =
             ? { [K in keyof TFields]: GoboxValueOf<TFields[K]> }
             : never
 
-export const number = (initial = 0): GoboxNumberType => {
-  return {
+export const Num = Object.assign(
+  function Num(initial = 0): GoboxNumberType {
+    return {
+      tag: 'number',
+      initial,
+      width: 1,
+      defaults: [initial],
+    }
+  },
+  {
     tag: 'number',
-    initial,
+    initial: 0,
     width: 1,
-    defaults: [initial],
-  }
-}
+    defaults: [0],
+  },
+) as GoboxNumberTypeFactory
 
-export const string = (initial = ''): GoboxStringType => {
-  return {
+export const Str = Object.assign(
+  function Str(initial = ''): GoboxStringType {
+    return {
+      tag: 'string',
+      initial,
+      width: 1,
+      defaults: [initial],
+    }
+  },
+  {
     tag: 'string',
-    initial,
+    initial: '',
     width: 1,
-    defaults: [initial],
-  }
-}
+    defaults: [''],
+  },
+) as GoboxStringTypeFactory
 
-export const boolean = (initial = false): GoboxBooleanType => {
-  return {
+export const Bool = Object.assign(
+  function Bool(initial = false): GoboxBooleanType {
+    return {
+      tag: 'boolean',
+      initial,
+      width: 1,
+      defaults: [initial ? 1 : 0],
+    }
+  },
+  {
     tag: 'boolean',
-    initial,
+    initial: false,
     width: 1,
-    defaults: [initial ? 1 : 0],
-  }
-}
+    defaults: [0],
+  },
+) as GoboxBooleanTypeFactory
 
 export const vector = <TElement extends GoboxTypeAny>(
   element: TElement,
@@ -125,10 +176,12 @@ export const vector = <TElement extends GoboxTypeAny>(
   }
 }
 
-export const struct = <TFields extends Record<string, GoboxTypeAny>>(
+const buildStructType = <TFields extends Record<string, GoboxTypeAny>>(
   fields: TFields,
 ): GoboxStructType<TFields> => {
-  const fieldOrder = Object.keys(fields) as Array<keyof TFields>
+  const fieldOrder = Object.keys(fields) as Array<
+    Extract<keyof TFields, string>
+  >
   const offsets = {} as { [K in keyof TFields]: number }
   const defaults: GoboxMemoryAtom[] = []
   let cursor = 0
@@ -151,54 +204,95 @@ export const struct = <TFields extends Record<string, GoboxTypeAny>>(
   }
 }
 
-export const trait = <TMethods extends Record<string, unknown>>(
-  methodNames: ReadonlyArray<keyof TMethods>,
-): GoboxTrait<TMethods> => {
-  return {
-    tag: 'trait',
-    methodNames: [...methodNames],
-  }
+const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export function useImpl<
-  TStruct extends GoboxStructLike,
-  TMethods extends Record<string, unknown>,
->(type: TStruct, methods: TMethods): TStruct & { methods: TMethods }
-export function useImpl<
-  TStruct extends GoboxStructLike,
-  TTraitMethods extends Record<string, unknown>,
-  TMethods extends TTraitMethods & Record<string, unknown>,
->(
-  type: TStruct,
-  traitDef: GoboxTrait<TTraitMethods>,
-  methods: TMethods,
-): TStruct & { methods: TMethods }
-export function useImpl<
-  TStruct extends GoboxStructLike,
-  TMethods extends Record<string, unknown>,
->(
-  type: TStruct,
-  methodsOrTrait: TMethods | GoboxTraitLike,
-  maybeMethods?: TMethods,
-): TStruct & { methods: TMethods } {
-  let methods: TMethods
-  if (maybeMethods !== undefined) {
-    const traitDef = methodsOrTrait as GoboxTraitLike
-    methods = maybeMethods
-    for (const methodName of traitDef.methodNames) {
-      if (!(methodName in methods)) {
-        throw new Error(`Missing trait method: ${String(methodName)}`)
+const resolveDefaultsFromInitial = (
+  type: GoboxTypeAny,
+  initial: unknown,
+): GoboxMemoryAtom[] => {
+  if (initial === undefined) {
+    return [...type.defaults]
+  }
+
+  switch (type.tag) {
+    case 'number':
+      if (typeof initial !== 'number') {
+        throw new Error('number initializer must be a number')
       }
+      return [initial]
+    case 'string':
+      if (typeof initial !== 'string') {
+        throw new Error('string initializer must be a string')
+      }
+      return [initial]
+    case 'boolean':
+      if (typeof initial !== 'boolean') {
+        throw new Error('boolean initializer must be a boolean')
+      }
+      return [initial ? 1 : 0]
+    case 'vector': {
+      if (!Array.isArray(initial) || initial.length !== type.length) {
+        throw new Error('vector initializer length must match vector length')
+      }
+      const defaults: GoboxMemoryAtom[] = []
+      for (const item of initial) {
+        defaults.push(...resolveDefaultsFromInitial(type.element, item))
+      }
+      return defaults
     }
-  } else {
-    methods = methodsOrTrait as TMethods
-  }
-
-  return {
-    ...type,
-    methods,
+    case 'struct': {
+      if (!isObjectRecord(initial)) {
+        throw new Error('struct initializer must be an object')
+      }
+      const defaults: GoboxMemoryAtom[] = []
+      for (const key of type.fieldOrder) {
+        const fieldType = type.fields[key]
+        if (!fieldType) {
+          continue
+        }
+        defaults.push(
+          ...resolveDefaultsFromInitial(
+            fieldType,
+            initial[String(key)] as unknown,
+          ),
+        )
+      }
+      return defaults
+    }
+    default: {
+      const exhaustiveType: never = type
+      void exhaustiveType
+      throw new Error('unsupported type initializer')
+    }
   }
 }
+
+export const defineStruct = <TFields extends Record<string, GoboxTypeAny>>(
+  fields: TFields,
+): GoboxStructTypeFactory<TFields> => {
+  const base = buildStructType(fields)
+  return Object.assign(function Struct(
+    initial?: GoboxStructInitial<TFields>,
+  ): GoboxStructType<TFields> {
+    if (initial === undefined) {
+      return base
+    }
+    return {
+      ...base,
+      defaults: resolveDefaultsFromInitial(base, initial),
+    }
+  }, base) as GoboxStructTypeFactory<TFields>
+}
+
+export const struct = <TFields extends Record<string, GoboxTypeAny>>(
+  fields: TFields,
+): GoboxStructType<TFields> => {
+  return defineStruct(fields)()
+}
+
+export { defineImpl, useImpl } from './functions'
 
 export const isPrimitiveType = (
   type: GoboxTypeAny,

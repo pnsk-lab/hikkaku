@@ -1,32 +1,32 @@
 import { describe, expect, test } from 'vite-plus/test'
 import {
-  boolean,
+  Bool,
+  defineImpl,
+  defineStruct,
   isPrimitiveType,
-  number,
-  string,
-  struct,
-  trait,
-  useImpl,
+  Num,
+  Str,
   vector,
 } from './types'
 
 describe('gobox/types', () => {
   test('builds primitive types with defaults', () => {
-    expect(number(3).defaults).toEqual([3])
-    expect(string('a').defaults).toEqual(['a'])
-    expect(boolean(true).defaults).toEqual([1])
+    expect(new Num(3).defaults).toEqual([3])
+    expect(new Str('a').defaults).toEqual(['a'])
+    expect(new Bool(true).defaults).toEqual([1])
   })
 
   test('builds fixed-length vector and struct layouts', () => {
-    const vec = vector(number(0), 3)
+    const vec = vector(new Num(0), 3)
     expect(vec.width).toBe(3)
     expect(vec.defaults).toEqual([0, 0, 0])
 
-    const pos = struct({
-      x: number(1),
-      y: number(2),
-      name: string('cat'),
+    const Pos = defineStruct({
+      x: new Num(1),
+      y: new Num(2),
+      name: new Str('cat'),
     })
+    const pos = new Pos()
 
     expect(pos.width).toBe(3)
     expect(pos.fieldOffsets.x).toBe(0)
@@ -36,63 +36,64 @@ describe('gobox/types', () => {
   })
 
   test('validates vector length', () => {
-    expect(() => vector(number(0), -1)).toThrow(
+    expect(() => vector(new Num(0), -1)).toThrow(
       /vector length must be a non-negative integer/,
     )
-    expect(() => vector(number(0), 1.5)).toThrow(
+    expect(() => vector(new Num(0), 1.5)).toThrow(
       /vector length must be a non-negative integer/,
     )
   })
 
   test('reports primitive type check correctly', () => {
-    expect(isPrimitiveType(number(0))).toBe(true)
-    expect(isPrimitiveType(string(''))).toBe(true)
-    expect(isPrimitiveType(boolean(false))).toBe(true)
-    expect(isPrimitiveType(struct({ value: number(0) }))).toBe(false)
+    expect(isPrimitiveType(new Num(0))).toBe(true)
+    expect(isPrimitiveType(new Str(''))).toBe(true)
+    expect(isPrimitiveType(new Bool(false))).toBe(true)
+    const Counter = defineStruct({ value: new Num(0) })
+    expect(isPrimitiveType(new Counter())).toBe(false)
   })
 
-  test('supports trait contracts on useImpl', () => {
-    const counter = struct({
-      count: number(0),
+  test('supports defineImpl using defineStruct type', () => {
+    const Counter = defineStruct({
+      count: new Num(0),
     })
-
-    const counterTrait = trait<{
-      sync(): void
-    }>(['sync'])
-
-    const withTrait = useImpl(counter, counterTrait, {
+    const CounterImpl = defineImpl(Counter, {
       sync: () => undefined,
       reset: () => undefined,
     })
+    const counter = new CounterImpl()
 
-    expect(withTrait.methods.sync).toBeTypeOf('function')
-    expect(withTrait.methods.reset).toBeTypeOf('function')
+    expect(counter.methods.sync).toBeTypeOf('function')
+    expect(counter.methods.reset).toBeTypeOf('function')
   })
 
-  test('supports useImpl without a trait', () => {
-    const pos = struct({
-      x: number(0),
+  test('supports defineStruct initializer through new', () => {
+    const Counter = defineStruct({
+      count: new Num(0),
+      name: new Str(''),
+      ready: new Bool(false),
     })
-    const withMethods = useImpl(pos, {
-      reset: () => undefined,
-      scale: 2,
+    const initialized = new Counter({
+      count: 10,
+      name: 'cat',
+      ready: true,
     })
 
-    expect(withMethods.methods.reset).toBeTypeOf('function')
-    expect(withMethods.methods.scale).toBe(2)
+    expect(initialized.defaults).toEqual([10, 'cat', 1])
   })
 
-  test('throws when required trait methods are missing', () => {
-    const counter = struct({
-      count: number(0),
+  test('skips falsy struct field definitions', () => {
+    const Model = defineStruct({
+      skipped: undefined as never,
+      value: new Num(42),
+    } as {
+      skipped: never
+      value: ReturnType<typeof Num>
     })
+    const type = new Model()
 
-    const counterTrait = trait<{
-      sync(): void
-    }>(['sync'])
-
-    expect(() =>
-      useImpl(counter, counterTrait, {} as unknown as { sync(): void }),
-    ).toThrow(/Missing trait method: sync/)
+    expect(type.fieldOffsets).toHaveProperty('value', 0)
+    expect((type.fieldOffsets as { skipped?: number }).skipped).toBeUndefined()
+    expect(type.width).toBe(1)
+    expect(type.defaults).toEqual([42])
   })
 })
