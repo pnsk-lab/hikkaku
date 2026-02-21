@@ -1,4 +1,4 @@
-import { type PrimitiveSource, Project } from 'hikkaku'
+import { Project } from 'hikkaku'
 import {
   add,
   addToList,
@@ -456,108 +456,141 @@ const PIXEL_FONT_GLYPHS = [
   '000000111000000',
 ]
 
+type NumberSource =
+  | number
+  | ReturnType<typeof add>
+  | ReturnType<typeof getItemOfList>
+type ColorSource = string | ReturnType<typeof getItemOfList>
+
+const toNumberSource = (value: NumberSource): ReturnType<typeof add> => {
+  return add(value as never, 0)
+}
+
 // Helpers that convert the timeline/roll coordinates into flat list indexes shared across the renderer and audio code.
-const clipIndex = (
-  track: PrimitiveSource<number>,
-  event: PrimitiveSource<number>,
-) => {
-  return add(multiply(subtract(track, 1), EVENTS_PER_TRACK), event)
+const clipIndex = (track: NumberSource, event: NumberSource) => {
+  const trackNumber = toNumberSource(track)
+  const eventNumber = toNumberSource(event)
+  return add(multiply(subtract(trackNumber, 1), EVENTS_PER_TRACK), eventNumber)
 }
 
 const noteIndex = (
-  clip: PrimitiveSource<number>,
-  step: PrimitiveSource<number>,
-  pitch: PrimitiveSource<number>,
+  clip: NumberSource,
+  step: NumberSource,
+  pitch: NumberSource,
 ) => {
+  const clipNumber = toNumberSource(clip)
+  const stepNumber = toNumberSource(step)
+  const pitchNumber = toNumberSource(pitch)
   return add(
     add(
-      multiply(subtract(clip, 1), NOTES_PER_CLIP),
-      multiply(subtract(pitch, 1), ROLL_STEPS),
+      multiply(subtract(clipNumber, 1), NOTES_PER_CLIP),
+      multiply(subtract(pitchNumber, 1), ROLL_STEPS),
     ),
-    step,
+    stepNumber,
   )
 }
 
-const melodicMidiNote = (
-  pitch: PrimitiveSource<number>,
-  track: PrimitiveSource<number>,
-) => {
+const melodicMidiNote = (pitch: NumberSource, track: NumberSource) => {
+  const pitchNumber = toNumberSource(pitch)
+  const trackNumber = toNumberSource(track)
   return add(
-    add(48, subtract(ROLL_PITCHES, pitch)),
-    multiply(subtract(track, 1), 5),
+    add(48, subtract(ROLL_PITCHES, pitchNumber)),
+    multiply(subtract(trackNumber, 1), 5),
   )
 }
 
-const drumMidiNote = (pitch: PrimitiveSource<number>) => {
-  return add(DRUM_MIDI_MIN, subtract(ROLL_PITCHES, pitch))
+const drumMidiNote = (pitch: NumberSource) => {
+  const pitchNumber = toNumberSource(pitch)
+  return add(DRUM_MIDI_MIN, subtract(ROLL_PITCHES, pitchNumber))
 }
 
-const trackCenterY = (track: PrimitiveSource<number>) => {
+const trackCenterY = (track: NumberSource) => {
+  const trackNumber = toNumberSource(track)
   return subtract(
-    subtract(TIMELINE_TOP, multiply(subtract(track, 1), TRACK_HEIGHT)),
+    subtract(TIMELINE_TOP, multiply(subtract(trackNumber, 1), TRACK_HEIGHT)),
     TRACK_HEIGHT / 2,
   )
 }
 
-const cellTopLeftX = (step: PrimitiveSource<number>) => {
-  return add(ROLL_GRID_LEFT, multiply(subtract(step, 1), ROLL_CELL_W))
+const cellTopLeftX = (step: NumberSource) => {
+  const stepNumber = toNumberSource(step)
+  return add(ROLL_GRID_LEFT, multiply(subtract(stepNumber, 1), ROLL_CELL_W))
 }
 
-const cellCenterY = (pitch: PrimitiveSource<number>) => {
+const cellCenterY = (pitch: NumberSource) => {
+  const pitchNumber = toNumberSource(pitch)
   return subtract(
     subtract(ROLL_TOP, divide(rollCellH.get(), 2)),
-    multiply(subtract(pitch, 1), rollCellH.get()),
+    multiply(subtract(pitchNumber, 1), rollCellH.get()),
   )
 }
 
 const drawHorizontal = (
-  x1: PrimitiveSource<number>,
-  x2: PrimitiveSource<number>,
-  y: PrimitiveSource<number>,
-  size: PrimitiveSource<number>,
-  color: PrimitiveSource<string>,
+  x1: NumberSource,
+  x2: NumberSource,
+  y: NumberSource,
+  size: NumberSource,
+  color: ColorSource,
 ) => {
-  setVariableTo(rectHalfLow, mathop('floor', divide(subtract(size, 1), 2)))
-  setVariableTo(rectHalfHigh, mathop('floor', divide(size, 2)))
+  const x1Number = toNumberSource(x1)
+  const x2Number = toNumberSource(x2)
+  const yNumber = toNumberSource(y)
+  const sizeNumber = toNumberSource(size)
+  setVariableTo(
+    rectHalfLow,
+    mathop('floor', divide(subtract(sizeNumber, 1), 2)),
+  )
+  setVariableTo(rectHalfHigh, mathop('floor', divide(sizeNumber, 2)))
   drawRect(
-    x1,
-    subtract(y, rectHalfLow.get()),
-    x2,
-    add(y, rectHalfHigh.get()),
+    x1Number,
+    subtract(yNumber, rectHalfLow.get()),
+    x2Number,
+    add(yNumber, rectHalfHigh.get()),
     color,
   )
 }
 
 const drawVertical = (
-  x: PrimitiveSource<number>,
-  y1: PrimitiveSource<number>,
-  y2: PrimitiveSource<number>,
-  size: PrimitiveSource<number>,
-  color: PrimitiveSource<string>,
+  x: NumberSource,
+  y1: NumberSource,
+  y2: NumberSource,
+  size: NumberSource,
+  color: ColorSource,
 ) => {
-  setVariableTo(rectHalfLow, mathop('floor', divide(subtract(size, 1), 2)))
-  setVariableTo(rectHalfHigh, mathop('floor', divide(size, 2)))
+  const xNumber = toNumberSource(x)
+  const y1Number = toNumberSource(y1)
+  const y2Number = toNumberSource(y2)
+  const sizeNumber = toNumberSource(size)
+  setVariableTo(
+    rectHalfLow,
+    mathop('floor', divide(subtract(sizeNumber, 1), 2)),
+  )
+  setVariableTo(rectHalfHigh, mathop('floor', divide(sizeNumber, 2)))
   drawRect(
-    subtract(x, rectHalfLow.get()),
-    y1,
-    add(x, rectHalfHigh.get()),
-    y2,
+    subtract(xNumber, rectHalfLow.get()),
+    y1Number,
+    add(xNumber, rectHalfHigh.get()),
+    y2Number,
     color,
   )
 }
 
 // Normalizes the rectangle bounds, sets pen parameters, and sweeps a line to render horizontal bars.
 const drawRect = (
-  x1: PrimitiveSource<number>,
-  y1: PrimitiveSource<number>,
-  x2: PrimitiveSource<number>,
-  y2: PrimitiveSource<number>,
-  color: PrimitiveSource<string>,
+  x1: NumberSource,
+  y1: NumberSource,
+  x2: NumberSource,
+  y2: NumberSource,
+  color: ColorSource,
 ) => {
-  setVariableTo(rectLeft, x1)
-  setVariableTo(rectRight, x2)
-  setVariableTo(rectBottom, y1)
-  setVariableTo(rectTop, y2)
+  const x1Number = toNumberSource(x1)
+  const y1Number = toNumberSource(y1)
+  const x2Number = toNumberSource(x2)
+  const y2Number = toNumberSource(y2)
+  setVariableTo(rectLeft, x1Number)
+  setVariableTo(rectRight, x2Number)
+  setVariableTo(rectBottom, y1Number)
+  setVariableTo(rectTop, y2Number)
 
   ifThen(gt(rectLeft.get(), rectRight.get()), () => {
     setVariableTo(rectTmp, rectLeft.get())

@@ -13,6 +13,8 @@ import type {
   CostumeReference,
   CreateListOptions,
   CreateVariableOptions,
+  HikkakuNumber,
+  HikkakuString,
   ListReference,
   SoundData,
   SoundReference,
@@ -146,7 +148,7 @@ export class Target<IsStage extends boolean = boolean> {
       name,
       type: 'variable',
       get: () =>
-        valueBlock('data_variable', {
+        valueBlock<HikkakuNumber | HikkakuString>('data_variable', {
           fields: {
             VARIABLE: [name, id],
           },

@@ -1,7 +1,11 @@
 import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
-import type { PrimitiveSource } from '../core/types'
+import type {
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 /**
  * Moves sprite.
@@ -18,7 +22,7 @@ import type { PrimitiveSource } from '../core/types'
  * moveSteps(10)
  * ```
  */
-export const moveSteps = (steps: PrimitiveSource<number>) => {
+export const moveSteps = (steps: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_movesteps', {
     inputs: {
       STEPS: fromPrimitiveSource(InputType.Number, steps, 10),
@@ -43,8 +47,8 @@ export const moveSteps = (steps: PrimitiveSource<number>) => {
  * ```
  */
 export const gotoXY = (
-  x: PrimitiveSource<number>,
-  y: PrimitiveSource<number>,
+  x: PrimitiveSource<HikkakuNumber>,
+  y: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('motion_gotoxy', {
     inputs: {
@@ -69,7 +73,7 @@ export const gotoXY = (
  * changeXBy(10)
  * ```
  */
-export const changeXBy = (dx: PrimitiveSource<number>) => {
+export const changeXBy = (dx: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_changexby', {
     inputs: {
       DX: fromPrimitiveSource(InputType.Number, dx, 10),
@@ -92,7 +96,7 @@ export const changeXBy = (dx: PrimitiveSource<number>) => {
  * changeYBy(10)
  * ```
  */
-export const changeYBy = (dy: PrimitiveSource<number>) => {
+export const changeYBy = (dy: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_changeyby', {
     inputs: {
       DY: fromPrimitiveSource(InputType.Number, dy, 10),
@@ -115,7 +119,7 @@ export const changeYBy = (dy: PrimitiveSource<number>) => {
  * setX(10)
  * ```
  */
-export const setX = (x: PrimitiveSource<number>) => {
+export const setX = (x: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_setx', {
     inputs: {
       X: fromPrimitiveSource(InputType.Number, x, 0),
@@ -138,7 +142,7 @@ export const setX = (x: PrimitiveSource<number>) => {
  * setY(10)
  * ```
  */
-export const setY = (y: PrimitiveSource<number>) => {
+export const setY = (y: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_sety', {
     inputs: {
       Y: fromPrimitiveSource(InputType.Number, y, 0),
@@ -161,7 +165,7 @@ export const setY = (y: PrimitiveSource<number>) => {
  * goTo('mouse-pointer')
  * ```
  */
-export const goTo = (target: PrimitiveSource<string>) => {
+export const goTo = (target: PrimitiveSource<HikkakuString>) => {
   return block('motion_goto', {
     inputs: {
       TO: menuInput(target, menuOfGoTo),
@@ -170,7 +174,7 @@ export const goTo = (target: PrimitiveSource<string>) => {
 }
 export const GOTO_RANDOM = '_random_'
 export const menuOfGoTo = (target: string = GOTO_RANDOM) => {
-  return valueBlock('motion_goto_menu', {
+  return valueBlock<HikkakuString>('motion_goto_menu', {
     fields: {
       TO: [target, null],
     },
@@ -193,7 +197,7 @@ export const menuOfGoTo = (target: string = GOTO_RANDOM) => {
  * turnRight(10)
  * ```
  */
-export const turnRight = (degrees: PrimitiveSource<number>) => {
+export const turnRight = (degrees: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_turnright', {
     inputs: {
       DEGREES: fromPrimitiveSource(InputType.Number, degrees, 15),
@@ -216,7 +220,7 @@ export const turnRight = (degrees: PrimitiveSource<number>) => {
  * turnLeft(10)
  * ```
  */
-export const turnLeft = (degrees: PrimitiveSource<number>) => {
+export const turnLeft = (degrees: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_turnleft', {
     inputs: {
       DEGREES: fromPrimitiveSource(InputType.Number, degrees, 15),
@@ -239,7 +243,7 @@ export const turnLeft = (degrees: PrimitiveSource<number>) => {
  * pointInDirection('forward')
  * ```
  */
-export const pointInDirection = (direction: PrimitiveSource<number>) => {
+export const pointInDirection = (direction: PrimitiveSource<HikkakuNumber>) => {
   return block('motion_pointindirection', {
     inputs: {
       DIRECTION: fromPrimitiveSource(InputType.Angle, direction, 90),
@@ -262,7 +266,7 @@ export const pointInDirection = (direction: PrimitiveSource<number>) => {
  * pointTowards('mouse-pointer')
  * ```
  */
-export const pointTowards = (target: PrimitiveSource<string>) => {
+export const pointTowards = (target: PrimitiveSource<HikkakuString>) => {
   return block('motion_pointtowards', {
     inputs: {
       TOWARDS: menuInput(target, menuOfPointTowards),
@@ -271,7 +275,7 @@ export const pointTowards = (target: PrimitiveSource<string>) => {
 }
 const TOWARDS_MOUSE_POINTER = '_mouse_'
 export const menuOfPointTowards = (target: string = TOWARDS_MOUSE_POINTER) => {
-  return valueBlock('motion_pointtowards_menu', {
+  return valueBlock<HikkakuString>('motion_pointtowards_menu', {
     fields: {
       TOWARDS: [target, null],
     },
@@ -297,9 +301,9 @@ export const menuOfPointTowards = (target: string = TOWARDS_MOUSE_POINTER) => {
  * ```
  */
 export const glide = (
-  seconds: PrimitiveSource<number>,
-  x: PrimitiveSource<number>,
-  y: PrimitiveSource<number>,
+  seconds: PrimitiveSource<HikkakuNumber>,
+  x: PrimitiveSource<HikkakuNumber>,
+  y: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('motion_glidesecstoxy', {
     inputs: {
@@ -327,8 +331,8 @@ export const glide = (
  * ```
  */
 export const glideTo = (
-  seconds: PrimitiveSource<number>,
-  target: PrimitiveSource<string>,
+  seconds: PrimitiveSource<HikkakuNumber>,
+  target: PrimitiveSource<HikkakuString>,
 ) => {
   return block('motion_glideto', {
     inputs: {
@@ -339,7 +343,7 @@ export const glideTo = (
 }
 
 export const menuOfGlideTo = (target: string = GOTO_RANDOM) => {
-  return valueBlock('motion_glideto_menu', {
+  return valueBlock<HikkakuString>('motion_glideto_menu', {
     fields: {
       TO: [target, null],
     },
@@ -405,7 +409,7 @@ export const setRotationStyle = (
  * ```
  */
 export const getX = () => {
-  return valueBlock('motion_xposition', {})
+  return valueBlock<HikkakuNumber>('motion_xposition', {})
 }
 
 /**
@@ -423,7 +427,7 @@ export const getX = () => {
  * ```
  */
 export const getY = () => {
-  return valueBlock('motion_yposition', {})
+  return valueBlock<HikkakuNumber>('motion_yposition', {})
 }
 
 /**
@@ -441,5 +445,5 @@ export const getY = () => {
  * ```
  */
 export const getDirection = () => {
-  return valueBlock('motion_direction', {})
+  return valueBlock<HikkakuNumber>('motion_direction', {})
 }

@@ -1,13 +1,22 @@
-import type { HikkakuBlock, PrimitiveSource } from 'hikkaku'
+import type {
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuReporterBlock,
+  HikkakuString,
+  PrimitiveSource,
+} from 'hikkaku'
 import { __unstable_getBuildScopeFrame } from 'hikkaku'
 import {
   add,
   callProcedure,
   defineProcedure,
+  equals,
+  ifThen,
   procedureBoolean,
   procedureLabel,
   procedureStringOrNumber,
 } from 'hikkaku/blocks'
+import { IMPL_CONSTRUCTOR_SYMBOL, IMPL_METHODS_SYMBOL } from './internal/impl'
 import {
   getRuntimeForCurrentTarget,
   type SlotPointer,
@@ -30,8 +39,8 @@ import { isPrimitiveType } from './types'
 import {
   __unsafe_createScopedValueFromPointer,
   __unsafe_getPointerSource,
+  makeScopedValueFromType,
   type ScopedValueFromType,
-  useScopedValue,
 } from './value'
 
 export type FunctionArgSpec = Record<string, GoboxPrimitiveTypeLike>
@@ -54,10 +63,10 @@ type NormalizeFunctionReturn<TReturn extends GoboxPrimitiveTypeLike> =
 
 type PrimitiveInputForType<TType extends GoboxPrimitiveType> =
   TType extends GoboxBooleanType
-    ? PrimitiveSource<boolean>
+    ? PrimitiveSource<HikkakuBool>
     : TType extends GoboxNumberType
-      ? PrimitiveSource<number>
-      : PrimitiveSource<string | number>
+      ? PrimitiveSource<HikkakuNumber>
+      : PrimitiveSource<HikkakuString | HikkakuNumber>
 
 export type FunctionCallArgs<TArgs extends Record<string, GoboxPrimitiveType>> =
   {
@@ -73,7 +82,7 @@ export type FunctionReaders<TArgs extends Record<string, GoboxPrimitiveType>> =
     [K in keyof TArgs]: PrimitiveReaderForType<TArgs[K]>
   }
 
-export interface UseFunctionOptions<
+export interface DefineFunctionOptions<
   TArgs extends FunctionArgSpec,
   TReturn extends GoboxPrimitiveTypeLike,
 > {
@@ -82,11 +91,11 @@ export interface UseFunctionOptions<
   returns: TReturn
   warp?: boolean
   body: (ctx: {
-    args: FunctionReaders<NormalizeFunctionArgs<TArgs>>
+    args: FunctionReaders<NormalizeFunctionArgs<NoInfer<TArgs>>>
     returning(
-      value: PrimitiveInputForType<NormalizeFunctionReturn<TReturn>>,
-    ): GoboxReturningToken<NormalizeFunctionReturn<TReturn>>
-  }) => GoboxReturningToken<NormalizeFunctionReturn<TReturn>> | undefined
+      value: PrimitiveInputForType<NormalizeFunctionReturn<NoInfer<TReturn>>>,
+    ): GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>>
+  }) => GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>> | void
 }
 
 export interface GoboxFunctionDefinition<
@@ -102,33 +111,14 @@ export interface GoboxFunctionDefinition<
   ): ScopedValueFromType<NormalizeFunctionReturn<TReturn>>
 }
 
-type UseFunctionInput<
+type DefineFunctionInput<
   TArgs extends FunctionArgSpec = FunctionArgSpec,
   TReturn extends GoboxPrimitiveTypeLike = GoboxPrimitiveTypeLike,
-> = Omit<UseFunctionOptions<TArgs, TReturn>, 'name'> & {
+> = Omit<DefineFunctionOptions<TArgs, TReturn>, 'name'> & {
   name?: string
 }
 
-type UseFunctionInputLike<
-  TArgs extends FunctionArgSpec = FunctionArgSpec,
-  TReturn extends GoboxPrimitiveTypeLike = GoboxPrimitiveTypeLike,
-> = {
-  name?: string
-  args: TArgs
-  returns: TReturn
-  body: unknown
-}
-
-type NormalizeImplMethod<TMethod> =
-  TMethod extends GoboxFunctionDefinition<infer TArgs, infer TReturn>
-    ? GoboxFunctionDefinition<TArgs, TReturn>
-    : TMethod extends UseFunctionInputLike<infer TArgs, infer TReturn>
-      ? GoboxFunctionDefinition<TArgs, TReturn>
-      : TMethod
-
-type NormalizeImplMethods<TMethods extends Record<string, unknown>> = {
-  [K in keyof TMethods]: NormalizeImplMethod<TMethods[K]>
-}
+type StructFields = Record<string, GoboxTypeAny>
 
 class GoboxReturningToken<TReturn extends GoboxPrimitiveType> {
   readonly scopeId: number
@@ -140,31 +130,154 @@ class GoboxReturningToken<TReturn extends GoboxPrimitiveType> {
   }
 }
 
-type StructFieldsFromFactory<TStruct extends GoboxStructTypeFactory<any>> =
-  TStruct extends GoboxStructTypeFactory<infer TFields> ? TFields : never
+type StructInitial<TFields extends StructFields> = GoboxStructInitial<TFields>
 
-type StructInitialFromFactory<TStruct extends GoboxStructTypeFactory<any>> =
-  GoboxStructInitial<StructFieldsFromFactory<TStruct>>
+type StructInstance<TFields extends StructFields> = GoboxStructType<TFields>
 
-type StructInstanceFromFactory<TStruct extends GoboxStructTypeFactory<any>> =
-  GoboxStructType<StructFieldsFromFactory<TStruct>>
+type ImplSelf<TFields extends StructFields> = ScopedValueFromType<
+  StructInstance<TFields>
+>
+
+type UseImplFunctionInput<
+  TFields extends StructFields,
+  TArgs extends FunctionArgSpec = FunctionArgSpec,
+  TReturn extends GoboxPrimitiveTypeLike = GoboxPrimitiveTypeLike,
+> = Omit<DefineFunctionOptions<TArgs, TReturn>, 'name' | 'body'> & {
+  name?: string
+  body: (ctx: {
+    self: ImplSelf<TFields>
+    args: FunctionReaders<NormalizeFunctionArgs<NoInfer<TArgs>>>
+    returning(
+      value: PrimitiveInputForType<NormalizeFunctionReturn<NoInfer<TReturn>>>,
+    ): GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>>
+  }) => GoboxReturningToken<NormalizeFunctionReturn<NoInfer<TReturn>>> | void
+}
+
+type UseImplFunctionOptions<
+  TFields extends StructFields,
+  TArgs extends FunctionArgSpec,
+  TReturn extends GoboxPrimitiveTypeLike,
+> = Omit<UseImplFunctionInput<TFields, TArgs, TReturn>, 'name'> & {
+  name: string
+  selfType: StructInstance<TFields>
+}
+
+type NormalizeImplMethod<TFields extends StructFields, TMethod> =
+  TMethod extends GoboxFunctionDefinition<infer TArgs, infer TReturn>
+    ? GoboxFunctionDefinition<TArgs, TReturn>
+    : TMethod extends UseImplFunctionInput<TFields, infer TArgs, infer TReturn>
+      ? GoboxFunctionDefinition<TArgs, TReturn>
+      : TMethod
+
+type NormalizeImplMethods<
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+> = {
+  [K in keyof TMethods as K extends 'constructor'
+    ? never
+    : K]: NormalizeImplMethod<TFields, TMethods[K]>
+}
+
+type ImplConstructorHandler<TFields extends StructFields> =
+  | ((ctx: { self: ImplSelf<TFields> }) => void)
+  | (() => void)
+
+type ImplConstructorInput<TFields extends StructFields> = {
+  constructor?: ImplConstructorHandler<TFields> | Function
+}
+
+type ImplConstructorCompatInput = {
+  // Accept Object.prototype.constructor shape for tsgo compatibility.
+  constructor?: Function
+}
+
+type ImplFunctionMethodsInput<
+  TFields extends StructFields,
+  TArgsMap extends Record<string, FunctionArgSpec>,
+  TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+> = {
+  [K in keyof TArgsMap]:
+    | GoboxFunctionDefinition<TArgsMap[K], TReturnMap[K]>
+    | UseImplFunctionInput<TFields, TArgsMap[K], TReturnMap[K]>
+} & ImplConstructorInput<TFields>
+
+type ImplFunctionOptionMethodsInput<
+  TFields extends StructFields,
+  TArgsMap extends Record<string, FunctionArgSpec>,
+  TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+> = {
+  [K in keyof TArgsMap]: UseImplFunctionInput<
+    TFields,
+    TArgsMap[K],
+    TReturnMap[K]
+  >
+} & ImplConstructorInput<TFields>
+
+type ImplFunctionDefinitionMethodsInput<
+  TFields extends StructFields,
+  TArgsMap extends Record<string, FunctionArgSpec>,
+  TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+> = {
+  [K in keyof TArgsMap]: GoboxFunctionDefinition<TArgsMap[K], TReturnMap[K]>
+} & ImplConstructorInput<TFields>
+
+type ImplFunctionOptionSpec = {
+  args: unknown
+  returns: unknown
+}
+
+type ImplFunctionOptionMethodsFromSpec<
+  TFields extends StructFields,
+  TSpecs extends Record<string, ImplFunctionOptionSpec>,
+> = {
+  [K in keyof TSpecs]: TSpecs[K] extends {
+    args: infer TArgs extends FunctionArgSpec
+    returns: infer TReturn extends GoboxPrimitiveTypeLike
+  }
+    ? UseImplFunctionInput<TFields, TArgs, TReturn>
+    : never
+} & ImplConstructorInput<TFields>
+
+type ImplFunctionInputLike =
+  | GoboxFunctionDefinition<FunctionArgSpec, GoboxPrimitiveTypeLike>
+  | DefineFunctionInput<FunctionArgSpec, GoboxPrimitiveTypeLike>
+
+type ImplNonFunctionMethodsInput<TMethods extends Record<string, unknown>> = {
+  [K in keyof TMethods as K extends 'constructor'
+    ? never
+    : K]: TMethods[K] extends ImplFunctionInputLike ? never : unknown
+}
+
+type ImplMethodCarrier<
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+> = {
+  readonly [IMPL_METHODS_SYMBOL]: NormalizeImplMethods<TFields, TMethods>
+}
 
 export type GoboxImplTypeFactory<
-  TStruct extends GoboxStructTypeFactory<any>,
+  TFields extends StructFields,
   TMethods extends Record<string, unknown>,
 > = {
   (
-    initial?: StructInitialFromFactory<TStruct>,
-  ): StructInstanceFromFactory<TStruct> & {
-    methods: NormalizeImplMethods<TMethods>
-  }
+    initial?: StructInitial<TFields>,
+  ): StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
   new (
-    initial?: StructInitialFromFactory<TStruct>,
-  ): StructInstanceFromFactory<TStruct> & {
-    methods: NormalizeImplMethods<TMethods>
-  }
-} & StructInstanceFromFactory<TStruct> & {
-    methods: NormalizeImplMethods<TMethods>
+    initial?: StructInitial<TFields>,
+  ): StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+} & StructInstance<TFields> &
+  ImplMethodCarrier<TFields, TMethods> & {
+    configure(
+      initial?: StructInitial<TFields>,
+    ): GoboxImplTypeFactory<TFields, TMethods>
+    setDefaults(
+      initial: StructInitial<TFields>,
+    ): GoboxImplTypeFactory<TFields, TMethods>
+    makeScopedValue(
+      initial?: StructInitial<TFields>,
+    ): ScopedValueFromType<
+      StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+    >
   }
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
@@ -186,12 +299,12 @@ const isFunctionDefinitionLike = (
 const isPrimitiveTypeLike = (
   value: unknown,
 ): value is GoboxPrimitiveTypeLike => {
-  return typeof value === 'function' || isPrimitiveType(value as GoboxTypeAny)
+  return isPrimitiveType(value as GoboxTypeAny)
 }
 
-const isUseFunctionInput = (
+const isDefineFunctionInput = (
   value: unknown,
-): value is UseFunctionInput<FunctionArgSpec, GoboxPrimitiveTypeLike> => {
+): value is DefineFunctionInput<FunctionArgSpec, GoboxPrimitiveTypeLike> => {
   if (!isObjectRecord(value)) {
     return false
   }
@@ -206,9 +319,6 @@ const isUseFunctionInput = (
 const normalizePrimitiveType = <TType extends GoboxPrimitiveTypeLike>(
   type: TType,
 ): NormalizeFunctionReturn<TType> => {
-  if (typeof type === 'function') {
-    return type() as NormalizeFunctionReturn<TType>
-  }
   return type as NormalizeFunctionReturn<TType>
 }
 
@@ -224,30 +334,66 @@ const normalizeFunctionArgs = <TArgs extends FunctionArgSpec>(
   return normalized
 }
 
-const normalizeImplMethods = <TMethods extends Record<string, unknown>>(
+const normalizeImplMethods = <
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+>(
+  selfType: StructInstance<TFields>,
   methods: TMethods,
-): NormalizeImplMethods<TMethods> => {
+): NormalizeImplMethods<TFields, TMethods> => {
   const normalized: Record<string, unknown> = {}
 
   for (const [methodName, methodValue] of Object.entries(methods)) {
+    if (methodName === 'constructor') {
+      continue
+    }
     if (isFunctionDefinitionLike(methodValue)) {
       normalized[methodName] = methodValue
       continue
     }
-    if (isUseFunctionInput(methodValue)) {
-      normalized[methodName] = useFunction({
+    if (isDefineFunctionInput(methodValue)) {
+      normalized[methodName] = useImplFunction({
         name: methodValue.name ?? methodName,
+        selfType,
         args: methodValue.args,
         returns: methodValue.returns,
         warp: methodValue.warp,
-        body: methodValue.body,
+        body: methodValue.body as UseImplFunctionInput<
+          TFields,
+          FunctionArgSpec,
+          GoboxPrimitiveTypeLike
+        >['body'],
       })
       continue
     }
     normalized[methodName] = methodValue
   }
 
-  return normalized as NormalizeImplMethods<TMethods>
+  return Object.freeze(normalized) as NormalizeImplMethods<TFields, TMethods>
+}
+
+const withImplMethods = <
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+>(
+  value: StructInstance<TFields>,
+  resolveMethods: () => NormalizeImplMethods<TFields, TMethods>,
+  constructorBody?: (ctx: { self: ImplSelf<TFields> }) => void,
+): StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods> => {
+  const withMethods = {
+    ...value,
+  } as StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+  Object.defineProperty(withMethods, IMPL_METHODS_SYMBOL, {
+    enumerable: false,
+    get: resolveMethods,
+  })
+  if (constructorBody !== undefined) {
+    Object.defineProperty(withMethods, IMPL_CONSTRUCTOR_SYMBOL, {
+      enumerable: false,
+      value: constructorBody,
+    })
+  }
+  return Object.freeze(withMethods)
 }
 
 const assertRunTopLevel = (name: string): void => {
@@ -259,15 +405,15 @@ const assertRunTopLevel = (name: string): void => {
 
 const coerceReporterByType = (
   type: GoboxPrimitiveType,
-  reporter: HikkakuBlock,
-): PrimitiveSource<string | number | boolean> => {
+  reporter: HikkakuReporterBlock,
+): PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool> => {
   switch (type.tag) {
     case 'number':
-      return add(reporter as PrimitiveSource<number>, 0)
+      return add(reporter as PrimitiveSource<HikkakuNumber>, 0)
     case 'string':
-      return reporter as PrimitiveSource<string | number>
+      return reporter as PrimitiveSource<HikkakuString | HikkakuNumber>
     case 'boolean':
-      return reporter as PrimitiveSource<boolean>
+      return reporter as PrimitiveSource<HikkakuBool>
     default: {
       const exhaustiveType: never = type
       void exhaustiveType
@@ -303,13 +449,13 @@ const setScopedPrimitiveValue = <TType extends GoboxPrimitiveType>(
   )
 }
 
-export const useFunction = <
+export const defineFunction = <
   TArgs extends FunctionArgSpec,
   TReturn extends GoboxPrimitiveTypeLike,
 >(
-  options: UseFunctionOptions<TArgs, TReturn>,
+  options: DefineFunctionOptions<TArgs, TReturn>,
 ): GoboxFunctionDefinition<TArgs, TReturn> => {
-  assertRunTopLevel('useFunction')
+  assertRunTopLevel('defineFunction')
 
   const runtime = getRuntimeForCurrentTarget()
   const normalizedArgs = normalizeFunctionArgs(options.args)
@@ -341,7 +487,7 @@ export const useFunction = <
       const references = rawReferences as Record<
         string,
         {
-          getter(): HikkakuBlock
+          getter(): HikkakuReporterBlock
         }
       >
 
@@ -372,7 +518,7 @@ export const useFunction = <
       }
       const returnPointerReporter = returnPointerReference.getter()
       const returnPointerSource = add(
-        returnPointerReporter as PrimitiveSource<number>,
+        returnPointerReporter as PrimitiveSource<HikkakuNumber>,
         0,
       )
       const pointer: SlotPointer = {
@@ -387,7 +533,9 @@ export const useFunction = <
       )
       const bodyScope = __unstable_getBuildScopeFrame()
       if (!bodyScope) {
-        throw new Error('useFunction body must be built inside a stack scope')
+        throw new Error(
+          'defineFunction body must be built inside a stack scope',
+        )
       }
       let nextReturn = fallbackPrimitiveByType(normalizedReturn)
       const issuedTokens: Array<GoboxReturningToken<NormalizedReturn>> = []
@@ -409,12 +557,12 @@ export const useFunction = <
       if (issuedTokens.length > 0) {
         if (!(bodyResult instanceof GoboxReturningToken)) {
           throw new Error(
-            'returning() must be used as `return returning(...)` in useFunction body',
+            'returning() must be used as `return returning(...)` in defineFunction body',
           )
         }
         if (!issuedTokens.includes(bodyResult)) {
           throw new Error(
-            'returning() must be used as `return returning(...)` in useFunction body',
+            'returning() must be used as `return returning(...)` in defineFunction body',
           )
         }
         if (
@@ -422,7 +570,7 @@ export const useFunction = <
           issuedTokens.some((token) => token !== bodyResult)
         ) {
           throw new Error(
-            'returning() must be called once at useFunction body top-level and returned directly',
+            'returning() must be called once at defineFunction body top-level and returned directly',
           )
         }
         nextReturn = bodyResult.value
@@ -436,12 +584,12 @@ export const useFunction = <
   const call = (
     args: FunctionCallArgs<NormalizedArgs>,
   ): ScopedValueFromType<NormalizedReturn> => {
-    const destination = useScopedValue(normalizedReturn)
+    const destination = makeScopedValueFromType(normalizedReturn)
     const pointerSource = __unsafe_getPointerSource(destination)
 
     const inputs: Record<
       string,
-      PrimitiveSource<string | number | boolean>
+      PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool>
     > = {}
 
     for (const [name, value] of Object.entries(args)) {
@@ -455,7 +603,9 @@ export const useFunction = <
       if (!reference) {
         throw new Error(`Unknown function argument: ${name}`)
       }
-      inputs[reference.id] = value as PrimitiveSource<string | number | boolean>
+      inputs[reference.id] = value as PrimitiveSource<
+        HikkakuString | HikkakuNumber | HikkakuBool
+      >
     }
 
     const retReference = (
@@ -487,49 +637,447 @@ export const useFunction = <
   return definition
 }
 
-export const defineImpl = <
-  TStruct extends GoboxStructTypeFactory<any>,
+const useImplFunction = <
+  TFields extends StructFields,
+  TArgs extends FunctionArgSpec,
+  TReturn extends GoboxPrimitiveTypeLike,
+>(
+  options: UseImplFunctionOptions<TFields, TArgs, TReturn>,
+): GoboxFunctionDefinition<TArgs, TReturn> => {
+  assertRunTopLevel('defineImpl')
+
+  const runtime = getRuntimeForCurrentTarget()
+  const normalizedArgs = normalizeFunctionArgs(options.args)
+  const normalizedReturn = normalizePrimitiveType(options.returns)
+  type NormalizedArgs = NormalizeFunctionArgs<TArgs>
+  type NormalizedReturn = NormalizeFunctionReturn<TReturn>
+  const argEntries = Object.entries(normalizedArgs) as Array<
+    [keyof NormalizedArgs, NormalizedArgs[keyof NormalizedArgs]]
+  >
+
+  const proclist: Array<
+    | ReturnType<typeof procedureLabel>
+    | ReturnType<typeof procedureBoolean>
+    | ReturnType<typeof procedureStringOrNumber>
+  > = [procedureLabel(options.name)]
+
+  for (const [name, type] of argEntries) {
+    if (type.tag === 'boolean') {
+      proclist.push(procedureBoolean(String(name)))
+    } else {
+      proclist.push(procedureStringOrNumber(String(name)))
+    }
+  }
+  proclist.push(procedureStringOrNumber('__ret_ptr'))
+  proclist.push(procedureStringOrNumber('__self_ptr'))
+
+  const procedure = defineProcedure(
+    proclist,
+    (rawReferences) => {
+      const references = rawReferences as Record<
+        string,
+        {
+          getter(): HikkakuReporterBlock
+        }
+      >
+
+      const readers = {} as FunctionReaders<NormalizedArgs>
+      for (const [name, type] of argEntries) {
+        const reference = references[String(name)]
+        if (!reference) {
+          throw new Error(
+            `Missing function argument reference: ${String(name)}`,
+          )
+        }
+        readers[name] = {
+          get: () =>
+            coerceReporterByType(
+              type,
+              reference.getter(),
+            ) as PrimitiveReaderForType<
+              NormalizedArgs[typeof name]
+            >['get'] extends () => infer T
+              ? T
+              : never,
+        } as FunctionReaders<NormalizedArgs>[typeof name]
+      }
+
+      const returnPointerReference = references.__ret_ptr
+      if (!returnPointerReference) {
+        throw new Error('Missing __ret_ptr argument reference')
+      }
+      const returnPointerReporter = returnPointerReference.getter()
+      const returnPointerSource = add(
+        returnPointerReporter as PrimitiveSource<HikkakuNumber>,
+        0,
+      )
+      const returnPointer: SlotPointer = {
+        kind: 'expr',
+        source: returnPointerSource,
+        offset: 0,
+      }
+      const returnSlot = __unsafe_createScopedValueFromPointer(
+        runtime,
+        normalizedReturn,
+        returnPointer,
+      )
+
+      const selfPointerReference = references.__self_ptr
+      if (!selfPointerReference) {
+        throw new Error('Missing __self_ptr argument reference')
+      }
+      const selfPointerReporter = selfPointerReference.getter()
+      // Keep hidden self pointer argument connected even when body does not use self.
+      ifThen(
+        equals(
+          selfPointerReporter as PrimitiveSource<HikkakuString | HikkakuNumber>,
+          selfPointerReporter as PrimitiveSource<HikkakuString | HikkakuNumber>,
+        ),
+        () => {},
+      )
+      const selfPointerSource =
+        selfPointerReporter as PrimitiveSource<HikkakuNumber>
+      const selfPointer: SlotPointer = {
+        kind: 'expr',
+        source: selfPointerSource,
+        offset: 0,
+      }
+      const self = __unsafe_createScopedValueFromPointer(
+        runtime,
+        options.selfType,
+        selfPointer,
+      ) as ImplSelf<TFields>
+
+      const bodyScope = __unstable_getBuildScopeFrame()
+      if (!bodyScope) {
+        throw new Error(
+          'defineFunction body must be built inside a stack scope',
+        )
+      }
+      let nextReturn = fallbackPrimitiveByType(normalizedReturn)
+      const issuedTokens: Array<GoboxReturningToken<NormalizedReturn>> = []
+
+      const returning = (
+        value: PrimitiveInputForType<NormalizedReturn>,
+      ): GoboxReturningToken<NormalizedReturn> => {
+        const currentScope = __unstable_getBuildScopeFrame()
+        const token = new GoboxReturningToken(currentScope?.id ?? -1, value)
+        issuedTokens.push(token)
+        return token
+      }
+
+      const bodyResult = options.body({
+        self,
+        args: readers,
+        returning,
+      })
+
+      if (issuedTokens.length > 0) {
+        if (!(bodyResult instanceof GoboxReturningToken)) {
+          throw new Error(
+            'returning() must be used as `return returning(...)` in defineFunction body',
+          )
+        }
+        if (!issuedTokens.includes(bodyResult)) {
+          throw new Error(
+            'returning() must be used as `return returning(...)` in defineFunction body',
+          )
+        }
+        if (
+          bodyResult.scopeId !== bodyScope.id ||
+          issuedTokens.some((token) => token !== bodyResult)
+        ) {
+          throw new Error(
+            'returning() must be called once at defineFunction body top-level and returned directly',
+          )
+        }
+        nextReturn = bodyResult.value
+      }
+      setScopedPrimitiveValue(returnSlot, nextReturn)
+      return undefined
+    },
+    options.warp ?? false,
+  )
+
+  const call = (
+    args: FunctionCallArgs<NormalizedArgs>,
+    self?: ImplSelf<TFields>,
+  ): ScopedValueFromType<NormalizedReturn> => {
+    if (!self) {
+      throw new Error('impl method call requires bound self')
+    }
+    const destination = makeScopedValueFromType(normalizedReturn)
+    const pointerSource = __unsafe_getPointerSource(destination)
+    const selfPointerSource = __unsafe_getPointerSource(self)
+
+    const inputs: Record<
+      string,
+      PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool>
+    > = {}
+
+    for (const [name, value] of Object.entries(args)) {
+      const reference = (
+        procedure as unknown as {
+          reference: {
+            arguments: Record<string, { id: string }>
+          }
+        }
+      ).reference.arguments[name]
+      if (!reference) {
+        throw new Error(`Unknown function argument: ${name}`)
+      }
+      inputs[reference.id] = value as PrimitiveSource<
+        HikkakuString | HikkakuNumber | HikkakuBool
+      >
+    }
+
+    const retReference = (
+      procedure as unknown as {
+        reference: {
+          arguments: Record<string, { id: string }>
+        }
+      }
+    ).reference.arguments.__ret_ptr
+    if (!retReference) {
+      throw new Error('internal return pointer argument is missing')
+    }
+    inputs[retReference.id] = pointerSource
+
+    const selfReference = (
+      procedure as unknown as {
+        reference: {
+          arguments: Record<string, { id: string }>
+        }
+      }
+    ).reference.arguments.__self_ptr
+    if (!selfReference) {
+      throw new Error('internal self pointer argument is missing')
+    }
+    inputs[selfReference.id] = selfPointerSource
+
+    callProcedure(procedure, inputs)
+    return destination
+  }
+
+  const definition: GoboxFunctionDefinition<TArgs, TReturn> = {
+    name: options.name,
+    args: options.args,
+    returns: options.returns,
+    procedure,
+    call,
+  }
+
+  return definition
+}
+
+const defineImplInternal = <
+  TFields extends StructFields,
   TMethods extends Record<string, unknown>,
 >(
-  type: TStruct,
-  methods: TMethods,
-): GoboxImplTypeFactory<TStruct, TMethods> => {
+  type: GoboxStructTypeFactory<TFields>,
+  methods: TMethods & ImplConstructorCompatInput,
+): GoboxImplTypeFactory<TFields, TMethods> => {
   const base = type()
-  let cachedMethods: NormalizeImplMethods<TMethods> | undefined
-  const resolveMethods = (): NormalizeImplMethods<TMethods> => {
+  if ((base.fieldOrder as ReadonlyArray<string>).includes('methods')) {
+    throw new Error('impl struct field "methods" is reserved')
+  }
+  const constructorCandidate = Object.hasOwn(methods, 'constructor')
+    ? (methods as ImplConstructorCompatInput).constructor
+    : undefined
+  if (
+    constructorCandidate !== undefined &&
+    typeof constructorCandidate !== 'function'
+  ) {
+    throw new Error('impl constructor must be a function')
+  }
+  const constructorBody =
+    typeof constructorCandidate === 'function'
+      ? (ctx: { self: ImplSelf<TFields> }) => {
+          ;(constructorCandidate as (...args: unknown[]) => unknown)(ctx)
+        }
+      : undefined
+
+  let cachedMethods: NormalizeImplMethods<TFields, TMethods> | undefined
+  const resolveMethods = (): NormalizeImplMethods<TFields, TMethods> => {
     if (!cachedMethods) {
-      cachedMethods = normalizeImplMethods(methods)
+      cachedMethods = normalizeImplMethods(base, methods)
     }
     return cachedMethods
   }
+
+  const withImplMetadata = (
+    value: StructInstance<TFields>,
+  ): StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods> => {
+    return withImplMethods(value, resolveMethods, constructorBody)
+  }
+
+  const baseImplType = withImplMetadata(base)
+
   const implFactory = Object.assign(function Impl(
-    initial?: StructInitialFromFactory<TStruct>,
-  ): StructInstanceFromFactory<TStruct> & {
-    methods: NormalizeImplMethods<TMethods>
-  } {
-    const instance = type(
-      initial,
-    ) as unknown as StructInstanceFromFactory<TStruct>
-    return {
-      ...instance,
-      methods: resolveMethods(),
+    initial?: StructInitial<TFields>,
+  ): StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods> {
+    const instance = type(initial) as StructInstance<TFields>
+    return withImplMetadata(instance)
+  }, baseImplType) as GoboxImplTypeFactory<TFields, TMethods>
+
+  const typedMethods = methods as TMethods & ImplConstructorCompatInput
+  implFactory.configure = ((
+    initial?: StructInitial<TFields>,
+  ): GoboxImplTypeFactory<TFields, TMethods> => {
+    return defineImplInternal(type.configure(initial), typedMethods)
+  }) as GoboxImplTypeFactory<TFields, TMethods>['configure']
+  implFactory.setDefaults = ((
+    initial: StructInitial<TFields>,
+  ): GoboxImplTypeFactory<TFields, TMethods> => {
+    return defineImplInternal(type.setDefaults(initial), typedMethods)
+  }) as GoboxImplTypeFactory<TFields, TMethods>['setDefaults']
+  implFactory.makeScopedValue = ((
+    initial?: StructInitial<TFields>,
+  ): ScopedValueFromType<
+    StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+  > => {
+    if (initial === undefined) {
+      return makeScopedValueFromType(baseImplType) as ScopedValueFromType<
+        StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+      >
     }
-  }, base)
-  Object.defineProperty(implFactory, 'methods', {
-    enumerable: true,
+    return defineImplInternal(
+      type.setDefaults(initial),
+      typedMethods,
+    ).makeScopedValue() as ScopedValueFromType<
+      StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+    >
+  }) as GoboxImplTypeFactory<TFields, TMethods>['makeScopedValue']
+
+  Object.defineProperty(implFactory, IMPL_METHODS_SYMBOL, {
+    enumerable: false,
     get: resolveMethods,
   })
-  return implFactory as GoboxImplTypeFactory<TStruct, TMethods>
+  if (constructorBody !== undefined) {
+    Object.defineProperty(implFactory, IMPL_CONSTRUCTOR_SYMBOL, {
+      enumerable: false,
+      value: constructorBody,
+    })
+  }
+  return Object.freeze(implFactory) as GoboxImplTypeFactory<TFields, TMethods>
 }
 
-export const useImpl = <
-  TStruct extends GoboxStructTypeFactory<any>,
+export function defineImpl<
+  TFields extends StructFields,
+  const TSpecs extends { [K in keyof TSpecs]: ImplFunctionOptionSpec },
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>,
+): GoboxImplTypeFactory<
+  TFields,
+  ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>
+>
+
+export function defineImpl<
+  TFields extends StructFields,
+  const TArgsMap extends Record<string, FunctionArgSpec>,
+  const TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: ImplFunctionOptionMethodsInput<TFields, TArgsMap, TReturnMap>,
+): GoboxImplTypeFactory<
+  TFields,
+  ImplFunctionOptionMethodsInput<TFields, TArgsMap, TReturnMap>
+>
+
+export function defineImpl<
+  TFields extends StructFields,
+  const TArgsMap extends Record<string, FunctionArgSpec>,
+  const TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: ImplFunctionDefinitionMethodsInput<TFields, TArgsMap, TReturnMap>,
+): GoboxImplTypeFactory<
+  TFields,
+  ImplFunctionDefinitionMethodsInput<TFields, TArgsMap, TReturnMap>
+>
+
+export function defineImpl<
+  TFields extends StructFields,
   TMethods extends Record<string, unknown>,
 >(
-  type: TStruct,
-  methods: TMethods,
-): StructInstanceFromFactory<TStruct> & {
-  methods: NormalizeImplMethods<TMethods>
-} => {
-  return defineImpl(type, methods)()
+  type: GoboxStructTypeFactory<TFields>,
+  methods: TMethods &
+    ImplConstructorCompatInput &
+    ImplNonFunctionMethodsInput<TMethods>,
+): GoboxImplTypeFactory<TFields, TMethods>
+
+export function defineImpl<
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: TMethods & ImplConstructorCompatInput,
+): GoboxImplTypeFactory<TFields, TMethods> {
+  return defineImplInternal(type, methods)
+}
+
+export function useImpl<
+  TFields extends StructFields,
+  const TSpecs extends { [K in keyof TSpecs]: ImplFunctionOptionSpec },
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>,
+): ScopedValueFromType<
+  StructInstance<TFields> &
+    ImplMethodCarrier<TFields, ImplFunctionOptionMethodsFromSpec<TFields, TSpecs>>
+>
+
+export function useImpl<
+  TFields extends StructFields,
+  const TArgsMap extends Record<string, FunctionArgSpec>,
+  const TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: ImplFunctionOptionMethodsInput<TFields, TArgsMap, TReturnMap>,
+): ScopedValueFromType<
+  StructInstance<TFields> &
+    ImplMethodCarrier<
+      TFields,
+      ImplFunctionOptionMethodsInput<TFields, TArgsMap, TReturnMap>
+    >
+>
+
+export function useImpl<
+  TFields extends StructFields,
+  const TArgsMap extends Record<string, FunctionArgSpec>,
+  const TReturnMap extends { [K in keyof TArgsMap]: GoboxPrimitiveTypeLike },
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: ImplFunctionDefinitionMethodsInput<TFields, TArgsMap, TReturnMap>,
+): ScopedValueFromType<
+  StructInstance<TFields> &
+    ImplMethodCarrier<
+      TFields,
+      ImplFunctionDefinitionMethodsInput<TFields, TArgsMap, TReturnMap>
+    >
+>
+
+export function useImpl<
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: TMethods &
+    ImplConstructorCompatInput &
+    ImplNonFunctionMethodsInput<TMethods>,
+): ScopedValueFromType<
+  StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+>
+
+export function useImpl<
+  TFields extends StructFields,
+  TMethods extends Record<string, unknown>,
+>(
+  type: GoboxStructTypeFactory<TFields>,
+  methods: TMethods & ImplConstructorCompatInput,
+): ScopedValueFromType<
+  StructInstance<TFields> & ImplMethodCarrier<TFields, TMethods>
+> {
+  return defineImplInternal(type, methods).makeScopedValue()
 }

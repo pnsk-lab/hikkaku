@@ -1,5 +1,5 @@
 import type * as sb3 from 'sb3-types'
-import type { HikkakuBlock } from './types'
+import type { HikkakuBlock, HikkakuReporterBlock, HikkakuType } from './types'
 
 export type Handler = () => void
 
@@ -172,8 +172,11 @@ function attachValueBlock(ctx: RootContext, parentId: string, blockId: string) {
   ctx.usedAsValueSet.add(block)
 }
 
-export const valueBlock = (opcode: string, init: BlockInit): HikkakuBlock => {
-  return block(opcode, { ...init, isValue: true })
+export const valueBlock = <T extends HikkakuType>(
+  opcode: string,
+  init: BlockInit,
+): HikkakuReporterBlock<T> => {
+  return block(opcode, { ...init, isValue: true }) as HikkakuReporterBlock<T>
 }
 
 const applyNextAndParent = (blocks: sb3.Block[]) => {

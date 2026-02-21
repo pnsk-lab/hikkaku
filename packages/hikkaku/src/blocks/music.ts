@@ -1,7 +1,7 @@
 import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
-import type { PrimitiveSource } from '../core/types'
+import type { HikkakuNumber, PrimitiveSource } from '../core/types'
 
 /**
  * Plays drum for beats.
@@ -20,8 +20,8 @@ import type { PrimitiveSource } from '../core/types'
  * ```
  */
 export const playDrumForBeats = (
-  drum: PrimitiveSource<number>,
-  beats: PrimitiveSource<number>,
+  drum: PrimitiveSource<HikkakuNumber>,
+  beats: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('music_playDrumForBeats', {
     inputs: {
@@ -48,8 +48,8 @@ export const playDrumForBeats = (
  * ```
  */
 export const midiPlayDrumForBeats = (
-  drum: PrimitiveSource<number>,
-  beats: PrimitiveSource<number>,
+  drum: PrimitiveSource<HikkakuNumber>,
+  beats: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('music_midiPlayDrumForBeats', {
     inputs: {
@@ -74,7 +74,7 @@ export const midiPlayDrumForBeats = (
  * restForBeats(0.25)
  * ```
  */
-export const restForBeats = (beats: PrimitiveSource<number>) => {
+export const restForBeats = (beats: PrimitiveSource<HikkakuNumber>) => {
   return block('music_restForBeats', {
     inputs: {
       BEATS: fromPrimitiveSource(InputType.Number, beats, 0.25),
@@ -99,8 +99,8 @@ export const restForBeats = (beats: PrimitiveSource<number>) => {
  * ```
  */
 export const playNoteForBeats = (
-  note: PrimitiveSource<number>,
-  beats: PrimitiveSource<number>,
+  note: PrimitiveSource<HikkakuNumber>,
+  beats: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('music_playNoteForBeats', {
     inputs: {
@@ -125,7 +125,7 @@ export const playNoteForBeats = (
  * setInstrument(1)
  * ```
  */
-export const setInstrument = (instrument: PrimitiveSource<number>) => {
+export const setInstrument = (instrument: PrimitiveSource<HikkakuNumber>) => {
   return block('music_setInstrument', {
     inputs: {
       INSTRUMENT: fromPrimitiveSource(InputType.Number, instrument, 1),
@@ -148,7 +148,9 @@ export const setInstrument = (instrument: PrimitiveSource<number>) => {
  * midiSetInstrument(1)
  * ```
  */
-export const midiSetInstrument = (instrument: PrimitiveSource<number>) => {
+export const midiSetInstrument = (
+  instrument: PrimitiveSource<HikkakuNumber>,
+) => {
   return block('music_midiSetInstrument', {
     inputs: {
       INSTRUMENT: fromPrimitiveSource(InputType.Number, instrument, 1),
@@ -171,7 +173,7 @@ export const midiSetInstrument = (instrument: PrimitiveSource<number>) => {
  * setTempo(60)
  * ```
  */
-export const setTempo = (tempo: PrimitiveSource<number>) => {
+export const setTempo = (tempo: PrimitiveSource<HikkakuNumber>) => {
   return block('music_setTempo', {
     inputs: {
       TEMPO: fromPrimitiveSource(InputType.Number, tempo, 20),
@@ -194,7 +196,7 @@ export const setTempo = (tempo: PrimitiveSource<number>) => {
  * changeTempo(20)
  * ```
  */
-export const changeTempo = (tempo: PrimitiveSource<number>) => {
+export const changeTempo = (tempo: PrimitiveSource<HikkakuNumber>) => {
   return block('music_changeTempo', {
     inputs: {
       TEMPO: fromPrimitiveSource(InputType.Number, tempo, 20),
@@ -217,5 +219,5 @@ export const changeTempo = (tempo: PrimitiveSource<number>) => {
  * ```
  */
 export const getTempo = () => {
-  return valueBlock('music_getTempo', {})
+  return valueBlock<HikkakuNumber>('music_getTempo', {})
 }

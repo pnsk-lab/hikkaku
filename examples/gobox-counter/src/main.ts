@@ -1,6 +1,6 @@
 import { defineImpl } from '@hikkaku/gobox/functions'
 import { defineStruct, Num } from '@hikkaku/gobox/types'
-import { useEffect, useScopedValue, useSignal } from '@hikkaku/gobox/value'
+import { useEffect, useSignal } from '@hikkaku/gobox/value'
 import { Project } from 'hikkaku'
 import { IMAGES } from 'hikkaku/assets'
 import {
@@ -41,8 +41,8 @@ cat.addCostume({
 })
 
 const Counter = defineStruct({
-  count: new Num(0),
-  doubled: new Num(0),
+  count: Num,
+  doubled: Num,
 })
 
 const CounterImpl = defineImpl(Counter, {
@@ -51,27 +51,20 @@ const CounterImpl = defineImpl(Counter, {
       value: Num,
     },
     returns: Num,
-    body: ({
-      args,
-      returning,
-    }: {
-      args: { value: { get(): number } }
-      returning: (value: number) => { scopeId: number; value: number }
-    }) => {
-      return returning(add(args.value.get(), args.value.get()) as never)
+    body: ({ args, returning }) => {
+      return returning(add(args.value.get(), args.value.get()))
     },
   },
 })
 
 cat.run(() => {
-  const count = useSignal(new Num(0))
-  const counter = new CounterImpl()
-  const state = useScopedValue(counter)
+  const count = useSignal(Num.makeScopedValue(0))
+  const state = CounterImpl.makeScopedValue()
 
   useEffect(() => {
     state.count.set(count.get())
 
-    const doubled = counter.methods.double.call({
+    const doubled = state.methods.double.call({
       value: state.count.get(),
     })
     state.doubled.set(doubled.get())

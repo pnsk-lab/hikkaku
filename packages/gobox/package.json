@@ -28,7 +28,7 @@
   "scripts": {
     "test": "vp test run",
     "build": "vp pack",
-    "typecheck": "tsgo"
+    "typecheck": "tsc"
   },
   "repository": {
     "url": "https://github.com/pnsk-lab/hikkaku",

@@ -7,7 +7,8 @@ import {
   whenFlagClicked,
 } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { defineImpl, useFunction } from './functions'
+import { defineFunction, defineImpl, useImpl } from './functions'
+import { IMPL_METHODS_SYMBOL } from './internal/impl'
 import { Bool, defineStruct, type GoboxPrimitiveType, Num, Str } from './types'
 
 type ProcedureBlock = {
@@ -67,12 +68,12 @@ describe('gobox/functions', () => {
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
-      const plusOne = useFunction({
+      const plusOne = defineFunction({
         name: 'plusOne',
         args: {
-          value: new Num(0),
+          value: Num,
         },
-        returns: new Num(0),
+        returns: Num,
         body: ({ args, returning }) =>
           returning(add(args.value.get() as never, 1) as never),
       })
@@ -105,12 +106,12 @@ describe('gobox/functions', () => {
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
-      const isEnabled = useFunction({
+      const isEnabled = defineFunction({
         name: 'isEnabled',
         args: {
-          enabled: new Bool(false),
+          enabled: Bool,
         },
-        returns: new Bool(false),
+        returns: Bool,
         body: ({ args, returning }) => returning(args.enabled.get() as never),
       })
 
@@ -144,12 +145,12 @@ describe('gobox/functions', () => {
     const out = project.stage.createVariable('out', '')
 
     project.stage.run(() => {
-      const prefix = useFunction({
+      const prefix = defineFunction({
         name: 'prefix',
         args: {
-          value: new Str(''),
+          value: Str,
         },
-        returns: new Str(''),
+        returns: Str,
         body: ({ args, returning }) => returning(args.value.get() as never),
       })
 
@@ -183,12 +184,12 @@ describe('gobox/functions', () => {
 
     expect(() => {
       project.stage.run(() => {
-        const plusOne = useFunction({
+        const plusOne = defineFunction({
           name: 'plusOne',
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) =>
             returning(add(args.value.get() as never, 1) as never),
         })
@@ -201,17 +202,17 @@ describe('gobox/functions', () => {
     }).toThrow(/Unknown function argument: unknown/)
   })
 
-  test('restricts useFunction to run top-level', () => {
+  test('restricts defineFunction to run top-level', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
         whenFlagClicked(() => {
-          useFunction({
+          defineFunction({
             name: 'illegal',
             args: {
-              value: new Num(0),
+              value: Num,
             },
-            returns: new Num(0),
+            returns: Num,
             body: ({ args, returning }) => returning(args.value.get() as never),
           })
         })
@@ -219,36 +220,35 @@ describe('gobox/functions', () => {
     }).toThrow(/must be defined at run\(\) top-level/)
   })
 
-  test('defineImpl accepts function options without useFunction wrapper', () => {
+  test('defineImpl accepts function options without defineFunction wrapper', () => {
     const project = new Project()
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
       const Counter = defineStruct({
-        value: new Num(0),
+        value: Num,
       })
       const CounterImpl = defineImpl(Counter, {
         double: {
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
-          body: ({
-            args,
-            returning,
-          }: {
-            args: { value: { get(): number } }
-            returning: (value: number) => { scopeId: number; value: number }
-          }) =>
-            returning(
+          returns: Num,
+          body: ({ args, returning }) => {
+            if (false) {
+              // @ts-expect-error args should be inferred from args spec.
+              args.missing.get()
+            }
+            return returning(
               add(
                 args.value.get() as never,
                 args.value.get() as never,
               ) as never,
-            ),
+            )
+          },
         },
       })
-      const counter = new CounterImpl()
+      const counter = CounterImpl.makeScopedValue()
 
       whenFlagClicked(() => {
         const result = counter.methods.double.call({
@@ -273,21 +273,126 @@ describe('gobox/functions', () => {
     expect(out.id).toBeTruthy()
   })
 
-  test('defineImpl accepts existing useFunction definitions', () => {
+  test('defineImpl method body can read struct fields through self', () => {
     const project = new Project()
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
       const Counter = defineStruct({
-        value: new Num(0),
+        value: Num,
+      })
+      const CounterImpl = defineImpl(Counter, {
+        addToSelf: {
+          args: {
+            delta: Num,
+          },
+          returns: Num,
+          body: ({ self, args, returning }) =>
+            returning(
+              add(
+                self.value.get() as never,
+                args.delta.get() as never,
+              ) as never,
+            ),
+        },
+      })
+      const counter = CounterImpl.makeScopedValue({
+        value: 10,
       })
 
-      const double = useFunction({
+      whenFlagClicked(() => {
+        const result = counter.methods.addToSelf.call({
+          delta: 7,
+        })
+        setVariableTo(out, result.get() as never)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const opcodes = Object.values(stage?.blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+    expect(opcodes).toContain('procedures_definition')
+    expect(opcodes).toContain('procedures_call')
+    expect(opcodes).toContain('data_replaceitemoflist')
+    expect(out.id).toBeTruthy()
+  })
+
+  test('defineImpl constructor initializes scoped state on makeScopedValue', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', 0)
+
+    project.stage.run(() => {
+      const Counter = defineStruct({
+        value: Num,
+      })
+      const CounterImpl = defineImpl(Counter, {
+        constructor: ({
+          self,
+        }: {
+          self: { value: { set(value: number): void } }
+        }) => {
+          self.value.set(9)
+        },
+        read: {
+          args: {},
+          returns: Num,
+          body: ({
+            self,
+            returning,
+          }: {
+            self: { value: { get(): number } }
+            returning: (value: number) => { scopeId: number; value: number }
+          }) => returning(self.value.get() as never),
+        },
+      })
+
+      const counter = CounterImpl.makeScopedValue()
+      whenFlagClicked(() => {
+        const result = (
+          counter.methods.read as unknown as {
+            call(args: Record<string, never>): { get(): unknown }
+          }
+        ).call({})
+        setVariableTo(out, result.get() as never)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const opcodes = Object.values(stage?.blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+    expect(opcodes).toContain('data_replaceitemoflist')
+    expect(opcodes).toContain('procedures_definition')
+    expect(opcodes).toContain('procedures_call')
+    expect(out.id).toBeTruthy()
+  })
+
+  test('defineImpl accepts existing defineFunction definitions', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', 0)
+
+    project.stage.run(() => {
+      const Counter = defineStruct({
+        value: Num,
+      })
+
+      const double = defineFunction({
         name: 'double',
         args: {
-          value: new Num(0),
+          value: Num,
         },
-        returns: new Num(0),
+        returns: Num,
         body: ({ args, returning }) =>
           returning(
             add(args.value.get() as never, args.value.get() as never) as never,
@@ -297,7 +402,7 @@ describe('gobox/functions', () => {
       const CounterImpl = defineImpl(Counter, {
         double,
       })
-      const counter = new CounterImpl()
+      const counter = CounterImpl.makeScopedValue()
 
       whenFlagClicked(() => {
         const result = counter.methods.double.call({
@@ -323,37 +428,42 @@ describe('gobox/functions', () => {
   })
 
   test('defineImpl keeps method normalization result on factory and instances', () => {
+    const project = new Project()
     const Counter = defineStruct({
-      value: new Num(0),
+      value: Num,
     })
     const CounterImpl = defineImpl(Counter, {
       marker: 'ok',
     })
 
-    expect(CounterImpl.methods).toHaveProperty('marker', 'ok')
-    expect(new CounterImpl().methods).toHaveProperty('marker', 'ok')
+    expect((CounterImpl as { methods?: unknown }).methods).toBeUndefined()
+    expect((new CounterImpl() as { methods?: unknown }).methods).toBeUndefined()
+    project.stage.run(() => {
+      const counter = CounterImpl.makeScopedValue()
+      expect(counter.methods).toHaveProperty('marker', 'ok')
+    })
   })
 
   test('falls back to fixed primitive defaults when returning is not called', () => {
     const project = new Project()
 
     project.stage.run(() => {
-      useFunction({
+      defineFunction({
         name: 'noNumber',
         args: {},
-        returns: new Num(123),
+        returns: Num.setDefaults(123),
         body: () => {},
       })
-      useFunction({
+      defineFunction({
         name: 'noString',
         args: {},
-        returns: new Str('filled'),
+        returns: Str.setDefaults('filled'),
         body: () => {},
       })
-      useFunction({
+      defineFunction({
         name: 'noBoolean',
         args: {},
-        returns: new Bool(true),
+        returns: Bool.setDefaults(true),
         body: () => {},
       })
     })
@@ -422,12 +532,12 @@ describe('gobox/functions', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
-        useFunction({
+        defineFunction({
           name: 'badIfThen',
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) => {
             ifThen(true, () => {
               returning(args.value.get() as never)
@@ -442,12 +552,12 @@ describe('gobox/functions', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
-        useFunction({
+        defineFunction({
           name: 'badRepeat',
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) => {
             repeat(1, () => {
               returning(args.value.get() as never)
@@ -462,12 +572,12 @@ describe('gobox/functions', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
-        useFunction({
+        defineFunction({
           name: 'missingReturnKeyword',
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) => {
             returning(args.value.get() as never)
           },
@@ -483,17 +593,17 @@ describe('gobox/functions', () => {
       project.stage.run(() => {
         const unsupportedType = {
           tag: 'vector',
-          element: new Num(0),
+          element: Num,
           length: 2,
           width: 2,
           defaults: [0, 0],
         } as unknown as GoboxPrimitiveType
-        const fn = useFunction({
+        const fn = defineFunction({
           name: 'unsupportedArg',
           args: {
             value: unsupportedType,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) => returning(args.value.get() as never),
         })
         fn.call({} as { value: number })
@@ -506,7 +616,7 @@ describe('gobox/functions', () => {
 
     expect(() => {
       project.stage.run(() => {
-        const fn = useFunction({
+        const fn = defineFunction({
           name: 'unsupportedReturn',
           args: {},
           returns: {
@@ -529,12 +639,12 @@ describe('gobox/functions', () => {
 
     expect(() => {
       project.stage.run(() => {
-        const fn = useFunction({
+        const fn = defineFunction({
           name: 'missingRetPtr',
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) => returning(args.value.get() as never),
         })
 
@@ -557,12 +667,12 @@ describe('gobox/functions', () => {
 
     expect(() => {
       project.stage.run(() => {
-        const fn = useFunction({
+        const fn = defineFunction({
           name: 'badReturning',
           args: {
-            value: new Num(0),
+            value: Num,
           },
-          returns: new Num(0),
+          returns: Num,
           body: ({ args, returning }) => {
             const next = returning(args.value.get() as never)
             setVariableTo(out, next.value as never)
@@ -581,21 +691,15 @@ describe('gobox/functions', () => {
     const out = project.stage.createVariable('out', 0)
 
     project.stage.run(() => {
-      const Counter = defineStruct({ value: new Num(0) })
+      const Counter = defineStruct({ value: Num })
       const CounterImpl = defineImpl(Counter, {
         double: {
-          args: { value: new Num(0) },
-          returns: new Num(0),
-          body: ({
-            args,
-            returning,
-          }: {
-            args: { value: { get(): number } }
-            returning: (value: number) => { scopeId: number; value: number }
-          }) => returning(args.value.get() as never),
+          args: { value: Num },
+          returns: Num,
+          body: ({ args, returning }) => returning(args.value.get() as never),
         },
       })
-      const counter = new CounterImpl()
+      const counter = CounterImpl.makeScopedValue()
       const result = counter.methods.double.call({
         value: 4,
       })
@@ -608,13 +712,13 @@ describe('gobox/functions', () => {
   test('keeps primitive method values unchanged during defineImpl normalization', () => {
     const project = new Project()
     project.stage.run(() => {
-      const Model = defineStruct({ value: new Num(0) })
+      const Model = defineStruct({ value: Num })
       const ModelImpl = defineImpl(Model, {
         marker: 'ok',
       } as {
         marker: string
       })
-      const model = new ModelImpl()
+      const model = ModelImpl.makeScopedValue()
       expect((model.methods as { marker: string }).marker).toBe('ok')
       expect(model.methods).toHaveProperty('marker', 'ok')
     })
@@ -625,12 +729,12 @@ describe('gobox/functions', () => {
     const out = project.stage.createVariable('out', false)
 
     project.stage.run(() => {
-      const isReady = useFunction({
+      const isReady = defineFunction({
         name: 'isReady',
         args: {
-          ready: new Bool(false),
+          ready: Bool,
         },
-        returns: new Bool(false),
+        returns: Bool,
         body: ({ args, returning }) => returning(args.ready.get() as never),
       })
 
@@ -641,5 +745,294 @@ describe('gobox/functions', () => {
     })
 
     expect(out.id).toBeTruthy()
+  })
+
+  test('throws when impl struct field name is reserved', () => {
+    const Counter = defineStruct({
+      methods: Num,
+    })
+    expect(() => {
+      defineImpl(Counter, {
+        marker: 'x',
+      })
+    }).toThrow(/reserved/)
+  })
+
+  test('throws when impl constructor is not a function', () => {
+    const Counter = defineStruct({
+      value: Num,
+    })
+    expect(() => {
+      defineImpl(Counter, {
+        constructor: 1 as unknown as () => void,
+      })
+    }).toThrow(/constructor must be a function/)
+  })
+
+  test('supports impl setDefaults and useImpl helper', () => {
+    const project = new Project()
+    project.stage.run(() => {
+      const Counter = defineStruct({
+        value: Num,
+      })
+      const CounterImpl = defineImpl(Counter, {
+        read: {
+          args: {},
+          returns: Num,
+          body: ({ self, returning }) => returning(self.value.get() as never),
+        },
+      })
+      const configured = CounterImpl.setDefaults({
+        value: 7,
+      })
+      const scoped = configured.makeScopedValue()
+      const viaUseImpl = useImpl(configured, {
+        marker: 'ok',
+      })
+      expect(scoped.methods.read.call({})).toBeDefined()
+      expect(viaUseImpl.methods).toHaveProperty('marker', 'ok')
+    })
+  })
+
+  test('throws when raw impl function call is unbound', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          pass: {
+            args: {
+              value: Num,
+            },
+            returns: Num,
+            body: ({ args, returning }) => returning(args.value.get() as never),
+          },
+        })
+        const rawMethods = (
+          CounterImpl as {
+            [IMPL_METHODS_SYMBOL]: Record<string, unknown>
+          }
+        )[IMPL_METHODS_SYMBOL]
+        const method = rawMethods.pass as {
+          call(args: { value: number }, self?: unknown): unknown
+        }
+        method.call({
+          value: 1,
+        })
+      })
+    }).toThrow(/requires bound self/)
+  })
+
+  test('throws when impl function call has unknown arguments', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          pass: {
+            args: {
+              value: Num,
+            },
+            returns: Num,
+            body: ({ args, returning }) => returning(args.value.get() as never),
+          },
+        })
+        const counter = CounterImpl.makeScopedValue()
+        counter.methods.pass.call({
+          value: 1,
+          extra: 2,
+        } as {
+          value: number
+          extra: number
+        })
+      })
+    }).toThrow(/Unknown function argument: extra/)
+  })
+
+  test('throws when impl function call is missing internal pointers', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          pass: {
+            args: {
+              value: Bool,
+            },
+            returns: Num,
+            body: ({ self, returning }) => returning(self.value.get() as never),
+          },
+        })
+        const counter = CounterImpl.makeScopedValue()
+        const bound = counter.methods.pass as {
+          procedure: {
+            reference: { arguments: Record<string, { id: string }> }
+          }
+          call(args: { value: boolean }): unknown
+        }
+        bound.procedure.reference.arguments.__ret_ptr = undefined as never
+        bound.call({
+          value: true,
+        })
+      })
+    }).toThrow(/return pointer argument is missing/)
+
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          pass: {
+            args: {
+              value: Bool,
+            },
+            returns: Num,
+            body: ({ self, returning }) => returning(self.value.get() as never),
+          },
+        })
+        const counter = CounterImpl.makeScopedValue()
+        const bound = counter.methods.pass as {
+          procedure: {
+            reference: { arguments: Record<string, { id: string }> }
+          }
+          call(args: { value: boolean }): unknown
+        }
+        bound.procedure.reference.arguments.__self_ptr = undefined as never
+        bound.call({
+          value: true,
+        })
+      })
+    }).toThrow(/self pointer argument is missing/)
+  })
+
+  test('supports impl method fallback when returning is not called', () => {
+    const project = new Project()
+    project.stage.run(() => {
+      const Counter = defineStruct({
+        value: Num,
+      })
+      const CounterImpl = defineImpl(Counter, {
+        noop: {
+          args: {},
+          returns: Num,
+          body: () => undefined,
+        },
+      })
+      const counter = CounterImpl.makeScopedValue()
+      expect(counter.methods.noop.call({})).toBeDefined()
+    })
+  })
+
+  test('throws when impl method uses returning without returning token', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          bad: {
+            args: {
+              value: Num,
+            },
+            returns: Num,
+            body: ({ args, returning }) => {
+              returning(args.value.get() as never)
+            },
+          },
+        })
+        const counter = CounterImpl.makeScopedValue()
+        counter.methods.bad.call({
+          value: 1,
+        })
+      })
+    }).toThrow(/returning\(\) must/)
+  })
+
+  test('throws when impl method calls returning multiple times', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          bad: {
+            args: {
+              value: Num,
+            },
+            returns: Num,
+            body: ({ args, returning }) => {
+              const first = returning(args.value.get() as never)
+              returning(args.value.get() as never)
+              return first
+            },
+          },
+        })
+        const counter = CounterImpl.makeScopedValue()
+        counter.methods.bad.call({
+          value: 1,
+        })
+      })
+    }).toThrow(/returning\(\) must/)
+  })
+
+  test('throws when impl method returns forged token instance', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        const Counter = defineStruct({
+          value: Num,
+        })
+        const CounterImpl = defineImpl(Counter, {
+          bad: {
+            args: {
+              value: Num,
+            },
+            returns: Num,
+            body: ({ args, returning }) => {
+              const token = returning(args.value.get() as never)
+              const forged = Object.assign(
+                Object.create(Object.getPrototypeOf(token)),
+                token,
+              ) as typeof token
+              return forged
+            },
+          },
+        })
+        const counter = CounterImpl.makeScopedValue()
+        counter.methods.bad.call({
+          value: 1,
+        })
+      })
+    }).toThrow(/returning\(\) must/)
+  })
+
+  test('reuses cached normalized impl methods metadata', () => {
+    const Counter = defineStruct({
+      value: Num,
+    })
+    const CounterImpl = defineImpl(Counter, {
+      marker: 'ok',
+    })
+
+    const first = (
+      CounterImpl as {
+        [IMPL_METHODS_SYMBOL]: Record<string, unknown>
+      }
+    )[IMPL_METHODS_SYMBOL]
+    const second = (
+      CounterImpl as {
+        [IMPL_METHODS_SYMBOL]: Record<string, unknown>
+      }
+    )[IMPL_METHODS_SYMBOL]
+    expect(first).toBe(second)
   })
 })

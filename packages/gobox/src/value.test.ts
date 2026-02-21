@@ -2,18 +2,21 @@ import { Project } from 'hikkaku'
 import { setVariableTo, stop, whenFlagClicked } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
 import {
+  allocateScopedPointer,
   getCurrentScope,
   getRuntimeForCurrentTarget,
   MAX_GBOX_MEMORY_SLOTS,
   pointerToIndexSource,
   withPointerOffset,
 } from './internal/runtime'
-import { Bool, Num, Str, struct, vector } from './types'
+import { Bool, defineStruct, Num, Str, struct, Vector } from './types'
 import {
+  __unsafe_createScopedValueFromPointer,
   __unsafe_getPointerSource,
+  __unsafe_getRuntimeFromScopedValue,
   isTrue,
+  makeScopedValueFromType,
   useEffect,
-  useScopedValue,
   useSignal,
 } from './value'
 
@@ -39,8 +42,8 @@ describe('gobox/value', () => {
     const project = new Project()
 
     project.stage.run(() => {
-      const x = useScopedValue(new Num(10))
-      const y = useScopedValue(new Num(20))
+      const x = Num.makeScopedValue(10)
+      const y = Num.makeScopedValue(20)
       x.set(11)
       y.set(21)
     })
@@ -56,12 +59,11 @@ describe('gobox/value', () => {
     const project = new Project()
 
     project.stage.run(() => {
-      const state = useScopedValue(
-        struct({
-          position: vector(new Num(0), 2),
-          score: new Num(1),
-        }),
-      )
+      const State = defineStruct({
+        position: Vector.configure(Num, 2),
+        score: Num.setDefaults(1),
+      })
+      const state = State.makeScopedValue()
       state.position.at(0).set(10)
       state.position.at(1).set(20)
       state.score.set(5)
@@ -79,8 +81,8 @@ describe('gobox/value', () => {
     const project = new Project()
 
     project.stage.run(() => {
-      useScopedValue(new Str('hello'))
-      useScopedValue(new Bool(false))
+      Str.makeScopedValue('hello')
+      Bool.makeScopedValue(false)
     })
 
     const scratch = project.toScratch()
@@ -94,7 +96,7 @@ describe('gobox/value', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
-        useScopedValue(vector(new Num(0), 0))
+        Vector.configure(Num, 0).makeScopedValue()
       })
     }).toThrow(/scoped value width must be positive/)
   })
@@ -103,7 +105,7 @@ describe('gobox/value', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
-        const values = useScopedValue(vector(new Num(0), 2))
+        const values = Vector.configure(Num, 2).makeScopedValue()
         values.at(2)
       })
     }).toThrow(/vector index out of range/)
@@ -114,7 +116,7 @@ describe('gobox/value', () => {
     expect(() => {
       project.stage.run(() => {
         whenFlagClicked(() => {
-          useScopedValue(new Num(0))
+          Num.makeScopedValue()
           stop('this script')
         })
       })
@@ -126,9 +128,9 @@ describe('gobox/value', () => {
     expect(() => {
       project.stage.run(() => {
         whenFlagClicked(() => {
-          useScopedValue(new Num(0))
+          Num.makeScopedValue()
         })
-        useScopedValue(new Num(0))
+        Num.makeScopedValue()
       })
     }).toThrow(
       /static allocation must happen before dynamic scoped allocations/,
@@ -140,7 +142,7 @@ describe('gobox/value', () => {
     expect(() => {
       project.stage.run(() => {
         whenFlagClicked(() => {
-          useSignal(0)
+          useSignal(Num.makeScopedValue(0))
         })
       })
     }).toThrow(/run\(\) top-level/)
@@ -157,13 +159,14 @@ describe('gobox/value', () => {
     }).toThrow(/run\(\) top-level/)
   })
 
-  test('restricts useSignal to primitive gobox types', () => {
+  test('restricts useSignal to primitive scoped gobox values', () => {
     const project = new Project()
     expect(() => {
       project.stage.run(() => {
-        useSignal(struct({ x: new Num(0) }) as unknown as number)
+        const complex = struct({ x: Num }).makeScopedValue()
+        useSignal(complex as unknown as import('./value').ScopedNumberValue)
       })
-    }).toThrow(/only supports primitive gobox types/)
+    }).toThrow(/only supports scoped primitive gobox values/)
   })
 })
 
@@ -175,9 +178,9 @@ describe('gobox/value internals', () => {
     const outBoolean = project.stage.createVariable('outBoolean', 0)
 
     project.stage.run(() => {
-      const valueNumber = useScopedValue(new Num(1))
-      const valueString = useScopedValue(new Str('a'))
-      const valueBoolean = useScopedValue(new Bool(false))
+      const valueNumber = Num.makeScopedValue(1)
+      const valueString = Str.makeScopedValue('a')
+      const valueBoolean = Bool.makeScopedValue(false)
 
       const borrowNumber = valueNumber.borrow()
       const borrowMutNumber = valueNumber.borrowMut()
@@ -204,10 +207,58 @@ describe('gobox/value internals', () => {
     }).toThrow(/value is not a scoped gobox value/)
   })
 
+  test('gets runtime from scoped values and rejects non-scoped inputs', () => {
+    const project = new Project()
+    project.stage.run(() => {
+      const value = Num.makeScopedValue(1)
+      const runtime = __unsafe_getRuntimeFromScopedValue(value)
+      expect(runtime).toBe(getRuntimeForCurrentTarget())
+    })
+
+    expect(() => {
+      __unsafe_getRuntimeFromScopedValue({} as never)
+    }).toThrow(/value is not a scoped gobox value/)
+  })
+
+  test('throws for unknown gobox type tags in scoped creation', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        makeScopedValueFromType({
+          tag: 'unknown',
+          width: 1,
+          defaults: [0],
+        } as unknown as import('./types').GoboxTypeAny)
+      })
+    }).toThrow(/unknown gobox type/)
+  })
+
+  test('skips malformed struct fields in unsafe scoped creation', () => {
+    const project = new Project()
+    project.stage.run(() => {
+      const runtime = getRuntimeForCurrentTarget()
+      const pointer = allocateScopedPointer(runtime, 1, [0])
+      const malformed = {
+        tag: 'struct',
+        fields: {},
+        fieldOrder: ['ghost'],
+        fieldOffsets: { ghost: 0 },
+        width: 1,
+        defaults: [0],
+      } as unknown as import('./types').GoboxStructType<Record<string, never>>
+      const scoped = __unsafe_createScopedValueFromPointer(
+        runtime,
+        malformed,
+        pointer,
+      ) as { ghost?: unknown }
+      expect(scoped.ghost).toBeUndefined()
+    })
+  })
+
   test('builds isTrue boolean projection block', () => {
     const project = new Project()
     project.stage.run(() => {
-      const signal = useScopedValue(new Bool(true))
+      const signal = Bool.makeScopedValue(true)
       setVariableTo(
         project.stage.createVariable('flag', 0),
         isTrue(signal.get()) as never,
@@ -255,9 +306,9 @@ describe('gobox/internal/runtime edge cases', () => {
   test('supports dynamic scoped allocations after static allocations', () => {
     const project = new Project()
     project.stage.run(() => {
-      useScopedValue(new Num(1))
+      Num.makeScopedValue(1)
       whenFlagClicked(() => {
-        useScopedValue(new Num(2))
+        Num.makeScopedValue(2)
       })
     })
 
@@ -273,13 +324,72 @@ describe('gobox/internal/runtime edge cases', () => {
     expect(opcodes).toContain('control_if')
   })
 
+  test('reuses dynamic scope state for repeated allocations in same stack scope', () => {
+    const project = new Project()
+    project.stage.run(() => {
+      whenFlagClicked(() => {
+        Num.makeScopedValue(1)
+        Num.makeScopedValue(2)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const opcodes = Object.values(stage?.blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+    expect(opcodes).toContain('data_setvariableto')
+  })
+
+  test('supports pointer offsets for variable and expr pointers', () => {
+    const project = new Project()
+    const pointerVar = project.stage.createVariable('ptr', 1)
+    const out = project.stage.createVariable('out', 0)
+
+    const variablePointer = withPointerOffset(
+      {
+        kind: 'variable',
+        variable: pointerVar,
+        offset: 2,
+      },
+      3,
+    )
+    const exprPointer = withPointerOffset(
+      {
+        kind: 'expr',
+        source: 5,
+        offset: 4,
+      },
+      6,
+    )
+
+    expect(variablePointer).toEqual({
+      kind: 'variable',
+      variable: pointerVar,
+      offset: 5,
+    })
+    expect(exprPointer).toEqual({
+      kind: 'expr',
+      source: 5,
+      offset: 10,
+    })
+    project.stage.run(() => {
+      setVariableTo(out, pointerToIndexSource(variablePointer) as never)
+      setVariableTo(out, pointerToIndexSource(exprPointer) as never)
+    })
+  })
+
   test('throws when static allocations exceed memory limit', () => {
     expect(() => {
       const project = new Project()
       project.stage.run(() => {
         const runtime = getRuntimeForCurrentTarget()
         runtime.staticCursor = MAX_GBOX_MEMORY_SLOTS
-        useScopedValue(new Num(0))
+        Num.makeScopedValue()
       })
     }).toThrow(/gobox memory limit exceeded/)
   })
@@ -288,11 +398,11 @@ describe('gobox/internal/runtime edge cases', () => {
     expect(() => {
       const project = new Project()
       project.stage.run(() => {
-        useScopedValue(new Num(0))
+        Num.makeScopedValue()
         whenFlagClicked(() => {
           const runtime = getRuntimeForCurrentTarget()
           runtime.staticCursor = MAX_GBOX_MEMORY_SLOTS
-          useScopedValue(new Num(0))
+          Num.makeScopedValue()
         })
       })
     }).toThrow(/gobox memory limit exceeded/)

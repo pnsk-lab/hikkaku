@@ -16,6 +16,7 @@ export type {
   GoboxTypeAny,
   GoboxValueOf,
   GoboxVectorType,
+  GoboxVectorTypeFactory,
 } from './types'
 export {
   Bool,
@@ -24,6 +25,6 @@ export {
   Num,
   Str,
   struct,
-  vector,
+  Vector,
 } from './types'
 export * from './value'

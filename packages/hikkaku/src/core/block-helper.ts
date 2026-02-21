@@ -5,8 +5,12 @@ import type {
   CostumeReference,
   CostumeSource,
   HikkakuBlock,
+  HikkakuBool,
+  HikkakuReporterBlock,
+  HikkakuString,
   PrimitiveAvailableOnScratch,
   PrimitiveSource,
+  PrimitiveToHikkakuType,
   SoundReference,
   SoundSource,
 } from './types'
@@ -66,7 +70,7 @@ type MappingToPrimitive<T extends PrimitiveInputType> =
 type PrimitiveInputType = sb3.InputPrimitive['0']
 export function fromPrimitiveSource<T extends PrimitiveInputType>(
   inputType: T,
-  source: PrimitiveSource<MappingToPrimitive<T>>,
+  source: PrimitiveSource<PrimitiveToHikkakuType<MappingToPrimitive<T>>>,
   defaultValue?: MappingToPrimitive<T>,
 ): sb3.Input {
   defaultValue =
@@ -117,13 +121,15 @@ function createInput(
 }
 
 // Special helper for boolean conditions - no primitive shadow support in Scratch
-export function fromBooleanSource(source: PrimitiveSource<boolean>): sb3.Input {
+export function fromBooleanSource(
+  source: PrimitiveSource<HikkakuBool>,
+): sb3.Input {
   if (typeof source === 'boolean') {
     if (source === true) {
-      const TRUE = valueBlock('operator_not', {})
+      const TRUE = valueBlock<HikkakuBool>('operator_not', {})
       return [Shadow.SameBlockShadow, TRUE.id]
     } else {
-      const FALSE = valueBlock('operator_and', {})
+      const FALSE = valueBlock<HikkakuBool>('operator_and', {})
       return [Shadow.SameBlockShadow, FALSE.id]
     }
   }
@@ -134,7 +140,7 @@ export function fromBooleanSource(source: PrimitiveSource<boolean>): sb3.Input {
 
 export const unwrapCostumeSource = (
   source: CostumeSource,
-): PrimitiveSource<string> => {
+): PrimitiveSource<HikkakuString> => {
   if (isCostumeReference(source)) {
     return source.name
   }
@@ -144,7 +150,7 @@ export const unwrapCostumeSource = (
 
 export const unwrapSoundSource = (
   source: SoundSource,
-): PrimitiveSource<string> => {
+): PrimitiveSource<HikkakuString> => {
   if (isSoundReference(source)) {
     return source.name
   }
@@ -164,15 +170,15 @@ export const isHikkakuBlock = (block: unknown): block is HikkakuBlock => {
 }
 
 export const menuInput = <T extends PrimitiveAvailableOnScratch>(
-  source: PrimitiveSource<T>,
-  createMenu: (source?: T) => HikkakuBlock,
+  source: PrimitiveSource<PrimitiveToHikkakuType<T>>,
+  createMenu: (source?: T) => HikkakuReporterBlock<HikkakuString>,
 ): sb3.Input => {
   if (isHikkakuBlock(source)) {
     const shadow = createMenu()
     return [Shadow.DiffBlockShadow, source.id, shadow.id]
   }
 
-  const menu = createMenu(source)
+  const menu = createMenu(source as unknown as T)
   return fromPrimitiveSource(InputType.String, menu)
 }
 

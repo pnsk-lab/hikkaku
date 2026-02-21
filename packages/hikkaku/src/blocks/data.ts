@@ -3,12 +3,15 @@ import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type {
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuString,
   ListReference,
   PrimitiveSource,
   VariableReference,
 } from '../core/types'
 
-export type ListIndex = PrimitiveSource<number | string>
+export type ListIndex = PrimitiveSource<HikkakuNumber | HikkakuString>
 
 const toField = (field: VariableReference | ListReference): Fields => [
   field.name,
@@ -31,7 +34,7 @@ const toField = (field: VariableReference | ListReference): Fields => [
  * ```
  */
 export const getVariable = (variable: VariableReference) => {
-  return valueBlock('data_variable', {
+  return valueBlock<HikkakuString | HikkakuNumber>('data_variable', {
     fields: {
       VARIABLE: toField(variable),
     },
@@ -45,7 +48,7 @@ export const getVariable = (variable: VariableReference) => {
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param variable VariableReference
- * @param value PrimitiveSource<number | string>
+ * @param value PrimitiveSource<HikkakuNumber | HikkakuString>
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -56,7 +59,7 @@ export const getVariable = (variable: VariableReference) => {
  */
 export const setVariableTo = (
   variable: VariableReference,
-  value: PrimitiveSource<number | string>,
+  value: PrimitiveSource<HikkakuNumber | HikkakuString>,
 ) => {
   return block('data_setvariableto', {
     inputs: {
@@ -75,7 +78,7 @@ export const setVariableTo = (
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param variable VariableReference
- * @param value PrimitiveSource<number>
+ * @param value PrimitiveSource<HikkakuNumber>
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -86,7 +89,7 @@ export const setVariableTo = (
  */
 export const changeVariableBy = (
   variable: VariableReference,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('data_changevariableby', {
     inputs: {
@@ -160,7 +163,7 @@ export const hideVariable = (variable: VariableReference) => {
  * ```
  */
 export const getListContents = (list: ListReference) => {
-  return valueBlock('data_listcontents', {
+  return valueBlock<HikkakuString>('data_listcontents', {
     fields: {
       LIST: toField(list),
     },
@@ -174,7 +177,7 @@ export const getListContents = (list: ListReference) => {
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param list ListReference
- * @param item PrimitiveSource<string | number>
+ * @param item PrimitiveSource<HikkakuString | HikkakuNumber>
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -185,7 +188,7 @@ export const getListContents = (list: ListReference) => {
  */
 export const addToList = (
   list: ListReference,
-  item: PrimitiveSource<string | number>,
+  item: PrimitiveSource<HikkakuString | HikkakuNumber>,
 ) => {
   return block('data_addtolist', {
     inputs: {
@@ -204,7 +207,7 @@ export const addToList = (
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param list Input value used by this block.
- * @param index PrimitiveSource<number | string>
+ * @param index PrimitiveSource<HikkakuNumber | HikkakuString>
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -267,7 +270,7 @@ export const deleteAllOfList = (list: ListReference) => {
 export const insertAtList = (
   list: ListReference,
   index: ListIndex,
-  item: PrimitiveSource<string | number>,
+  item: PrimitiveSource<HikkakuString | HikkakuNumber>,
 ) => {
   return block('data_insertatlist', {
     inputs: {
@@ -300,7 +303,7 @@ export const insertAtList = (
 export const replaceItemOfList = (
   list: ListReference,
   index: ListIndex,
-  item: PrimitiveSource<string | number>,
+  item: PrimitiveSource<HikkakuString | HikkakuNumber>,
 ) => {
   return block('data_replaceitemoflist', {
     inputs: {
@@ -330,7 +333,7 @@ export const replaceItemOfList = (
  * ```
  */
 export const getItemOfList = (list: ListReference, index: ListIndex) => {
-  return valueBlock('data_itemoflist', {
+  return valueBlock<HikkakuString | HikkakuNumber>('data_itemoflist', {
     inputs: {
       INDEX: fromPrimitiveSource(InputType.String, index, 1),
     },
@@ -358,9 +361,9 @@ export const getItemOfList = (list: ListReference, index: ListIndex) => {
  */
 export const getItemNumOfList = (
   list: ListReference,
-  item: PrimitiveSource<string | number>,
+  item: PrimitiveSource<HikkakuString | HikkakuNumber>,
 ) => {
-  return valueBlock('data_itemnumoflist', {
+  return valueBlock<HikkakuNumber>('data_itemnumoflist', {
     inputs: {
       ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },
@@ -386,7 +389,7 @@ export const getItemNumOfList = (
  * ```
  */
 export const lengthOfList = (list: ListReference) => {
-  return valueBlock('data_lengthoflist', {
+  return valueBlock<HikkakuNumber>('data_lengthoflist', {
     fields: {
       LIST: toField(list),
     },
@@ -411,9 +414,9 @@ export const lengthOfList = (list: ListReference) => {
  */
 export const listContainsItem = (
   list: ListReference,
-  item: PrimitiveSource<string | number>,
+  item: PrimitiveSource<HikkakuString | HikkakuNumber>,
 ) => {
-  return valueBlock('data_listcontainsitem', {
+  return valueBlock<HikkakuBool>('data_listcontainsitem', {
     inputs: {
       ITEM: fromPrimitiveSource(InputType.String, item, 'thing'),
     },

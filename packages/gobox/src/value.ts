@@ -1,4 +1,11 @@
-import type { HikkakuBlock, PrimitiveSource } from 'hikkaku'
+import type {
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuReporterBlock,
+  HikkakuString,
+  PrimitiveSource,
+  PrimitiveToHikkakuType,
+} from 'hikkaku'
 import { __unstable_getBuildScopeFrame } from 'hikkaku'
 import {
   add,
@@ -11,6 +18,8 @@ import {
   replaceItemOfList,
   whenFlagClicked,
 } from 'hikkaku/blocks'
+import type { FunctionArgSpec, GoboxFunctionDefinition } from './functions'
+import { IMPL_CONSTRUCTOR_SYMBOL, IMPL_METHODS_SYMBOL } from './internal/impl'
 import {
   allocateScopedPointer,
   type GoboxTargetRuntime,
@@ -19,19 +28,17 @@ import {
   type SlotPointer,
   withPointerOffset,
 } from './internal/runtime'
-import {
-  Bool as boolType,
-  type GoboxBooleanType,
-  type GoboxNumberType,
-  type GoboxPrimitiveType,
-  type GoboxStringType,
-  type GoboxStructType,
-  type GoboxTypeAny,
-  type GoboxValueOf,
-  type GoboxVectorType,
-  isPrimitiveType,
-  Num as numType,
-  Str as strType,
+import type {
+  GoboxBooleanType,
+  GoboxMemoryAtom,
+  GoboxNumberType,
+  GoboxPrimitiveType,
+  GoboxPrimitiveTypeLike,
+  GoboxStringType,
+  GoboxStructType,
+  GoboxTypeAny,
+  GoboxValueOf,
+  GoboxVectorType,
 } from './types'
 
 const POINTER_SYMBOL = Symbol('gobox.pointer')
@@ -45,22 +52,22 @@ interface ScopedInternal {
 }
 
 export interface ScopedNumberValue {
-  get(): HikkakuBlock
-  set(value: PrimitiveSource<number>): void
+  get(): HikkakuReporterBlock<HikkakuNumber>
+  set(value: PrimitiveSource<HikkakuNumber>): void
   borrow(): Pick<ScopedNumberValue, 'get'>
   borrowMut(): Pick<ScopedNumberValue, 'get' | 'set'>
 }
 
 export interface ScopedStringValue {
-  get(): HikkakuBlock
-  set(value: PrimitiveSource<string | number>): void
+  get(): HikkakuReporterBlock<HikkakuString | HikkakuNumber>
+  set(value: PrimitiveSource<HikkakuString | HikkakuNumber>): void
   borrow(): Pick<ScopedStringValue, 'get'>
   borrowMut(): Pick<ScopedStringValue, 'get' | 'set'>
 }
 
 export interface ScopedBooleanValue {
-  get(): HikkakuBlock
-  set(value: PrimitiveSource<boolean>): void
+  get(): HikkakuReporterBlock<HikkakuBool>
+  set(value: PrimitiveSource<HikkakuBool>): void
   borrow(): Pick<ScopedBooleanValue, 'get'>
   borrowMut(): Pick<ScopedBooleanValue, 'get' | 'set'>
 }
@@ -75,7 +82,7 @@ export type ScopedValueFromType<TType extends GoboxTypeAny> =
         : TType extends GoboxVectorType<infer TElement>
           ? ScopedVectorValue<TElement>
           : TType extends GoboxStructType<infer TFields>
-            ? ScopedStructValue<TFields>
+            ? ScopedStructValue<TFields> & ScopedImplMethodsFromType<TType>
             : never
 
 export interface ScopedVectorValue<TElement extends GoboxTypeAny> {
@@ -85,6 +92,60 @@ export interface ScopedVectorValue<TElement extends GoboxTypeAny> {
 
 export type ScopedStructValue<TFields extends Record<string, GoboxTypeAny>> = {
   [K in keyof TFields]: ScopedValueFromType<TFields[K]>
+}
+
+type ImplMethodsFromType<TType extends GoboxTypeAny> = TType extends {
+  readonly [IMPL_METHODS_SYMBOL]: infer TMethods extends Record<string, unknown>
+}
+  ? TMethods
+  : never
+
+type ScopedImplMethodsFromType<TType extends GoboxTypeAny> = [
+  ImplMethodsFromType<TType>,
+] extends [never]
+  ? Record<never, never>
+  : { readonly methods: ImplMethodsFromType<TType> }
+
+const isFunctionDefinitionLike = (
+  value: unknown,
+): value is GoboxFunctionDefinition<
+  FunctionArgSpec,
+  GoboxPrimitiveTypeLike
+> => {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  return (
+    'procedure' in value &&
+    typeof (value as { call?: unknown }).call === 'function'
+  )
+}
+
+const bindImplMethods = <
+  TMethods extends Record<string, unknown>,
+  TSelf extends object,
+>(
+  methods: TMethods,
+  self: TSelf,
+): TMethods => {
+  const bound: Record<string, unknown> = {}
+  for (const [name, method] of Object.entries(methods)) {
+    if (isFunctionDefinitionLike(method)) {
+      const definition = method
+      bound[name] = {
+        ...definition,
+        call: (args: unknown) =>
+          (
+            definition as unknown as {
+              call(callArgs: unknown, callSelf: TSelf): unknown
+            }
+          ).call(args, self),
+      }
+      continue
+    }
+    bound[name] = method
+  }
+  return Object.freeze(bound) as TMethods
 }
 
 const withInternal = <TValue extends object>(
@@ -149,7 +210,7 @@ const createNumberValue = (
         getItemOfList(
           runtime.memoryList,
           pointerToIndexSource(pointer),
-        ) as PrimitiveSource<number>,
+        ) as PrimitiveSource<HikkakuNumber>,
         0,
       )
     },
@@ -202,7 +263,7 @@ const createBooleanValue = (
           getItemOfList(
             runtime.memoryList,
             pointerToIndexSource(pointer),
-          ) as PrimitiveSource<number>,
+          ) as PrimitiveSource<HikkakuNumber>,
           0,
         ),
         0,
@@ -220,7 +281,7 @@ const createBooleanValue = (
       replaceItemOfList(
         runtime.memoryList,
         pointerToIndexSource(pointer),
-        add(next as PrimitiveSource<number>, 0),
+        add(next as PrimitiveSource<HikkakuNumber>, 0),
       )
     },
     borrow: () => ({
@@ -295,12 +356,34 @@ const createScopedValue = <TType extends GoboxTypeAny>(
           withPointerOffset(pointer, offset),
         )
       }
-      return withInternal(
+      const scopedStructValue = withInternal(
         structValue,
         runtime,
         pointer,
         type,
       ) as ScopedValueFromType<TType>
+      const methods = (
+        type as { [IMPL_METHODS_SYMBOL]?: Record<string, unknown> }
+      )[IMPL_METHODS_SYMBOL]
+      if (methods !== undefined) {
+        Object.defineProperty(structValue, 'methods', {
+          enumerable: true,
+          value: bindImplMethods(methods, scopedStructValue),
+        })
+      }
+      const constructor_ = (
+        type as {
+          [IMPL_CONSTRUCTOR_SYMBOL]?: (ctx: {
+            self: ScopedValueFromType<TType>
+          }) => void
+        }
+      )[IMPL_CONSTRUCTOR_SYMBOL]
+      if (constructor_ !== undefined) {
+        constructor_({
+          self: scopedStructValue,
+        })
+      }
+      return scopedStructValue
     }
     default: {
       const exhaustiveType: never = type
@@ -322,7 +405,7 @@ export const __unsafe_createScopedValueFromPointer = <
 
 export const __unsafe_getPointerSource = (
   value: unknown,
-): PrimitiveSource<number> => {
+): PrimitiveSource<HikkakuNumber> => {
   const internal = asInternal(value)
   return pointerToIndexSource(internal[POINTER_SYMBOL])
 }
@@ -334,46 +417,78 @@ export const __unsafe_getRuntimeFromScopedValue = (
   return internal[RUNTIME_SYMBOL]
 }
 
-export const useScopedValue = <TType extends GoboxTypeAny>(
+export const makeScopedValueFromType = <TType extends GoboxTypeAny>(
   type: TType,
+  defaults: ReadonlyArray<GoboxMemoryAtom> = type.defaults,
 ): ScopedValueFromType<TType> => {
   const runtime = getRuntimeForCurrentTarget()
-  const pointer = allocateScopedPointer(runtime, type.width, type.defaults)
-  initDynamicDefaults(runtime, pointer, type.defaults)
+  const runtimeDefaults = [...defaults]
+  const pointer = allocateScopedPointer(runtime, type.width, runtimeDefaults)
+  initDynamicDefaults(runtime, pointer, runtimeDefaults)
   return createScopedValue(runtime, type, pointer)
 }
 
 interface SignalInternal<TValue extends number | string | boolean> {
-  get(): PrimitiveSource<TValue>
-  set(value: PrimitiveSource<TValue>): void
+  get(): PrimitiveSource<PrimitiveToHikkakuType<TValue>>
+  set(value: PrimitiveSource<PrimitiveToHikkakuType<TValue>>): void
   subscribe(effect: ReturnType<typeof defineProcedure>): void
 }
 
 export interface GoboxSignal<TValue extends number | string | boolean> {
-  get(): PrimitiveSource<TValue>
-  set(value: PrimitiveSource<TValue>): void
+  get(): PrimitiveSource<PrimitiveToHikkakuType<TValue>>
+  set(value: PrimitiveSource<PrimitiveToHikkakuType<TValue>>): void
 }
 
 let activeSignalCollector: Set<
   SignalInternal<number | string | boolean>
 > | null = null
 
-const toPrimitiveSignalType = (
-  input: GoboxPrimitiveType | number | string | boolean,
-): GoboxPrimitiveType => {
-  if (typeof input === 'number') {
-    return new numType(input)
+type PrimitiveSignalDescriptor = {
+  tag: GoboxPrimitiveType['tag']
+  get(): PrimitiveSource<HikkakuBool | HikkakuNumber | HikkakuString>
+  set(value: PrimitiveSource<HikkakuBool | HikkakuNumber | HikkakuString>): void
+}
+
+const toPrimitiveSignalDescriptor = (
+  input: ScopedNumberValue | ScopedStringValue | ScopedBooleanValue,
+): PrimitiveSignalDescriptor => {
+  const internal = asInternal(input)
+  const type = internal[TYPE_SYMBOL]
+  switch (type.tag) {
+    case 'number': {
+      const scoped = input as ScopedNumberValue
+      return {
+        tag: type.tag,
+        get: () => scoped.get() as PrimitiveSource<HikkakuNumber>,
+        set: (value) => {
+          scoped.set(value as PrimitiveSource<HikkakuNumber>)
+        },
+      }
+    }
+    case 'string': {
+      const scoped = input as ScopedStringValue
+      return {
+        tag: type.tag,
+        get: () =>
+          scoped.get() as PrimitiveSource<HikkakuString | HikkakuNumber>,
+        set: (value) => {
+          scoped.set(value as PrimitiveSource<HikkakuString | HikkakuNumber>)
+        },
+      }
+    }
+    case 'boolean': {
+      const scoped = input as ScopedBooleanValue
+      return {
+        tag: type.tag,
+        get: () => scoped.get() as PrimitiveSource<HikkakuBool>,
+        set: (value) => {
+          scoped.set(value as PrimitiveSource<HikkakuBool>)
+        },
+      }
+    }
+    default:
+      throw new Error('useSignal only supports scoped primitive gobox values')
   }
-  if (typeof input === 'string') {
-    return new strType(input)
-  }
-  if (typeof input === 'boolean') {
-    return new boolType(input)
-  }
-  if (!isPrimitiveType(input)) {
-    throw new Error('useSignal only supports primitive gobox types')
-  }
-  return input
 }
 
 const assertRunTopLevel = (name: string): void => {
@@ -383,23 +498,14 @@ const assertRunTopLevel = (name: string): void => {
   }
 }
 
+export function useSignal(value: ScopedNumberValue): GoboxSignal<number>
+export function useSignal(value: ScopedStringValue): GoboxSignal<string>
+export function useSignal(value: ScopedBooleanValue): GoboxSignal<boolean>
 export function useSignal(
-  initialOrType: GoboxNumberType | number,
-): GoboxSignal<number>
-export function useSignal(
-  initialOrType: GoboxStringType | string,
-): GoboxSignal<string>
-export function useSignal(
-  initialOrType: GoboxBooleanType | boolean,
-): GoboxSignal<boolean>
-export function useSignal(
-  initialOrType: GoboxPrimitiveType | number | string | boolean,
+  value: ScopedNumberValue | ScopedStringValue | ScopedBooleanValue,
 ): GoboxSignal<number | string | boolean> {
   assertRunTopLevel('useSignal')
-
-  const _runtime = getRuntimeForCurrentTarget()
-  const type = toPrimitiveSignalType(initialOrType)
-  const value = useScopedValue(type)
+  const descriptor = toPrimitiveSignalDescriptor(value)
 
   const subscribers: Array<ReturnType<typeof defineProcedure>> = []
 
@@ -408,10 +514,14 @@ export function useSignal(
       if (activeSignalCollector) {
         activeSignalCollector.add(signal)
       }
-      return value.get() as PrimitiveSource<number | string | boolean>
+      return descriptor.get() as PrimitiveSource<
+        HikkakuNumber | HikkakuString | HikkakuBool
+      >
     },
     set: (next) => {
-      value.set(next as PrimitiveSource<never>)
+      descriptor.set(
+        next as PrimitiveSource<HikkakuBool | HikkakuNumber | HikkakuString>,
+      )
       for (const subscriber of subscribers) {
         callProcedure(subscriber, [])
       }
@@ -453,8 +563,10 @@ export const useEffect = (handler: () => void): void => {
   }
 }
 
-export const isTrue = (value: PrimitiveSource<boolean>): HikkakuBlock => {
-  return equals(value as PrimitiveSource<string | number>, 1)
+export const isTrue = (
+  value: PrimitiveSource<HikkakuBool>,
+): HikkakuReporterBlock<HikkakuBool> => {
+  return equals(value as PrimitiveSource<HikkakuString | HikkakuNumber>, 1)
 }
 
 export type {

@@ -5,7 +5,12 @@ import {
   unwrapCostumeSource,
 } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
-import type { CostumeSource, PrimitiveSource } from '../core/types'
+import type {
+  CostumeSource,
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 export type LookEffect =
   | 'color'
@@ -35,7 +40,7 @@ export type NumberName = 'number' | 'name'
  * say('Hello')
  * ```
  */
-export const say = (message: PrimitiveSource<string>) => {
+export const say = (message: PrimitiveSource<HikkakuString>) => {
   return block('looks_say', {
     inputs: {
       MESSAGE: fromPrimitiveSource(InputType.String, message, 'Hello!'),
@@ -60,8 +65,8 @@ export const say = (message: PrimitiveSource<string>) => {
  * ```
  */
 export const sayForSecs = (
-  message: PrimitiveSource<string>,
-  seconds: PrimitiveSource<number>,
+  message: PrimitiveSource<HikkakuString>,
+  seconds: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('looks_sayforsecs', {
     inputs: {
@@ -86,7 +91,7 @@ export const sayForSecs = (
  * think('Hello')
  * ```
  */
-export const think = (message: PrimitiveSource<string>) => {
+export const think = (message: PrimitiveSource<HikkakuString>) => {
   return block('looks_think', {
     inputs: {
       MESSAGE: fromPrimitiveSource(InputType.String, message, 'Hello!'),
@@ -111,8 +116,8 @@ export const think = (message: PrimitiveSource<string>) => {
  * ```
  */
 export const thinkForSecs = (
-  message: PrimitiveSource<string>,
-  seconds: PrimitiveSource<number>,
+  message: PrimitiveSource<HikkakuString>,
+  seconds: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('looks_thinkforsecs', {
     inputs: {
@@ -181,7 +186,7 @@ export const switchCostumeTo = (costume: CostumeSource) => {
   })
 }
 export const menuOfCostume = (costume: string = '') => {
-  return valueBlock('looks_costume', {
+  return valueBlock<HikkakuString>('looks_costume', {
     fields: {
       COSTUME: [costume, null],
     },
@@ -222,7 +227,7 @@ export const nextCostume = () => {
  * switchBackdropTo('backdrop1')
  * ```
  */
-export const switchBackdropTo = (backdrop: PrimitiveSource<string>) => {
+export const switchBackdropTo = (backdrop: PrimitiveSource<HikkakuString>) => {
   return block('looks_switchbackdropto', {
     inputs: {
       BACKDROP: menuInput(backdrop, menuOfBackdrop),
@@ -231,7 +236,7 @@ export const switchBackdropTo = (backdrop: PrimitiveSource<string>) => {
 }
 
 export const menuOfBackdrop = (backdrop: string = '') => {
-  return valueBlock('looks_backdrops', {
+  return valueBlock<HikkakuString>('looks_backdrops', {
     fields: {
       BACKDROP: [backdrop, null],
     },
@@ -254,7 +259,9 @@ export const menuOfBackdrop = (backdrop: string = '') => {
  * switchBackdropToAndWait('backdrop1')
  * ```
  */
-export const switchBackdropToAndWait = (backdrop: PrimitiveSource<string>) => {
+export const switchBackdropToAndWait = (
+  backdrop: PrimitiveSource<HikkakuString>,
+) => {
   return block('looks_switchbackdroptoandwait', {
     inputs: {
       BACKDROP: menuInput(backdrop, menuOfBackdrop),
@@ -298,7 +305,7 @@ export const nextBackdrop = () => {
  */
 export const changeLooksEffectBy = (
   effect: LookEffect,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('looks_changeeffectby', {
     inputs: {
@@ -328,7 +335,7 @@ export const changeLooksEffectBy = (
  */
 export const setLooksEffectTo = (
   effect: LookEffect,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('looks_seteffectto', {
     inputs: {
@@ -373,7 +380,7 @@ export const clearGraphicEffects = () => {
  * changeSizeBy(10)
  * ```
  */
-export const changeSizeBy = (value: PrimitiveSource<number>) => {
+export const changeSizeBy = (value: PrimitiveSource<HikkakuNumber>) => {
   return block('looks_changesizeby', {
     inputs: {
       CHANGE: fromPrimitiveSource(InputType.Number, value, 10),
@@ -396,7 +403,7 @@ export const changeSizeBy = (value: PrimitiveSource<number>) => {
  * setSizeTo(10)
  * ```
  */
-export const setSizeTo = (value: PrimitiveSource<number>) => {
+export const setSizeTo = (value: PrimitiveSource<HikkakuNumber>) => {
   return block('looks_setsizeto', {
     inputs: {
       SIZE: fromPrimitiveSource(InputType.Number, value, 100),
@@ -445,7 +452,7 @@ export const goToFrontBack = (position: FrontBack) => {
  */
 export const goForwardBackwardLayers = (
   direction: ForwardBackward,
-  layers: PrimitiveSource<number>,
+  layers: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('looks_goforwardbackwardlayers', {
     inputs: {
@@ -472,7 +479,7 @@ export const goForwardBackwardLayers = (
  * ```
  */
 export const getSize = () => {
-  return valueBlock('looks_size', {})
+  return valueBlock<HikkakuNumber>('looks_size', {})
 }
 
 /**
@@ -491,7 +498,7 @@ export const getSize = () => {
  * ```
  */
 export const getCostumeNumberName = (value: NumberName) => {
-  return valueBlock('looks_costumenumbername', {
+  return valueBlock<HikkakuString | HikkakuNumber>('looks_costumenumbername', {
     fields: {
       NUMBER_NAME: [value, null],
     },
@@ -514,7 +521,7 @@ export const getCostumeNumberName = (value: NumberName) => {
  * ```
  */
 export const getBackdropNumberName = (value: NumberName) => {
-  return valueBlock('looks_backdropnumbername', {
+  return valueBlock<HikkakuString | HikkakuNumber>('looks_backdropnumbername', {
     fields: {
       NUMBER_NAME: [value, null],
     },

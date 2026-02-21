@@ -1,4 +1,5 @@
 import type {
+  HikkakuNumber,
   ListReference,
   PrimitiveSource,
   Target,
@@ -47,7 +48,7 @@ export type SlotPointer =
     }
   | {
       kind: 'expr'
-      source: PrimitiveSource<number>
+      source: PrimitiveSource<HikkakuNumber>
       offset: number
     }
 
@@ -140,13 +141,15 @@ export const withPointerOffset = (
 export const pointerToIndexSource = (
   pointer: SlotPointer,
   extraOffset = 0,
-): PrimitiveSource<number> => {
+): PrimitiveSource<HikkakuNumber> => {
   switch (pointer.kind) {
     case 'static':
       return pointer.index + extraOffset
     case 'variable': {
       const totalOffset = pointer.offset + extraOffset
-      const base = getVariable(pointer.variable) as PrimitiveSource<number>
+      const base = getVariable(
+        pointer.variable,
+      ) as PrimitiveSource<HikkakuNumber>
       return totalOffset === 0 ? base : add(base, totalOffset)
     }
     case 'expr': {
@@ -223,7 +226,7 @@ const allocateStaticPointer = (
 ): SlotPointer => {
   if (runtime.hasDynamicAllocation) {
     throw new Error(
-      'useScopedValue() static allocation must happen before dynamic scoped allocations in the same target',
+      'makeScopedValue() static allocation must happen before dynamic scoped allocations in the same target',
     )
   }
 

@@ -1,7 +1,11 @@
 import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block } from '../core/composer'
-import type { PrimitiveSource } from '../core/types'
+import type {
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 /**
  * Runs when green flag is clicked.
@@ -205,7 +209,7 @@ export const whenTouchingObject = (target: string, stack?: () => void) => {
  */
 export const whenGreaterThan = (
   menu: string,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
   stack?: () => void,
 ) => {
   const res = block('event_whengreaterthan', {
@@ -236,7 +240,7 @@ export const whenGreaterThan = (
  * broadcast('Hello')
  * ```
  */
-export const broadcast = (message: PrimitiveSource<string>) => {
+export const broadcast = (message: PrimitiveSource<HikkakuString>) => {
   return block('event_broadcast', {
     inputs: {
       BROADCAST_INPUT: fromPrimitiveSource(
@@ -263,7 +267,7 @@ export const broadcast = (message: PrimitiveSource<string>) => {
  * broadcastAndWait('Hello')
  * ```
  */
-export const broadcastAndWait = (message: PrimitiveSource<string>) => {
+export const broadcastAndWait = (message: PrimitiveSource<HikkakuString>) => {
   return block('event_broadcastandwait', {
     inputs: {
       BROADCAST_INPUT: fromPrimitiveSource(

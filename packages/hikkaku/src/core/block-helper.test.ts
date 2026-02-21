@@ -9,7 +9,14 @@ import {
   unwrapCostumeSource,
   unwrapSoundSource,
 } from './block-helper'
-import { block, createBlocks } from './composer'
+import { block, createBlocks, valueBlock } from './composer'
+import type {
+  HikkakuBlock,
+  HikkakuNumber,
+  HikkakuReporterBlock,
+  HikkakuString,
+  PrimitiveSource,
+} from './types'
 
 describe('core/block-helper', () => {
   test('converts primitives into Scratch inputs', () => {
@@ -24,7 +31,10 @@ describe('core/block-helper', () => {
   })
 
   test('supports block and color inputs', () => {
-    const block = { isBlock: true, id: 'abc' } as const
+    const block = {
+      isBlock: true,
+      id: 'abc',
+    } as unknown as HikkakuReporterBlock
     expect(fromPrimitiveSource(InputType.String, block, 'fallback')).toEqual([
       Shadow.DiffBlockShadow,
       'abc',
@@ -46,10 +56,16 @@ describe('core/block-helper', () => {
     expect(isHikkakuBlock({ isBlock: true, id: 'x' })).toBe(true)
 
     const created: string[] = []
-    const sourceBlock = { isBlock: true, id: 'source' } as const
+    const sourceBlock = {
+      isBlock: true,
+      id: 'source',
+    } as unknown as HikkakuReporterBlock
     const input = menuInput(sourceBlock, () => {
       created.push('called')
-      return { isBlock: true, id: 'shadow' }
+      return {
+        isBlock: true,
+        id: 'shadow',
+      } as unknown as HikkakuReporterBlock<HikkakuString>
     })
 
     expect(created).toEqual(['called'])
@@ -62,7 +78,10 @@ describe('core/block-helper', () => {
       [InputType.Broadcast, 'start', 'start'],
     ])
 
-    const valueBlockSource = { isBlock: true, id: 'value-id' } as const
+    const valueBlockSource = {
+      isBlock: true,
+      id: 'value-id',
+    } as unknown as HikkakuReporterBlock
     expect(fromPrimitiveSource(InputType.Angle, valueBlockSource)).toEqual([
       Shadow.DiffBlockShadow,
       'value-id',
@@ -81,7 +100,12 @@ describe('core/block-helper', () => {
     let input: ReturnType<typeof fromPrimitiveSource> | null = null
 
     createBlocks(() => {
-      const shadowBlock = block('motion_xposition', { isShadow: true })
+      const shadowBlock = valueBlock('motion_xposition', { isShadow: true })
+      block('looks_say', {
+        inputs: {
+          MESSAGE: [Shadow.SameBlockShadow, shadowBlock.id],
+        },
+      })
       input = fromPrimitiveSource(InputType.String, shadowBlock, 'fallback')
     })
 
@@ -96,5 +120,12 @@ describe('core/block-helper', () => {
     if (input[1] !== shadowId) {
       throw new Error('expected input id to match')
     }
+  })
+
+  test('rejects statement blocks as primitive sources at type level', () => {
+    const statement = { isBlock: true, id: 'statement-id' } as HikkakuBlock
+    // @ts-expect-error statement blocks are not reporter blocks
+    const _invalid: PrimitiveSource<HikkakuNumber> = statement
+    expect(statement.id).toBe('statement-id')
   })
 })
