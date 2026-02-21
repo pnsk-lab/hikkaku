@@ -17,6 +17,57 @@ import {
   trait,
 } from './types'
 
+type ProcedureBlock = {
+  opcode: string
+  next?: string | null
+  mutation?: {
+    proccode?: string
+  }
+  inputs?: Record<string, unknown>
+}
+
+const findProcedureProccode = (
+  blocks: Record<string, ProcedureBlock> | undefined,
+  procedureName: string,
+): string | undefined => {
+  if (!blocks) {
+    return undefined
+  }
+
+  const definition = Object.values(blocks).find((block) => {
+    const customBlockInput = block.inputs?.custom_block
+    if (
+      !Array.isArray(customBlockInput) ||
+      customBlockInput.length < 2 ||
+      typeof customBlockInput[1] !== 'string'
+    ) {
+      return false
+    }
+    const prototype = blocks[customBlockInput[1]]
+    return (
+      block.opcode === 'procedures_definition' &&
+      prototype?.opcode === 'procedures_prototype' &&
+      typeof prototype.mutation?.proccode === 'string' &&
+      prototype.mutation.proccode.startsWith(procedureName)
+    )
+  })
+  if (!definition) {
+    return undefined
+  }
+
+  const customBlockInput = definition.inputs?.custom_block
+  if (
+    !Array.isArray(customBlockInput) ||
+    customBlockInput.length < 2 ||
+    typeof customBlockInput[1] !== 'string'
+  ) {
+    return undefined
+  }
+
+  const prototype = blocks[customBlockInput[1]]
+  return prototype?.mutation?.proccode
+}
+
 describe('gobox/functions', () => {
   test('supports statement-return custom functions', () => {
     const project = new Project()
@@ -54,6 +105,107 @@ describe('gobox/functions', () => {
     expect(opcodes).toContain('procedures_call')
     expect(opcodes).toContain('data_replaceitemoflist')
     expect(out.id).toBeTruthy()
+  })
+
+  test('supports boolean function arguments', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', 0)
+
+    project.stage.run(() => {
+      const isEnabled = useFunction({
+        name: 'isEnabled',
+        args: {
+          enabled: boolean(false),
+        },
+        returns: boolean(false),
+        body: ({ args, returning }) => returning(args.enabled.get() as never),
+      })
+
+      whenFlagClicked(() => {
+        const result = isEnabled.call({
+          enabled: true,
+        })
+        setVariableTo(out, result.get() as never)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const blocks = stage?.blocks as Record<string, ProcedureBlock> | undefined
+    const opcodes = Object.values(blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+    expect(opcodes).toContain('procedures_definition')
+    expect(opcodes).toContain('procedures_call')
+    expect(opcodes).toContain('data_replaceitemoflist')
+    expect(findProcedureProccode(blocks, 'isEnabled')).toContain('%b')
+    expect(out.id).toBeTruthy()
+  })
+
+  test('supports string function arguments', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', '')
+
+    project.stage.run(() => {
+      const prefix = useFunction({
+        name: 'prefix',
+        args: {
+          value: string(''),
+        },
+        returns: string(''),
+        body: ({ args, returning }) => returning(args.value.get() as never),
+      })
+
+      whenFlagClicked(() => {
+        const result = prefix.call({
+          value: 'hello',
+        })
+        setVariableTo(out, result.get() as never)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const blocks = stage?.blocks as Record<string, ProcedureBlock> | undefined
+    const opcodes = Object.values(blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+    expect(opcodes).toContain('procedures_definition')
+    expect(opcodes).toContain('procedures_call')
+    expect(opcodes).toContain('data_replaceitemoflist')
+    expect(findProcedureProccode(blocks, 'prefix')).toContain('%s')
+    expect(out.id).toBeTruthy()
+  })
+
+  test('throws when calling with unknown function arguments', () => {
+    const project = new Project()
+
+    expect(() => {
+      project.stage.run(() => {
+        const plusOne = useFunction({
+          name: 'plusOne',
+          args: {
+            value: number(0),
+          },
+          returns: number(0),
+          body: ({ args, returning }) =>
+            returning(add(args.value.get() as never, 1) as never),
+        })
+
+        plusOne.call({
+          value: 1,
+          unknown: 2,
+        } as { value: number; unknown: number })
+      })
+    }).toThrow(/Unknown function argument: unknown/)
   })
 
   test('restricts useFunction to run top-level', () => {

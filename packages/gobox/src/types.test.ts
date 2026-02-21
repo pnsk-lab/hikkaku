@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vite-plus/test'
 import {
   boolean,
+  isPrimitiveType,
   number,
   string,
   struct,
@@ -41,6 +42,13 @@ describe('gobox/types', () => {
     expect(() => vector(number(0), 1.5)).toThrow(
       /vector length must be a non-negative integer/,
     )
+  })
+
+  test('reports primitive type check correctly', () => {
+    expect(isPrimitiveType(number(0))).toBe(true)
+    expect(isPrimitiveType(string(''))).toBe(true)
+    expect(isPrimitiveType(boolean(false))).toBe(true)
+    expect(isPrimitiveType(struct({ value: number(0) }))).toBe(false)
   })
 
   test('supports trait contracts on useImpl', () => {

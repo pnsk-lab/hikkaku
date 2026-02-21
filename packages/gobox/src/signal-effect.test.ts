@@ -69,4 +69,42 @@ describe('gobox signal/effect', () => {
     expect(opcodes).not.toContain('event_broadcast')
     expect(out.id).toBeTruthy()
   })
+
+  test('supports string and boolean signal values', () => {
+    const project = new Project()
+    const out = project.stage.createVariable('out', -1)
+
+    project.stage.run(() => {
+      const name = useSignal('ready')
+      const running = useSignal(false)
+
+      useEffect(() => {
+        setVariableTo(out, name.get() as never)
+        setVariableTo(out, running.get() as never)
+      })
+
+      whenFlagClicked(() => {
+        name.set('go')
+        running.set(true)
+      })
+    })
+
+    const stage = project
+      .toScratch()
+      .targets.find((entry) => entry.name === 'Stage')
+    const opcodes = Object.values(stage?.blocks ?? {})
+      .filter(
+        (block): block is { opcode: string } =>
+          typeof block === 'object' && block !== null && 'opcode' in block,
+      )
+      .map((block) => block.opcode)
+
+    expect(opcodes).toContain('procedures_definition')
+    expect(
+      opcodes.filter((opcode) => opcode === 'procedures_call').length,
+    ).toBeGreaterThan(1)
+    expect(opcodes).not.toContain('event_broadcastreceived')
+    expect(opcodes).not.toContain('event_broadcast')
+    expect(out.id).toBeTruthy()
+  })
 })

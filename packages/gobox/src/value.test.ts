@@ -1,7 +1,7 @@
 import { Project } from 'hikkaku'
 import { stop, whenFlagClicked } from 'hikkaku/blocks'
 import { describe, expect, test } from 'vite-plus/test'
-import { number, struct, vector } from './types'
+import { boolean, number, string, struct, vector } from './types'
 import { useEffect, useScopedValue, useSignal } from './value'
 
 const findListByName = (
@@ -60,6 +60,30 @@ describe('gobox/value', () => {
     expect(list?.[0]).toBe(0)
     expect(list?.[1]).toBe(0)
     expect(list?.[2]).toBe(1)
+  })
+
+  test('supports string and boolean scoped values', () => {
+    const project = new Project()
+
+    project.stage.run(() => {
+      useScopedValue(string('hello'))
+      useScopedValue(boolean(false))
+    })
+
+    const scratch = project.toScratch()
+    const list = findListByName(scratch, 'Stage', '__gobox_mem')
+    expect(list?.length).toBe(2)
+    expect(list?.[0]).toBe('hello')
+    expect(list?.[1]).toBe(0)
+  })
+
+  test('initializes zero-length vectors as invalid scoped values', () => {
+    const project = new Project()
+    expect(() => {
+      project.stage.run(() => {
+        useScopedValue(vector(number(0), 0))
+      })
+    }).toThrow(/scoped value width must be positive/)
   })
 
   test('throws on out-of-range vector index access', () => {
