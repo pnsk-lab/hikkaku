@@ -117,7 +117,7 @@ isProcedureArgument: true,
 name: 'value',
 type: 'stringOrNumber',
 id: 'var-id',
-getter: () => valueBlock('argument_reporter_string_number', { fields: { VALUE: ['value', null] } }),
+getter: () => valueBlock<HikkakuString | HikkakuNumber>('argument_reporter_string_number', { fields: { VALUE: ['value', null] } }),
 })
 ```
 
@@ -138,6 +138,6 @@ isProcedureArgument: true,
 name: 'flag',
 type: 'boolean',
 id: 'flag-id',
-getter: () => valueBlock('argument_reporter_boolean', { fields: { VALUE: ['flag', null] } }),
+getter: () => valueBlock<HikkakuBool>('argument_reporter_boolean', { fields: { VALUE: ['flag', null] } }),
 })
 ```

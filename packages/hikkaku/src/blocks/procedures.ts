@@ -1,7 +1,14 @@
 import { InputType, Shadow } from 'sb3-types/enum'
 import { fromBooleanSource, fromPrimitiveSource } from '../core/block-helper'
 import { attachStack, block, valueBlock } from '../core/composer'
-import type { HikkakuBlock, PrimitiveSource } from '../core/types'
+import type {
+  HikkakuBlock,
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuReporterBlock,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 export type ProcedureArgumentDefault = string | boolean
 
@@ -95,7 +102,7 @@ export interface ProcedureReferenceBase {
   /**
    * Creates a reporter block for this argument reference.
    */
-  getter(): HikkakuBlock
+  getter(): HikkakuReporterBlock<HikkakuBool | HikkakuString | HikkakuNumber>
 }
 export interface ProcedureBooleanReference extends ProcedureReferenceBase {
   type: 'boolean'
@@ -120,7 +127,7 @@ export interface ProcedureDefinitionReference<
 
 export type ProcedureCallInput = {
   reference: ProcedureReference
-  value: PrimitiveSource<string | number | boolean>
+  value: PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool>
 }
 
 export interface ProcedureDefinition<
@@ -314,15 +321,24 @@ export const callProcedure = (
   argumentIdsOrInputs:
     | string[]
     | ProcedureCallInput[]
-    | Record<string, PrimitiveSource<string | number | boolean>>,
+    | Record<
+        string,
+        PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool>
+      >,
   inputsOrWarp?:
-    | Record<string, PrimitiveSource<string | number | boolean>>
+    | Record<
+        string,
+        PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool>
+      >
     | boolean,
   warp = false,
 ) => {
   let proccode = ''
   let argumentIds: string[] = []
-  let inputs: Record<string, PrimitiveSource<string | number | boolean>> = {}
+  let inputs: Record<
+    string,
+    PrimitiveSource<HikkakuString | HikkakuNumber | HikkakuBool>
+  > = {}
   let procedureReference: ProcedureDefinitionReference | null = null
 
   if (typeof proccodeOrReference === 'string') {
@@ -373,11 +389,13 @@ export const callProcedure = (
   > = {}
   for (const [key, value] of Object.entries(inputs)) {
     if (argumentTypeMap[key] === 'boolean') {
-      resolvedInputs[key] = fromBooleanSource(value as PrimitiveSource<boolean>)
+      resolvedInputs[key] = fromBooleanSource(
+        value as PrimitiveSource<HikkakuBool>,
+      )
     } else {
       resolvedInputs[key] = fromPrimitiveSource(
         InputType.String,
-        value as PrimitiveSource<string | number>,
+        value as PrimitiveSource<HikkakuString | HikkakuNumber>,
         '',
       )
     }
@@ -408,18 +426,21 @@ export const callProcedure = (
  *   name: 'value',
  *   type: 'stringOrNumber',
  *   id: 'var-id',
- *   getter: () => valueBlock('argument_reporter_string_number', { fields: { VALUE: ['value', null] } }),
+ *   getter: () => valueBlock<HikkakuString | HikkakuNumber>('argument_reporter_string_number', { fields: { VALUE: ['value', null] } }),
  * })
  * ```
  */
 export const argumentReporterStringNumber = (
   reference: ProcedureStringOrNumberReference,
 ) => {
-  return valueBlock('argument_reporter_string_number', {
-    fields: {
-      VALUE: [reference.name, null],
+  return valueBlock<HikkakuString | HikkakuNumber>(
+    'argument_reporter_string_number',
+    {
+      fields: {
+        VALUE: [reference.name, null],
+      },
     },
-  })
+  )
 }
 
 /**
@@ -436,14 +457,14 @@ export const argumentReporterStringNumber = (
  *   name: 'flag',
  *   type: 'boolean',
  *   id: 'flag-id',
- *   getter: () => valueBlock('argument_reporter_boolean', { fields: { VALUE: ['flag', null] } }),
+ *   getter: () => valueBlock<HikkakuBool>('argument_reporter_boolean', { fields: { VALUE: ['flag', null] } }),
  * })
  * ```
  */
 export const argumentReporterBoolean = (
   reference: ProcedureBooleanReference,
 ) => {
-  return valueBlock('argument_reporter_boolean', {
+  return valueBlock<HikkakuBool>('argument_reporter_boolean', {
     fields: {
       VALUE: [reference.name, null],
     },

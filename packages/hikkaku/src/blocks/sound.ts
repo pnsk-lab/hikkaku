@@ -5,7 +5,12 @@ import {
   unwrapSoundSource,
 } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
-import type { PrimitiveSource, SoundSource } from '../core/types'
+import type {
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+  SoundSource,
+} from '../core/types'
 
 export type SoundEffect = 'pitch' | 'pan'
 
@@ -73,7 +78,7 @@ export const playSoundUntilDone = (sound: SoundSource) => {
 }
 
 export const menuOfSounds = (sound: string = '') => {
-  return valueBlock('sound_sounds_menu', {
+  return valueBlock<HikkakuString>('sound_sounds_menu', {
     fields: {
       SOUND_MENU: [sound, null],
     },
@@ -117,7 +122,7 @@ export const stopAllSounds = () => {
  */
 export const setSoundEffectTo = (
   effect: SoundEffect,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('sound_seteffectto', {
     inputs: {
@@ -147,7 +152,7 @@ export const setSoundEffectTo = (
  */
 export const changeSoundEffectBy = (
   effect: SoundEffect,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('sound_changeeffectby', {
     inputs: {
@@ -192,7 +197,7 @@ export const clearEffects = () => {
  * setVolumeTo(10)
  * ```
  */
-export const setVolumeTo = (value: PrimitiveSource<number>) => {
+export const setVolumeTo = (value: PrimitiveSource<HikkakuNumber>) => {
   return block('sound_setvolumeto', {
     inputs: {
       VOLUME: fromPrimitiveSource(InputType.Number, value, 10),
@@ -215,7 +220,7 @@ export const setVolumeTo = (value: PrimitiveSource<number>) => {
  * changeVolumeBy(10)
  * ```
  */
-export const changeVolumeBy = (value: PrimitiveSource<number>) => {
+export const changeVolumeBy = (value: PrimitiveSource<HikkakuNumber>) => {
   return block('sound_changevolumeby', {
     inputs: {
       VOLUME: fromPrimitiveSource(InputType.Number, value, 10),
@@ -238,5 +243,5 @@ export const changeVolumeBy = (value: PrimitiveSource<number>) => {
  * ```
  */
 export const getVolume = () => {
-  return valueBlock('sound_volume', {})
+  return valueBlock<HikkakuNumber>('sound_volume', {})
 }

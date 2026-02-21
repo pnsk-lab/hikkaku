@@ -77,28 +77,38 @@ const DIRECTIONS: Array<[number, number]> = [
   [1, 1],
 ]
 
-const boardIndex = (
-  col: number | ReturnType<typeof add>,
-  row: number | ReturnType<typeof add>,
-) => {
-  return add(multiply(subtract(row, 1), BOARD_SIZE), col)
+const toNumberSource = (value: unknown): ReturnType<typeof add> => {
+  return add(value as never, 0)
 }
 
-const cellCenterX = (col: number | ReturnType<typeof add>) => {
-  return add(BOARD_LEFT + CELL_HALF, multiply(subtract(col, 1), CELL_SIZE))
+const boardIndex = (col: unknown, row: unknown) => {
+  const colNumber = toNumberSource(col)
+  const rowNumber = toNumberSource(row)
+  return add(multiply(subtract(rowNumber, 1), BOARD_SIZE), colNumber)
 }
 
-const cellCenterY = (row: number | ReturnType<typeof add>) => {
-  return subtract(BOARD_TOP - CELL_HALF, multiply(subtract(row, 1), CELL_SIZE))
+const cellCenterX = (col: unknown) => {
+  const colNumber = toNumberSource(col)
+  return add(
+    BOARD_LEFT + CELL_HALF,
+    multiply(subtract(colNumber, 1), CELL_SIZE),
+  )
 }
 
-const insideBoardCell = (
-  col: number | ReturnType<typeof add>,
-  row: number | ReturnType<typeof add>,
-) => {
+const cellCenterY = (row: unknown) => {
+  const rowNumber = toNumberSource(row)
+  return subtract(
+    BOARD_TOP - CELL_HALF,
+    multiply(subtract(rowNumber, 1), CELL_SIZE),
+  )
+}
+
+const insideBoardCell = (col: unknown, row: unknown) => {
+  const colNumber = toNumberSource(col)
+  const rowNumber = toNumberSource(row)
   return and(
-    and(gt(col, 0), lt(col, BOARD_SIZE + 1)),
-    and(gt(row, 0), lt(row, BOARD_SIZE + 1)),
+    and(gt(colNumber, 0), lt(colNumber, BOARD_SIZE + 1)),
+    and(gt(rowNumber, 0), lt(rowNumber, BOARD_SIZE + 1)),
   )
 }
 

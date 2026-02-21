@@ -3,7 +3,7 @@ import { svg } from '../assets/helpers'
 import { whenFlagClicked } from '../blocks/events'
 import { say } from '../blocks/looks'
 import { moveSteps } from '../blocks/motion'
-import { Project } from './project'
+import { __unstable_getBuildTarget, Project } from './project'
 
 describe('core/project', () => {
   test('creates stage/sprite and exports scratch project', () => {
@@ -50,5 +50,17 @@ describe('core/project', () => {
     expect(list.id).toBeTruthy()
     expect(projectJson.monitors.length).toBe(2)
     expect(project.getAdditionalAssets().size).toBe(2)
+  })
+
+  test('exposes current build target inside run', () => {
+    const project = new Project()
+    const stage = project.stage
+
+    stage.run(() => {
+      const target = __unstable_getBuildTarget()
+      expect(target).toBe(stage)
+    })
+
+    expect(__unstable_getBuildTarget()).toBeNull()
   })
 })

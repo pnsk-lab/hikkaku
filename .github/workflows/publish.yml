@@ -13,6 +13,7 @@ on:
           - vite-plugin-turbowarp-packager
           - moonscratch
           - testing
+          - gobox
       release_type:
         description: 'Version bump type'
         required: true
@@ -90,7 +91,7 @@ jobs:
           package="$PACKAGE_NAME"
           release_type="$INPUT_RELEASE_TYPE"
 
-          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager|moonscratch|testing)$ ]]; then
+          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager|moonscratch|testing|gobox)$ ]]; then
             echo "Unsupported package: $package"
             exit 1
           fi
@@ -111,6 +112,12 @@ jobs:
           package_name="$(node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof pkg.name==='string'?pkg.name.trim():'')" "$package_json_path")"
           if [ -z "$package_name" ]; then
             echo "package.json does not contain a valid name field: $package_json_path"
+            exit 1
+          fi
+
+          has_repository="$(node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));const repo=pkg.repository;const ok=(typeof repo==='string'&&repo.trim()!=='')||(repo&&typeof repo==='object'&&typeof repo.url==='string'&&repo.url.trim()!=='');process.stdout.write(ok?'yes':'no')" "$package_json_path")"
+          if [ "$has_repository" != "yes" ]; then
+            echo "package.json must contain a non-empty repository field: $package_json_path"
             exit 1
           fi
 
@@ -199,6 +206,10 @@ jobs:
         if: steps.metadata.outputs.package == 'testing'
         run: bun run --cwd packages/testing build
 
+      - name: Build gobox
+        if: steps.metadata.outputs.package == 'gobox'
+        run: bun run --cwd packages/gobox build
+
       - name: Build gpts zip
         if: steps.metadata.outputs.package == 'hikkaku'
         run: bun run --filter gpts-zip build
@@ -222,6 +233,9 @@ jobs:
               ;;
             testing)
               dir='packages/testing'
+              ;;
+            gobox)
+              dir='packages/gobox'
               ;;
             *)
               echo "Unsupported package: ${{ steps.metadata.outputs.package }}"

@@ -7,7 +7,11 @@
       "cache": true
     },
     "typecheck": {
-      "dependsOn": ["moonscratch#build", "@hikkaku/testing#build"],
+      "dependsOn": [
+        "@hikkaku/gobox#build",
+        "moonscratch#build",
+        "@hikkaku/testing#build"
+      ],
       "outputs": []
     },
     "test": {

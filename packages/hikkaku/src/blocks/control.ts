@@ -5,7 +5,13 @@ import {
   menuInput,
 } from '../core/block-helper'
 import { attachStack, block, substack, valueBlock } from '../core/composer'
-import type { PrimitiveSource, VariableReference } from '../core/types'
+import type {
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+  VariableReference,
+} from '../core/types'
 
 export type StopOption =
   | 'all'
@@ -19,7 +25,7 @@ export type StopOption =
  * Input: `times`, `handler`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param times PrimitiveSource<number>. number of iterations
+ * @param times PrimitiveSource<HikkakuNumber>. number of iterations
  * @param handler () => void. body of the loop
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
@@ -29,7 +35,10 @@ export type StopOption =
  * repeat(10, () => {})
  * ```
  */
-export const repeat = (times: PrimitiveSource<number>, handler: () => void) => {
+export const repeat = (
+  times: PrimitiveSource<HikkakuNumber>,
+  handler: () => void,
+) => {
   const substackId = substack(handler)
   return block('control_repeat', {
     inputs: {
@@ -45,7 +54,7 @@ export const repeat = (times: PrimitiveSource<number>, handler: () => void) => {
  * Input: `condition`, `handler`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param condition PrimitiveSource<boolean>
+ * @param condition PrimitiveSource<HikkakuBool>
  * @param handler () => void
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
@@ -56,7 +65,7 @@ export const repeat = (times: PrimitiveSource<number>, handler: () => void) => {
  * ```
  */
 export const repeatUntil = (
-  condition: PrimitiveSource<boolean>,
+  condition: PrimitiveSource<HikkakuBool>,
   handler: () => void,
 ) => {
   const substackId = substack(handler)
@@ -74,7 +83,7 @@ export const repeatUntil = (
  * Input: `condition`, `handler`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param condition PrimitiveSource<boolean>
+ * @param condition PrimitiveSource<HikkakuBool>
  * @param handler () => void
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
@@ -85,7 +94,7 @@ export const repeatUntil = (
  * ```
  */
 export const repeatWhile = (
-  condition: PrimitiveSource<boolean>,
+  condition: PrimitiveSource<HikkakuBool>,
   handler: () => void,
 ) => {
   const substackId = substack(handler)
@@ -104,7 +113,7 @@ export const repeatWhile = (
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
  * @param variable VariableReference
- * @param value PrimitiveSource<number>. upper bound
+ * @param value PrimitiveSource<HikkakuNumber>. upper bound
  * @param handler () => void
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
@@ -116,7 +125,7 @@ export const repeatWhile = (
  */
 export const forEach = (
   variable: VariableReference,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
   handler: () => void,
 ) => {
   const substackId = substack(handler)
@@ -163,7 +172,7 @@ export const forever = (handler: () => void) => {
  * Input: `seconds`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param seconds PrimitiveSource<number>
+ * @param seconds PrimitiveSource<HikkakuNumber>
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -172,7 +181,7 @@ export const forever = (handler: () => void) => {
  * wait(10)
  * ```
  */
-export const wait = (seconds: PrimitiveSource<number>) => {
+export const wait = (seconds: PrimitiveSource<HikkakuNumber>) => {
   return block('control_wait', {
     inputs: {
       DURATION: fromPrimitiveSource(InputType.Number, seconds, 1),
@@ -186,7 +195,7 @@ export const wait = (seconds: PrimitiveSource<number>) => {
  * Input: `condition`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param condition PrimitiveSource<boolean>
+ * @param condition PrimitiveSource<HikkakuBool>
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
  * ```ts
@@ -195,7 +204,7 @@ export const wait = (seconds: PrimitiveSource<number>) => {
  * waitUntil(true)
  * ```
  */
-export const waitUntil = (condition: PrimitiveSource<boolean>) => {
+export const waitUntil = (condition: PrimitiveSource<HikkakuBool>) => {
   return block('control_wait_until', {
     inputs: {
       CONDITION: fromBooleanSource(condition),
@@ -209,7 +218,7 @@ export const waitUntil = (condition: PrimitiveSource<boolean>) => {
  * Input: `condition`, `handler`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param condition PrimitiveSource<boolean>
+ * @param condition PrimitiveSource<HikkakuBool>
  * @param handler () => void
  * @returns Scratch statement block definition that is appended to the current script stack.
  * @example
@@ -220,7 +229,7 @@ export const waitUntil = (condition: PrimitiveSource<boolean>) => {
  * ```
  */
 export const ifThen = (
-  condition: PrimitiveSource<boolean>,
+  condition: PrimitiveSource<HikkakuBool>,
   handler: () => void,
 ) => {
   const substackId = substack(handler)
@@ -238,7 +247,7 @@ export const ifThen = (
  * Input: `condition`, `thenHandler`, `elseHandler`.
  * Output: Scratch statement block definition that is appended to the current script stack.
  *
- * @param condition PrimitiveSource<boolean>
+ * @param condition PrimitiveSource<HikkakuBool>
  * @param thenHandler () => void
  * @param elseHandler () => void
  * @returns Scratch statement block definition that is appended to the current script stack.
@@ -250,7 +259,7 @@ export const ifThen = (
  * ```
  */
 export const ifElse = (
-  condition: PrimitiveSource<boolean>,
+  condition: PrimitiveSource<HikkakuBool>,
   thenHandler: () => void,
   elseHandler: () => void,
 ) => {
@@ -286,9 +295,9 @@ export const ifElse = (
  */
 export const match = (
   ...branches:
-    | [condition: PrimitiveSource<boolean>, handler: () => void][]
+    | [condition: PrimitiveSource<HikkakuBool>, handler: () => void][]
     | [
-        ...[condition: PrimitiveSource<boolean>, handler: () => void][],
+        ...[condition: PrimitiveSource<HikkakuBool>, handler: () => void][],
         () => void,
       ]
 ) => {
@@ -299,7 +308,7 @@ export const match = (
   const tail = branches[branches.length - 1]
   const defaultHandler = typeof tail === 'function' ? tail : null
   const branchList = (defaultHandler ? branches.slice(0, -1) : branches) as [
-    PrimitiveSource<boolean>,
+    PrimitiveSource<HikkakuBool>,
     () => void,
   ][]
 
@@ -376,7 +385,7 @@ export const CREATE_CLONE_MYSELF = '_myself_'
  * ```
  */
 
-export const createClone = (target: PrimitiveSource<string>) => {
+export const createClone = (target: PrimitiveSource<HikkakuString>) => {
   return block('control_create_clone_of', {
     inputs: {
       CLONE_OPTION: menuInput(target, menuOfCreateClone),
@@ -387,7 +396,7 @@ export const createClone = (target: PrimitiveSource<string>) => {
 export const menuOfCreateClone = (
   target: (string & {}) | typeof CREATE_CLONE_MYSELF = CREATE_CLONE_MYSELF,
 ) => {
-  return valueBlock('control_create_clone_of_menu', {
+  return valueBlock<HikkakuString>('control_create_clone_of_menu', {
     fields: {
       CLONE_OPTION: [target, null],
     },
@@ -428,7 +437,7 @@ export const deleteThisClone = () => {
  * ```
  */
 export const getCounter = () => {
-  return valueBlock('control_get_counter', {})
+  return valueBlock<HikkakuNumber>('control_get_counter', {})
 }
 
 /**

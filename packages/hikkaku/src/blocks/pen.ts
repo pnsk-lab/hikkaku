@@ -1,7 +1,11 @@
 import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
-import type { PrimitiveSource } from '../core/types'
+import type {
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 export type PenColorParam =
   | 'color'
@@ -111,9 +115,7 @@ export const penUp = () => {
  * setPenColorTo("#ff0000")
  * ```
  */
-export const setPenColorTo = (
-  color: PrimitiveSource<`#${string}` | (string & {})>,
-) => {
+export const setPenColorTo = (color: PrimitiveSource<HikkakuString>) => {
   return block('pen_setPenColorToColor', {
     inputs: {
       COLOR: fromPrimitiveSource(InputType.Color, color),
@@ -154,8 +156,8 @@ export const setPenColorToColor = setPenColorTo
  * ```
  */
 export const changePenColorParamBy = (
-  param: PrimitiveSource<PenColorParam>,
-  value: PrimitiveSource<number>,
+  param: PrimitiveSource<HikkakuString>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('pen_changePenColorParamBy', {
     inputs: {
@@ -165,7 +167,7 @@ export const changePenColorParamBy = (
   })
 }
 export const menuOfPenColorParam = (colorParam: PenColorParam = 'color') => {
-  return valueBlock('pen_menu_colorParam', {
+  return valueBlock<HikkakuString>('pen_menu_colorParam', {
     fields: {
       colorParam: [colorParam, null],
     },
@@ -190,8 +192,8 @@ export const menuOfPenColorParam = (colorParam: PenColorParam = 'color') => {
  * ```
  */
 export const setPenColorParamTo = (
-  param: PrimitiveSource<PenColorParam>,
-  value: PrimitiveSource<number>,
+  param: PrimitiveSource<HikkakuString>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
   return block('pen_setPenColorParamTo', {
     inputs: {
@@ -216,7 +218,7 @@ export const setPenColorParamTo = (
  * changePenSizeBy(10)
  * ```
  */
-export const changePenSizeBy = (size: PrimitiveSource<number>) => {
+export const changePenSizeBy = (size: PrimitiveSource<HikkakuNumber>) => {
   return block('pen_changePenSizeBy', {
     inputs: {
       SIZE: fromPrimitiveSource(InputType.Number, size, 1),
@@ -239,7 +241,7 @@ export const changePenSizeBy = (size: PrimitiveSource<number>) => {
  * setPenSizeTo(10)
  * ```
  */
-export const setPenSizeTo = (size: PrimitiveSource<number>) => {
+export const setPenSizeTo = (size: PrimitiveSource<HikkakuNumber>) => {
   return block('pen_setPenSizeTo', {
     inputs: {
       SIZE: fromPrimitiveSource(InputType.Number, size, 1),
@@ -262,7 +264,7 @@ export const setPenSizeTo = (size: PrimitiveSource<number>) => {
  * setPenShadeToNumber(10)
  * ```
  */
-export const setPenShadeToNumber = (shade: PrimitiveSource<number>) => {
+export const setPenShadeToNumber = (shade: PrimitiveSource<HikkakuNumber>) => {
   return block('pen_setPenShadeToNumber', {
     inputs: {
       SHADE: fromPrimitiveSource(InputType.Number, shade, 50),
@@ -285,7 +287,7 @@ export const setPenShadeToNumber = (shade: PrimitiveSource<number>) => {
  * changePenShadeBy(10)
  * ```
  */
-export const changePenShadeBy = (shade: PrimitiveSource<number>) => {
+export const changePenShadeBy = (shade: PrimitiveSource<HikkakuNumber>) => {
   return block('pen_changePenShadeBy', {
     inputs: {
       SHADE: fromPrimitiveSource(InputType.Number, shade, 50),
@@ -308,7 +310,7 @@ export const changePenShadeBy = (shade: PrimitiveSource<number>) => {
  * setPenHueToNumber(10)
  * ```
  */
-export const setPenHueToNumber = (hue: PrimitiveSource<number>) => {
+export const setPenHueToNumber = (hue: PrimitiveSource<HikkakuNumber>) => {
   return block('pen_setPenHueToNumber', {
     inputs: {
       HUE: fromPrimitiveSource(InputType.Number, hue, 0),
@@ -331,7 +333,7 @@ export const setPenHueToNumber = (hue: PrimitiveSource<number>) => {
  * changePenHueBy(10)
  * ```
  */
-export const changePenHueBy = (hue: PrimitiveSource<number>) => {
+export const changePenHueBy = (hue: PrimitiveSource<HikkakuNumber>) => {
   return block('pen_changePenHueBy', {
     inputs: {
       HUE: fromPrimitiveSource(InputType.Number, hue, 0),

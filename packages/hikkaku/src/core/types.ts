@@ -2,9 +2,47 @@ import type { Costume, Sound } from 'sb3-types'
 
 export type PrimitiveAvailableOnScratch = number | boolean | string
 
-export type PrimitiveSource<T extends PrimitiveAvailableOnScratch> =
-  | T
-  | HikkakuBlock
+type HikkakuTypeTag = 'number' | 'bool' | 'string'
+type HikkakuBrand<T extends HikkakuTypeTag> = {
+  readonly __hikkakuType: T
+}
+
+export type HikkakuNumber = HikkakuBrand<'number'>
+export type HikkakuBool = HikkakuBrand<'bool'>
+export type HikkakuString = HikkakuBrand<'string'>
+export type HikkakuType = HikkakuNumber | HikkakuBool | HikkakuString
+
+export type PrimitiveToHikkakuType<T extends PrimitiveAvailableOnScratch> =
+  T extends number
+    ? HikkakuNumber
+    : T extends boolean
+      ? HikkakuBool
+      : T extends string
+        ? HikkakuString
+        : never
+
+export type HikkakuTypeToPrimitive<T extends HikkakuType> =
+  T extends HikkakuNumber
+    ? number
+    : T extends HikkakuBool
+      ? boolean
+      : T extends HikkakuString
+        ? string
+        : never
+
+export interface HikkakuBlock {
+  isBlock: true
+  id: string
+}
+
+export interface HikkakuReporterBlock<T extends HikkakuType = HikkakuType>
+  extends HikkakuBlock {
+  readonly __hikkakuType: T['__hikkakuType']
+}
+
+export type PrimitiveSource<T extends HikkakuType> =
+  | HikkakuTypeToPrimitive<T>
+  | HikkakuReporterBlock
 
 export interface VariableBase {
   id: string
@@ -46,8 +84,8 @@ export interface VariableReference extends VariableBase {
 }
 
 export interface VariableDefinition extends VariableReference {
-  get(): HikkakuBlock
-  set(value: PrimitiveSource<number | string>): HikkakuBlock
+  get(): HikkakuReporterBlock<HikkakuNumber | HikkakuString>
+  set(value: PrimitiveSource<HikkakuNumber | HikkakuString>): HikkakuBlock
 }
 
 export interface ListReference extends VariableBase {
@@ -59,19 +97,14 @@ export interface CostumeReference {
   type: 'costume'
 }
 
-export type CostumeSource = PrimitiveSource<string> | CostumeReference
+export type CostumeSource = PrimitiveSource<HikkakuString> | CostumeReference
 
 export interface SoundReference {
   name: string
   type: 'sound'
 }
 
-export type SoundSource = PrimitiveSource<string> | SoundReference
-
-export interface HikkakuBlock {
-  isBlock: true
-  id: string
-}
+export type SoundSource = PrimitiveSource<HikkakuString> | SoundReference
 
 export type CostumeData = Costume & { _data?: Uint8Array }
 export type SoundData = Sound & { _data?: Uint8Array }

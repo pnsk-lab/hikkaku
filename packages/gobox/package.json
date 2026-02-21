@@ -1,0 +1,49 @@
+{
+  "name": "@hikkaku/gobox",
+  "version": "0.1.0",
+  "module": "dist/index.js",
+  "private": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
+    "./value": {
+      "import": "./dist/value.mjs",
+      "types": "./dist/value.d.mts"
+    },
+    "./types": {
+      "import": "./dist/types.mjs",
+      "types": "./dist/types.d.mts"
+    },
+    "./functions": {
+      "import": "./dist/functions.mjs",
+      "types": "./dist/functions.d.mts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vp test run",
+    "build": "vp pack",
+    "typecheck": "tsc"
+  },
+  "repository": {
+    "url": "https://github.com/pnsk-lab/hikkaku",
+    "type": "git",
+    "directory": "packages/gobox"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  }
+}

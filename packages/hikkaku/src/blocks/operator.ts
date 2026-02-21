@@ -1,7 +1,12 @@
 import { InputType } from 'sb3-types/enum'
 import { fromBooleanSource, fromPrimitiveSource } from '../core/block-helper'
 import { valueBlock } from '../core/composer'
-import type { PrimitiveSource } from '../core/types'
+import type {
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 /**
  * Addition.
@@ -19,8 +24,11 @@ import type { PrimitiveSource } from '../core/types'
  * add(1, 2)
  * ```
  */
-export const add = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
-  return valueBlock('operator_add', {
+export const add = (
+  a: PrimitiveSource<HikkakuNumber>,
+  b: PrimitiveSource<HikkakuNumber>,
+) => {
+  return valueBlock<HikkakuNumber>('operator_add', {
     inputs: {
       NUM1: fromPrimitiveSource(InputType.Number, a, 0),
       NUM2: fromPrimitiveSource(InputType.Number, b, 0),
@@ -45,10 +53,10 @@ export const add = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
  * ```
  */
 export const subtract = (
-  a: PrimitiveSource<number>,
-  b: PrimitiveSource<number>,
+  a: PrimitiveSource<HikkakuNumber>,
+  b: PrimitiveSource<HikkakuNumber>,
 ) => {
-  return valueBlock('operator_subtract', {
+  return valueBlock<HikkakuNumber>('operator_subtract', {
     inputs: {
       NUM1: fromPrimitiveSource(InputType.Number, a, 0),
       NUM2: fromPrimitiveSource(InputType.Number, b, 0),
@@ -73,10 +81,10 @@ export const subtract = (
  * ```
  */
 export const multiply = (
-  a: PrimitiveSource<number>,
-  b: PrimitiveSource<number>,
+  a: PrimitiveSource<HikkakuNumber>,
+  b: PrimitiveSource<HikkakuNumber>,
 ) => {
-  return valueBlock('operator_multiply', {
+  return valueBlock<HikkakuNumber>('operator_multiply', {
     inputs: {
       NUM1: fromPrimitiveSource(InputType.Number, a, 0),
       NUM2: fromPrimitiveSource(InputType.Number, b, 0),
@@ -101,10 +109,10 @@ export const multiply = (
  * ```
  */
 export const divide = (
-  a: PrimitiveSource<number>,
-  b: PrimitiveSource<number>,
+  a: PrimitiveSource<HikkakuNumber>,
+  b: PrimitiveSource<HikkakuNumber>,
 ) => {
-  return valueBlock('operator_divide', {
+  return valueBlock<HikkakuNumber>('operator_divide', {
     inputs: {
       NUM1: fromPrimitiveSource(InputType.Number, a, 0),
       NUM2: fromPrimitiveSource(InputType.Number, b, 0),
@@ -129,10 +137,10 @@ export const divide = (
  * ```
  */
 export const lt = (
-  a: PrimitiveSource<number | string>,
-  b: PrimitiveSource<number | string>,
+  a: PrimitiveSource<HikkakuNumber | HikkakuString>,
+  b: PrimitiveSource<HikkakuNumber | HikkakuString>,
 ) => {
-  return valueBlock('operator_lt', {
+  return valueBlock<HikkakuBool>('operator_lt', {
     inputs: {
       OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
       OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
@@ -157,10 +165,10 @@ export const lt = (
  * ```
  */
 export const equals = (
-  a: PrimitiveSource<number | string>,
-  b: PrimitiveSource<number | string>,
+  a: PrimitiveSource<HikkakuNumber | HikkakuString>,
+  b: PrimitiveSource<HikkakuNumber | HikkakuString>,
 ) => {
-  return valueBlock('operator_equals', {
+  return valueBlock<HikkakuBool>('operator_equals', {
     inputs: {
       OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
       OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
@@ -185,10 +193,10 @@ export const equals = (
  * ```
  */
 export const gt = (
-  a: PrimitiveSource<number | string>,
-  b: PrimitiveSource<number | string>,
+  a: PrimitiveSource<HikkakuNumber | HikkakuString>,
+  b: PrimitiveSource<HikkakuNumber | HikkakuString>,
 ) => {
-  return valueBlock('operator_gt', {
+  return valueBlock<HikkakuBool>('operator_gt', {
     inputs: {
       OPERAND1: fromPrimitiveSource(InputType.String, a, ''),
       OPERAND2: fromPrimitiveSource(InputType.String, b, ''),
@@ -213,10 +221,10 @@ export const gt = (
  * ```
  */
 export const and = (
-  a: PrimitiveSource<boolean>,
-  b: PrimitiveSource<boolean>,
+  a: PrimitiveSource<HikkakuBool>,
+  b: PrimitiveSource<HikkakuBool>,
 ) => {
-  return valueBlock('operator_and', {
+  return valueBlock<HikkakuBool>('operator_and', {
     inputs: {
       OPERAND1: fromBooleanSource(a),
       OPERAND2: fromBooleanSource(b),
@@ -241,10 +249,10 @@ export const and = (
  * ```
  */
 export const or = (
-  a: PrimitiveSource<boolean>,
-  b: PrimitiveSource<boolean>,
+  a: PrimitiveSource<HikkakuBool>,
+  b: PrimitiveSource<HikkakuBool>,
 ) => {
-  return valueBlock('operator_or', {
+  return valueBlock<HikkakuBool>('operator_or', {
     inputs: {
       OPERAND1: fromBooleanSource(a),
       OPERAND2: fromBooleanSource(b),
@@ -267,8 +275,8 @@ export const or = (
  * not(false)
  * ```
  */
-export const not = (operand: PrimitiveSource<boolean>) => {
-  return valueBlock('operator_not', {
+export const not = (operand: PrimitiveSource<HikkakuBool>) => {
+  return valueBlock<HikkakuBool>('operator_not', {
     inputs: {
       OPERAND: fromBooleanSource(operand),
     },
@@ -292,10 +300,10 @@ export const not = (operand: PrimitiveSource<boolean>) => {
  * ```
  */
 export const random = (
-  from: PrimitiveSource<number>,
-  to: PrimitiveSource<number>,
+  from: PrimitiveSource<HikkakuNumber>,
+  to: PrimitiveSource<HikkakuNumber>,
 ) => {
-  return valueBlock('operator_random', {
+  return valueBlock<HikkakuNumber>('operator_random', {
     inputs: {
       FROM: fromPrimitiveSource(InputType.Number, from, 1),
       TO: fromPrimitiveSource(InputType.Number, to, 10),
@@ -320,10 +328,10 @@ export const random = (
  * ```
  */
 export const join = (
-  a: PrimitiveSource<string>,
-  b: PrimitiveSource<string>,
+  a: PrimitiveSource<HikkakuString>,
+  b: PrimitiveSource<HikkakuString>,
 ) => {
-  return valueBlock('operator_join', {
+  return valueBlock<HikkakuString>('operator_join', {
     inputs: {
       STRING1: fromPrimitiveSource(InputType.String, a, 'apple'),
       STRING2: fromPrimitiveSource(InputType.String, b, 'banana'),
@@ -348,10 +356,10 @@ export const join = (
  * ```
  */
 export const letterOf = (
-  letter: PrimitiveSource<number>,
-  text: PrimitiveSource<string>,
+  letter: PrimitiveSource<HikkakuNumber>,
+  text: PrimitiveSource<HikkakuString>,
 ) => {
-  return valueBlock('operator_letter_of', {
+  return valueBlock<HikkakuString>('operator_letter_of', {
     inputs: {
       LETTER: fromPrimitiveSource(InputType.PositiveInteger, letter, 1),
       STRING: fromPrimitiveSource(InputType.String, text, 'apple'),
@@ -374,8 +382,8 @@ export const letterOf = (
  * length('Hello')
  * ```
  */
-export const length = (text: PrimitiveSource<string>) => {
-  return valueBlock('operator_length', {
+export const length = (text: PrimitiveSource<HikkakuString>) => {
+  return valueBlock<HikkakuNumber>('operator_length', {
     inputs: {
       STRING: fromPrimitiveSource(InputType.String, text, 'apple'),
     },
@@ -399,10 +407,10 @@ export const length = (text: PrimitiveSource<string>) => {
  * ```
  */
 export const contains = (
-  text: PrimitiveSource<string>,
-  substring: PrimitiveSource<string>,
+  text: PrimitiveSource<HikkakuString>,
+  substring: PrimitiveSource<HikkakuString>,
 ) => {
-  return valueBlock('operator_contains', {
+  return valueBlock<HikkakuBool>('operator_contains', {
     inputs: {
       STRING1: fromPrimitiveSource(InputType.String, text, 'apple'),
       STRING2: fromPrimitiveSource(InputType.String, substring, 'a'),
@@ -426,8 +434,11 @@ export const contains = (
  * mod(10, 3)
  * ```
  */
-export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
-  return valueBlock('operator_mod', {
+export const mod = (
+  a: PrimitiveSource<HikkakuNumber>,
+  b: PrimitiveSource<HikkakuNumber>,
+) => {
+  return valueBlock<HikkakuNumber>('operator_mod', {
     inputs: {
       NUM1: fromPrimitiveSource(InputType.Number, a, 0),
       NUM2: fromPrimitiveSource(InputType.Number, b, 0),
@@ -450,8 +461,8 @@ export const mod = (a: PrimitiveSource<number>, b: PrimitiveSource<number>) => {
  * round(10)
  * ```
  */
-export const round = (value: PrimitiveSource<number>) => {
-  return valueBlock('operator_round', {
+export const round = (value: PrimitiveSource<HikkakuNumber>) => {
+  return valueBlock<HikkakuNumber>('operator_round', {
     inputs: {
       NUM: fromPrimitiveSource(InputType.Number, value, 0),
     },
@@ -492,9 +503,9 @@ export type MathOpOperator =
  */
 export const mathop = (
   operator: MathOpOperator,
-  value: PrimitiveSource<number>,
+  value: PrimitiveSource<HikkakuNumber>,
 ) => {
-  return valueBlock('operator_mathop', {
+  return valueBlock<HikkakuNumber>('operator_mathop', {
     inputs: {
       NUM: fromPrimitiveSource(InputType.Number, value, 0),
     },

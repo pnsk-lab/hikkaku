@@ -1,6 +1,9 @@
 import { Shadow } from 'sb3-types/enum'
 import { describe, expect, test } from 'vite-plus/test'
 import {
+  __unstable_forbidStopInCurrentScope,
+  __unstable_getBuildScopeFrame,
+  __unstable_onBuildScopeExit,
   attachStack,
   block,
   createBlocks,
@@ -65,5 +68,33 @@ describe('core/composer', () => {
         valueBlock('operator_add', { fields: {} })
       }),
     ).toThrow(/Unconnected value block/)
+  })
+
+  test('provides build scope frame snapshots', () => {
+    let onExitCalled = false
+    createBlocks(() => {
+      const frame = __unstable_getBuildScopeFrame()
+      expect(frame?.kind).toBe('run')
+      __unstable_onBuildScopeExit(() => {
+        onExitCalled = true
+      })
+      substack(() => {
+        block('looks_show', {})
+        const stackFrame = __unstable_getBuildScopeFrame()
+        expect(stackFrame?.kind).toBe('stack')
+      })
+    })
+    expect(onExitCalled).toBe(true)
+  })
+
+  test('throws when control_stop is emitted in forbidden scope', () => {
+    expect(() =>
+      createBlocks(() => {
+        substack(() => {
+          __unstable_forbidStopInCurrentScope()
+          block('control_stop', {})
+        })
+      }),
+    ).toThrow(/control_stop is not allowed/)
   })
 })

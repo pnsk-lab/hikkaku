@@ -1,7 +1,12 @@
 import { InputType } from 'sb3-types/enum'
 import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
-import type { PrimitiveSource } from '../core/types'
+import type {
+  HikkakuBool,
+  HikkakuNumber,
+  HikkakuString,
+  PrimitiveSource,
+} from '../core/types'
 
 /**
  * Mouse position.
@@ -18,7 +23,7 @@ import type { PrimitiveSource } from '../core/types'
  * ```
  */
 export const getMouseX = () => {
-  return valueBlock('sensing_mousex', {})
+  return valueBlock<HikkakuNumber>('sensing_mousex', {})
 }
 /**
  * getMouseY block helper.
@@ -35,7 +40,7 @@ export const getMouseX = () => {
  * ```
  */
 export const getMouseY = () => {
-  return valueBlock('sensing_mousey', {})
+  return valueBlock<HikkakuNumber>('sensing_mousey', {})
 }
 
 export type CurrentMenu =
@@ -64,7 +69,7 @@ export type DragMode = 'draggable' | 'not draggable'
  * ```
  */
 export const touchingObject = (target: string) => {
-  return valueBlock('sensing_touchingobject', {
+  return valueBlock<HikkakuBool>('sensing_touchingobject', {
     inputs: {
       TOUCHINGOBJECTMENU: menuInput(target, menuOfTouchingObject),
     },
@@ -72,7 +77,7 @@ export const touchingObject = (target: string) => {
 }
 
 export const menuOfTouchingObject = (target: string = '_mouse_') => {
-  return valueBlock('sensing_touchingobjectmenu', {
+  return valueBlock<HikkakuString>('sensing_touchingobjectmenu', {
     fields: {
       TOUCHINGOBJECTMENU: [target, null],
     },
@@ -94,8 +99,8 @@ export const menuOfTouchingObject = (target: string = '_mouse_') => {
  * touchingColor("#ff0000")
  * ```
  */
-export const touchingColor = (color: PrimitiveSource<`#${string}`>) => {
-  return valueBlock('sensing_touchingcolor', {
+export const touchingColor = (color: PrimitiveSource<HikkakuString>) => {
+  return valueBlock<HikkakuBool>('sensing_touchingcolor', {
     inputs: {
       COLOR: fromPrimitiveSource(InputType.Color, color),
     },
@@ -119,10 +124,10 @@ export const touchingColor = (color: PrimitiveSource<`#${string}`>) => {
  * ```
  */
 export const colorTouchingColor = (
-  color: PrimitiveSource<`#${string}`>,
-  targetColor: PrimitiveSource<`#${string}`>,
+  color: PrimitiveSource<HikkakuString>,
+  targetColor: PrimitiveSource<HikkakuString>,
 ) => {
-  return valueBlock('sensing_coloristouchingcolor', {
+  return valueBlock<HikkakuBool>('sensing_coloristouchingcolor', {
     inputs: {
       COLOR: fromPrimitiveSource(InputType.Color, color),
       COLOR2: fromPrimitiveSource(InputType.Color, targetColor),
@@ -146,7 +151,7 @@ export const colorTouchingColor = (
  * ```
  */
 export const distanceTo = (target: string) => {
-  return valueBlock('sensing_distanceto', {
+  return valueBlock<HikkakuNumber>('sensing_distanceto', {
     inputs: {
       DISTANCETOMENU: menuInput(target, menuOfDistanceTo),
     },
@@ -154,7 +159,7 @@ export const distanceTo = (target: string) => {
 }
 
 export const menuOfDistanceTo = (target: string = '_mouse_') => {
-  return valueBlock('sensing_distancetomenu', {
+  return valueBlock<HikkakuString>('sensing_distancetomenu', {
     fields: {
       DISTANCETOMENU: [target, null],
     },
@@ -177,7 +182,7 @@ export const menuOfDistanceTo = (target: string = '_mouse_') => {
  * ```
  */
 export const getTimer = () => {
-  return valueBlock('sensing_timer', {})
+  return valueBlock<HikkakuNumber>('sensing_timer', {})
 }
 
 /**
@@ -236,7 +241,7 @@ export const setDragMode = (mode: DragMode) => {
  * ```
  */
 export const getMouseDown = () => {
-  return valueBlock('sensing_mousedown', {})
+  return valueBlock<HikkakuBool>('sensing_mousedown', {})
 }
 
 /**
@@ -254,8 +259,8 @@ export const getMouseDown = () => {
  * getKeyPressed('space')
  * ```
  */
-export const getKeyPressed = (key: PrimitiveSource<string>) => {
-  return valueBlock('sensing_keypressed', {
+export const getKeyPressed = (key: PrimitiveSource<HikkakuString>) => {
+  return valueBlock<HikkakuBool>('sensing_keypressed', {
     inputs: {
       KEY_OPTION: menuInput(key, menuOfKeyOptions),
     },
@@ -263,7 +268,7 @@ export const getKeyPressed = (key: PrimitiveSource<string>) => {
 }
 
 export const menuOfKeyOptions = (key: string = 'space') => {
-  return valueBlock('sensing_keyoptions', {
+  return valueBlock<HikkakuString>('sensing_keyoptions', {
     fields: {
       KEY_OPTION: [key, null],
     },
@@ -287,7 +292,7 @@ export const menuOfKeyOptions = (key: string = 'space') => {
  * ```
  */
 export const current = (menu: CurrentMenu) => {
-  return valueBlock('sensing_current', {
+  return valueBlock<HikkakuNumber>('sensing_current', {
     fields: {
       CURRENTMENU: [menu, null],
     },
@@ -311,7 +316,7 @@ export const current = (menu: CurrentMenu) => {
  * ```
  */
 export const getAttributeOf = (property: string, target: string) => {
-  return valueBlock('sensing_of', {
+  return valueBlock<HikkakuString | HikkakuNumber>('sensing_of', {
     fields: {
       PROPERTY: [property, null],
     },
@@ -321,7 +326,7 @@ export const getAttributeOf = (property: string, target: string) => {
   })
 }
 export const menuOfAttributeObject = (object: string = '_stage_') => {
-  return valueBlock('sensing_of_object_menu', {
+  return valueBlock<HikkakuString>('sensing_of_object_menu', {
     fields: {
       OBJECT: [object, null],
     },
@@ -344,7 +349,7 @@ export const menuOfAttributeObject = (object: string = '_stage_') => {
  * ```
  */
 export const daysSince2000 = () => {
-  return valueBlock('sensing_dayssince2000', {})
+  return valueBlock<HikkakuNumber>('sensing_dayssince2000', {})
 }
 
 /**
@@ -362,7 +367,7 @@ export const daysSince2000 = () => {
  * ```
  */
 export const getLoudness = () => {
-  return valueBlock('sensing_loudness', {})
+  return valueBlock<HikkakuNumber>('sensing_loudness', {})
 }
 
 /**
@@ -380,7 +385,7 @@ export const getLoudness = () => {
  * ```
  */
 export const isLoud = () => {
-  return valueBlock('sensing_loud', {})
+  return valueBlock<HikkakuBool>('sensing_loud', {})
 }
 
 /**
@@ -398,7 +403,7 @@ export const isLoud = () => {
  * askAndWait('Hello')
  * ```
  */
-export const askAndWait = (question: PrimitiveSource<string>) => {
+export const askAndWait = (question: PrimitiveSource<HikkakuString>) => {
   return block('sensing_askandwait', {
     inputs: {
       QUESTION: fromPrimitiveSource(
@@ -425,7 +430,7 @@ export const askAndWait = (question: PrimitiveSource<string>) => {
  * ```
  */
 export const getAnswer = () => {
-  return valueBlock('sensing_answer', {})
+  return valueBlock<HikkakuString>('sensing_answer', {})
 }
 
 /**
@@ -443,5 +448,5 @@ export const getAnswer = () => {
  * ```
  */
 export const getUsername = () => {
-  return valueBlock('sensing_username', {})
+  return valueBlock<HikkakuString>('sensing_username', {})
 }
