@@ -65,7 +65,7 @@ cat.run(() => {
     state.count.set(count.get())
 
     const doubled = state.methods.double.call({
-      value: state.count. (),
+      value: state.count.get(),
     })
     state.doubled.set(doubled.get())
 
