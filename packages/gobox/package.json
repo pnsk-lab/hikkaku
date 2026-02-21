@@ -5,20 +5,20 @@
   "private": false,
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./value": {
-      "import": "./dist/value.js",
-      "types": "./dist/value.d.ts"
+      "import": "./dist/value.mjs",
+      "types": "./dist/value.d.mts"
     },
     "./types": {
-      "import": "./dist/types.js",
-      "types": "./dist/types.d.ts"
+      "import": "./dist/types.mjs",
+      "types": "./dist/types.d.mts"
     },
     "./functions": {
-      "import": "./dist/functions.js",
-      "types": "./dist/functions.d.ts"
+      "import": "./dist/functions.mjs",
+      "types": "./dist/functions.d.mts"
     }
   },
   "files": [

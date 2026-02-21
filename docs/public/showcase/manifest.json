@@ -32,6 +32,14 @@
     "status": "ok"
   },
   {
+    "id": "gobox-counter",
+    "title": "Gobox Counter",
+    "path": "/showcase/gobox-counter.html",
+    "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/gobox-counter",
+    "status": "error",
+    "error": "ENOENT: no such file or directory, open '/home/nakasyou/hikkaku/hikkaku1/examples/gobox-counter/dist/project.sb3'"
+  },
+  {
     "id": "json-parser",
     "title": "Json Parser",
     "path": "/showcase/json-parser.html",
@@ -83,8 +91,7 @@
     "title": "Simple",
     "path": "/showcase/simple.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/simple",
-    "status": "error",
-    "error": "ENOENT: no such file or directory, open '/root/jet9/hikkaku/examples/simple/dist/project.sb3'"
+    "status": "ok"
   },
   {
     "id": "tesseract",

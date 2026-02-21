@@ -57,8 +57,10 @@ export interface UseFunctionOptions<
   warp?: boolean
   body: (ctx: {
     args: FunctionReaders<TArgs>
-    returnValue: ScopedValueFromType<TReturn>
-  }) => void
+    returning(
+      value: PrimitiveInputForType<TReturn>,
+    ): GoboxReturningToken<TReturn>
+  }) => GoboxReturningToken<TReturn> | undefined
 }
 
 export interface GoboxFunctionDefinition<
@@ -88,6 +90,16 @@ type NormalizeImplMethod<TMethod> =
 
 type NormalizeImplMethods<TMethods extends Record<string, unknown>> = {
   [K in keyof TMethods]: NormalizeImplMethod<TMethods[K]>
+}
+
+class GoboxReturningToken<TReturn extends GoboxPrimitiveType> {
+  readonly scopeId: number
+  readonly value: PrimitiveInputForType<TReturn>
+
+  constructor(scopeId: number, value: PrimitiveInputForType<TReturn>) {
+    this.scopeId = scopeId
+    this.value = value
+  }
 }
 
 type UseImplMethodInputFromTrait<TMethod> =
@@ -187,6 +199,33 @@ const coerceReporterByType = (
   }
 }
 
+const fallbackPrimitiveByType = <TType extends GoboxPrimitiveType>(
+  type: TType,
+): PrimitiveInputForType<TType> => {
+  switch (type.tag) {
+    case 'number':
+      return 0 as PrimitiveInputForType<TType>
+    case 'string':
+      return '' as PrimitiveInputForType<TType>
+    case 'boolean':
+      return false as PrimitiveInputForType<TType>
+    default: {
+      const exhaustiveType: never = type
+      void exhaustiveType
+      throw new Error('unsupported primitive type')
+    }
+  }
+}
+
+const setScopedPrimitiveValue = <TType extends GoboxPrimitiveType>(
+  scopedValue: ScopedValueFromType<TType>,
+  next: PrimitiveInputForType<TType>,
+): void => {
+  ;(scopedValue as unknown as { set(value: PrimitiveSource<never>): void }).set(
+    next as PrimitiveSource<never>,
+  )
+}
+
 export const useFunction = <
   TArgs extends FunctionArgSpec,
   TReturn extends GoboxPrimitiveType,
@@ -260,16 +299,54 @@ export const useFunction = <
         source: returnPointerSource,
         offset: 0,
       }
-      const returnValue = __unsafe_createScopedValueFromPointer(
+      const returnSlot = __unsafe_createScopedValueFromPointer(
         runtime,
         options.returns,
         pointer,
       )
+      const bodyScope = __unstable_getBuildScopeFrame()
+      if (!bodyScope) {
+        throw new Error('useFunction body must be built inside a stack scope')
+      }
+      let nextReturn = fallbackPrimitiveByType(options.returns)
+      const issuedTokens: Array<GoboxReturningToken<TReturn>> = []
 
-      options.body({
+      const returning = (
+        value: PrimitiveInputForType<TReturn>,
+      ): GoboxReturningToken<TReturn> => {
+        const currentScope = __unstable_getBuildScopeFrame()
+        const token = new GoboxReturningToken(currentScope?.id ?? -1, value)
+        issuedTokens.push(token)
+        return token
+      }
+
+      const bodyResult = options.body({
         args: readers,
-        returnValue,
+        returning,
       })
+
+      if (issuedTokens.length > 0) {
+        if (!(bodyResult instanceof GoboxReturningToken)) {
+          throw new Error(
+            'returning() must be used as `return returning(...)` in useFunction body',
+          )
+        }
+        if (!issuedTokens.includes(bodyResult)) {
+          throw new Error(
+            'returning() must be used as `return returning(...)` in useFunction body',
+          )
+        }
+        if (
+          bodyResult.scopeId !== bodyScope.id ||
+          issuedTokens.some((token) => token !== bodyResult)
+        ) {
+          throw new Error(
+            'returning() must be called once at useFunction body top-level and returned directly',
+          )
+        }
+        nextReturn = bodyResult.value
+      }
+      setScopedPrimitiveValue(returnSlot, nextReturn)
       return undefined
     },
     options.warp ?? false,

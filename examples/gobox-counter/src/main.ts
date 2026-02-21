@@ -62,8 +62,8 @@ cat.run(() => {
         value: number(0),
       },
       returns: number(0),
-      body: ({ args, returnValue }) => {
-        returnValue.set(add(args.value.get(), args.value.get()))
+      body: ({ args, returning }) => {
+        return returning(add(args.value.get(), args.value.get()))
       },
     },
   })
