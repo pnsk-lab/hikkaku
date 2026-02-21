@@ -36,8 +36,7 @@
     "title": "Gobox Counter",
     "path": "/showcase/gobox-counter.html",
     "sourceUrl": "https://github.com/pnsk-lab/hikkaku/tree/main/examples/gobox-counter",
-    "status": "error",
-    "error": "ENOENT: no such file or directory, open '/home/nakasyou/hikkaku/hikkaku1/examples/gobox-counter/dist/project.sb3'"
+    "status": "ok"
   },
   {
     "id": "json-parser",

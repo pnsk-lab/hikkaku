@@ -22,7 +22,7 @@
       "outputs": ["src/blocks/**"]
     },
     "example:build": {
-      "dependsOn": ["^example:build"],
+      "dependsOn": ["^example:build", "^@hikkaku/gobox#build"],
       "outputs": ["dist/**", "build/**"],
       "cache": true
     },
