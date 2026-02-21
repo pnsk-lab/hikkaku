@@ -34,7 +34,7 @@ Input: `variable`, `value`.
 Output: Scratch statement block definition that is appended to the current script stack.
 
 * `variable: VariableReference`
-* `value: PrimitiveSource<number | string>`
+* `value: PrimitiveSource<HikkakuNumber | HikkakuString>`
 
 Example:
 ```ts
@@ -52,7 +52,7 @@ Input: `variable`, `value`.
 Output: Scratch statement block definition that is appended to the current script stack.
 
 * `variable: VariableReference`
-* `value: PrimitiveSource<number>`
+* `value: PrimitiveSource<HikkakuNumber>`
 
 Example:
 ```ts
@@ -121,7 +121,7 @@ Input: `list`, `item`.
 Output: Scratch statement block definition that is appended to the current script stack.
 
 * `list: ListReference`
-* `item: PrimitiveSource<string | number>`
+* `item: PrimitiveSource<HikkakuString | HikkakuNumber>`
 
 Example:
 ```ts
@@ -139,7 +139,7 @@ Input: `list`, `index`.
 Output: Scratch statement block definition that is appended to the current script stack.
 
 * `list: Input value used by this block`
-* `index: ListIndex` - PrimitiveSource<number | string>
+* `index: ListIndex` - PrimitiveSource<HikkakuNumber | HikkakuString>
 
 Example:
 ```ts

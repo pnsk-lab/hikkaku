@@ -16,7 +16,7 @@ Input: `times`, `handler`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `times: PrimitiveSource<number>` - number of iterations
+* `times: PrimitiveSource<HikkakuNumber>` - number of iterations
 * `handler: () => void` - body of the loop
 
 Example:
@@ -34,7 +34,7 @@ Input: `condition`, `handler`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `condition: PrimitiveSource<boolean>`
+* `condition: PrimitiveSource<HikkakuBool>`
 * `handler: () => void`
 
 Example:
@@ -52,7 +52,7 @@ Input: `condition`, `handler`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `condition: PrimitiveSource<boolean>`
+* `condition: PrimitiveSource<HikkakuBool>`
 * `handler: () => void`
 
 Example:
@@ -71,7 +71,7 @@ Input: `variable`, `value`, `handler`.
 Output: Scratch statement block definition that is appended to the current script stack.
 
 * `variable: VariableReference`
-* `value: PrimitiveSource<number>` - upper bound
+* `value: PrimitiveSource<HikkakuNumber>` - upper bound
 * `handler: () => void`
 
 Example:
@@ -106,7 +106,7 @@ Input: `seconds`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `seconds: PrimitiveSource<number>`
+* `seconds: PrimitiveSource<HikkakuNumber>`
 
 Example:
 ```ts
@@ -123,7 +123,7 @@ Input: `condition`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `condition: PrimitiveSource<boolean>`
+* `condition: PrimitiveSource<HikkakuBool>`
 
 Example:
 ```ts
@@ -140,7 +140,7 @@ Input: `condition`, `handler`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `condition: PrimitiveSource<boolean>`
+* `condition: PrimitiveSource<HikkakuBool>`
 * `handler: () => void`
 
 Example:
@@ -158,7 +158,7 @@ Input: `condition`, `thenHandler`, `elseHandler`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `condition: PrimitiveSource<boolean>`
+* `condition: PrimitiveSource<HikkakuBool>`
 * `thenHandler: () => void`
 * `elseHandler: () => void`
 
@@ -226,7 +226,7 @@ Input: `target`.
 
 Output: Scratch statement block definition that is appended to the current script stack.
 
-* `target: PrimitiveSource<string>` - string
+* `target: PrimitiveSource<HikkakuString>` - string
 
 Example:
 ```ts
