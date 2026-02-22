@@ -17,7 +17,13 @@ await $`cp -r ../hikkaku/dist .tmp/node_modules/hikkaku`
 const NECESSARY_PACKAGES = ['sb3-types', '@typescript', '@types/node']
 await $`mkdir -p .tmp/node_modules/@types`
 for (const pkg of NECESSARY_PACKAGES) {
-  await $`cp -r ./node_modules/${pkg} .tmp/node_modules/${pkg}`
+  if (existsSync(`//node_modules/${pkg}`)) {
+    await $`cp -r ./node_modules/${pkg} .tmp/node_modules/${pkg}`
+  } else if (existsSync(`../../node_modules/${pkg}`)) {
+    await $`cp -r ../../node_modules/${pkg} .tmp/node_modules/${pkg}`
+  } else {
+    console.warn(`Package ${pkg} not found in node_modules`)
+  }
 }
 
 // ファイルを置く
@@ -93,7 +99,7 @@ await Bun.write(
   }),
 )
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 // .tmp を zip にする
 import { zipSync } from 'fflate'
 
