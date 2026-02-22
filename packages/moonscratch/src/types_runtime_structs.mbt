@@ -16,7 +16,9 @@ pub(all) enum OpcodeTag {
   PenPenUp
   ControlRepeat
   ControlRepeatUntil
+  ControlForEach
   ControlIf
+  ControlIfElse
   DataSetVariableTo
   DataChangeVariableBy
 } derive(Show, Eq, ToJson)
@@ -56,6 +58,7 @@ pub(all) enum NumericReporterOp {
   PushConst(Double)
   LoadVariable(String, String)
   LoadVariableByRef(Int, String, Int?)
+  LoadListItemByRef(Int, String, Int?)
   Add
   Subtract
   Multiply
@@ -240,7 +243,7 @@ pub(all) struct Thread {
   mut warp_mode : Bool
   mut warp_started_ms : Int
   mut stack : Array[ControlFrame]
-  mut loop_counters : Map[String, Int]
+  mut loop_counters : Map[Int, Int]
   parent_waiter : Int?
 }
 

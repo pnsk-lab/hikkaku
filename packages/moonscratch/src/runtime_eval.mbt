@@ -218,6 +218,28 @@ fn compile_numeric_reporter_ops(
         }
         None => false
       }
+    "data_itemoflist" =>
+      match field_value(block, "LIST") {
+        Some((name, id)) =>
+          match resolve_list_ref(vm, target_index, id, Some(name)) {
+            Some((owner_index, list_id, list_slot)) =>
+              if compile_numeric_operand_ops(
+                  vm, target_index, target, block, "INDEX", ops, visiting, depth,
+                ) {
+                let owner_kind = if owner_index == vm.stage_index { 1 } else { 0 }
+                ops.push(
+                  NumericReporterOp::LoadListItemByRef(
+                    owner_kind, list_id, list_slot,
+                  ),
+                )
+                true
+              } else {
+                false
+              }
+            None => false
+          }
+        None => false
+      }
     "operator_add" =>
       if compile_numeric_operand_ops(
           vm, target_index, target, block, "NUM1", ops, visiting, depth,
@@ -395,6 +417,28 @@ fn eval_numeric_reporter_program(
           ),
         )
       }
+      NumericReporterOp::LoadListItemByRef(owner_kind, list_id, slot) =>
+        match stack.pop() {
+          Some(index_number) => {
+            let owner_index = if owner_kind == 1 {
+              vm.stage_index
+            } else {
+              target_index
+            }
+            let list = read_list_by_ref(vm, owner_index, list_id, slot)
+            let index = index_number.to_int() - 1
+            if index >= 0 && index < list.length() {
+              stack.push(
+                json_to_number_value(
+                  list[index],
+                ),
+              )
+            } else {
+              stack.push(0.0)
+            }
+          }
+          None => return None
+        }
       NumericReporterOp::Add =>
         match (stack.pop(), stack.pop()) {
           (Some(right), Some(left)) => stack.push(left + right)

@@ -13,6 +13,7 @@ type ViewerWorkerRequest =
   | {
       type: 'load'
       projectJson: string
+      offscreenCanvas?: OffscreenCanvas
     }
   | {
       type: 'input'
@@ -22,6 +23,7 @@ type ViewerWorkerRequest =
 let vm: ReturnType<typeof createHeadlessVM> | null = null
 let runToken = 0
 const pendingInputs: VMInputEvent[] = []
+let offscreenContext: OffscreenCanvasRenderingContext2D | null = null
 
 const flushPendingInputs = (): void => {
   if (!vm || pendingInputs.length === 0) {
@@ -31,6 +33,32 @@ const flushPendingInputs = (): void => {
     vm.dispatchInputEvent(input)
   }
   pendingInputs.length = 0
+}
+
+const setOffscreenCanvas = (nextCanvas: OffscreenCanvas | undefined): void => {
+  if (!nextCanvas) {
+    offscreenContext = null
+    return
+  }
+  const nextContext = nextCanvas.getContext('2d')
+  if (!nextContext) {
+    throw new Error('offscreen canvas 2D context is unavailable')
+  }
+  offscreenContext = nextContext
+}
+
+const renderFrameToOffscreen = (frame: RenderFrame): void => {
+  if (!offscreenContext) {
+    return
+  }
+  const { width, height, pixels } = frame
+  const canvas = offscreenContext.canvas
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width
+    canvas.height = height
+  }
+  const imageData = new ImageData(new Uint8ClampedArray(pixels), width, height)
+  offscreenContext.putImageData(imageData, 0, 0)
 }
 
 const waitForNextFrame = async (): Promise<void> => {
@@ -99,12 +127,21 @@ const playbackLoop = async (token: number): Promise<void> => {
 
     if (shouldRender) {
       const frame = vm.renderFrame()
-      postMessage({
-        type: 'frame',
-        frame,
-        workerFps: currentWorkerFps,
-        workerOpsPerSecond: currentWorkerOpsPerSecond,
-      })
+      if (offscreenContext) {
+        renderFrameToOffscreen(frame)
+        postMessage({
+          type: 'frame',
+          workerFps: currentWorkerFps,
+          workerOpsPerSecond: currentWorkerOpsPerSecond,
+        })
+      } else {
+        postMessage({
+          type: 'frame',
+          frame,
+          workerFps: currentWorkerFps,
+          workerOpsPerSecond: currentWorkerOpsPerSecond,
+        })
+      }
     }
 
     if (isFinished) {
@@ -138,10 +175,12 @@ globalThis.onmessage = (event) => {
   pendingInputs.length = 0
   runToken += 1
   const token = runToken
+  offscreenContext = null
   try {
     const program = createProgramModuleFromProject({
       projectJson: data.projectJson,
     })
+    setOffscreenCanvas(data.offscreenCanvas)
     vm = createHeadlessVM({
       program,
       options: {

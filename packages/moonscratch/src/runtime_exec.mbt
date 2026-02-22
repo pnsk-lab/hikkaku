@@ -1801,30 +1801,30 @@ fn has_active_warp_thread(vm : Vm) -> Bool {
 }
 
 ///|
-fn is_current_thread_in_warp_context(vm : Vm) -> Bool {
-  match vm.current_thread_id {
-    Some(thread_id) => {
-      for thread in vm.threads {
-        if thread.id == thread_id {
-          if thread.warp_mode {
-            return true
-          }
-          break
+fn thread_has_warp_procedure_context(vm : Vm, thread_id : Int) -> Bool {
+  match vm.procedure_frames.get(thread_id) {
+    Some(frames) =>
+      for frame in frames {
+        if frame.warp_mode {
+          return true
         }
       }
-      match vm.procedure_frames.get(thread_id) {
-        Some(frames) =>
-          for frame in frames {
-            if frame.warp_mode {
-              return true
-            }
-          }
-        None => ()
-      }
-      false
-    }
-    None => false
+    None => ()
   }
+  false
+}
+
+///|
+fn set_current_thread_context(vm : Vm, thread : Thread) -> Unit {
+  vm.current_thread_id = Some(thread.id)
+  vm.current_thread_in_warp_context = thread.warp_mode ||
+    thread_has_warp_procedure_context(vm, thread.id)
+}
+
+///|
+fn clear_current_thread_context(vm : Vm) -> Unit {
+  vm.current_thread_id = None
+  vm.current_thread_in_warp_context = false
 }
 
 ///|
@@ -1834,7 +1834,7 @@ fn request_redraw(vm : Vm) -> Unit {
   }
   vm.redraw_requested = true
   vm.render_cache_valid = false
-  if is_current_thread_in_warp_context(vm) {
+  if vm.current_thread_in_warp_context {
     vm.redraw_requested_while_warp = true
   }
 }
@@ -1963,9 +1963,12 @@ fn execute_list_replace(
 fn increment_block_hot_count(
   vm : Vm,
   target_index : Int,
-  block_id : String,
+  block_pc : Int,
 ) -> Int {
-  let block_hot_key = "\{target_index}:\{block_id}"
+  let a = if target_index >= 0 { target_index } else { 0 }
+  let b = if block_pc >= 0 { block_pc } else { 0 }
+  let sum = a + b
+  let block_hot_key = sum * (sum + 1) / 2 + b
   let block_hot_count = vm.hot_op_counts.get_or_default(block_hot_key, 0) + 1
   vm.hot_op_counts[block_hot_key] = block_hot_count
   block_hot_count
@@ -2026,7 +2029,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
   let mut next_pc = block_meta.next_pc
   let mut handled_hot_opcode = false
 
-  vm.current_thread_id = Some(thread.id)
+  set_current_thread_context(vm, thread)
   match block.opcode_tag {
     OpcodeTag::MotionChangeXBy => {
       let value = number_from_input(vm, target_index, block, "DX", 0)
@@ -2071,11 +2074,9 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let block_hot_count = increment_block_hot_count(
         vm,
         target_index,
-        block.id,
+        block_pc,
       )
-      let times = json_to_number_value(
-          value_from_input(vm, target_index, block, "TIMES", 0),
-        )
+      let times = number_from_input(vm, target_index, block, "TIMES", 0)
         .floor()
         .to_int()
       if times > 0 {
@@ -2108,6 +2109,34 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       }
       handled_hot_opcode = true
     }
+    OpcodeTag::ControlForEach => {
+      match block_meta.variable {
+        Some(variable_ref) => {
+          let limit = number_from_input(vm, target_index, block, "VALUE", 0)
+          let key = block_pc
+          let index = thread.loop_counters.get_or_default(key, 0)
+          if Double::from_int(index) < limit {
+            let next_index = index + 1
+            thread.loop_counters[key] = next_index
+            write_variable(
+              vm,
+              target_index,
+              variable_ref.id,
+              Some(variable_ref.name),
+              json_number(Double::from_int(next_index)),
+            )
+            thread.stack.push(
+              repeat_frame(1, block_meta.substack_pc, Some(block_pc)),
+            )
+            next_pc = block_meta.substack_pc
+          } else {
+            thread.loop_counters.remove(key)
+          }
+        }
+        None => ()
+      }
+      handled_hot_opcode = true
+    }
     OpcodeTag::ControlIf => {
       let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
       if condition {
@@ -2116,6 +2145,17 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         )
         next_pc = block_meta.substack_pc
       }
+      handled_hot_opcode = true
+    }
+    OpcodeTag::ControlIfElse => {
+      let condition = bool_from_input(vm, target_index, block, "CONDITION", 0)
+      let branch_pc = if condition {
+        block_meta.substack_pc
+      } else {
+        block_meta.substack2_pc
+      }
+      thread.stack.push(repeat_frame(1, branch_pc, block_meta.next_pc))
+      next_pc = branch_pc
       handled_hot_opcode = true
     }
     OpcodeTag::DataSetVariableTo => {
@@ -2232,7 +2272,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     OpcodeTag::Unknown => ()
   }
   if handled_hot_opcode {
-    vm.current_thread_id = None
+    clear_current_thread_context(vm)
     if thread.done {
       return thread
     }
@@ -2244,9 +2284,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
   }
   match block.opcode {
     "motion_movesteps" => {
-      let steps = json_to_number_value(
-        value_from_input(vm, target_index, block, "STEPS", 0),
-      )
+      let steps = number_from_input(vm, target_index, block, "STEPS", 0)
       let radians = (90.0 - vm.targets[target_index].direction) *
         @math.PI /
         180.0
@@ -2259,9 +2297,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "motion_turnright" => {
       let old_direction = vm.targets[target_index].direction
-      let degrees = json_to_number_value(
-        value_from_input(vm, target_index, block, "DEGREES", 0),
-      )
+      let degrees = number_from_input(vm, target_index, block, "DEGREES", 0)
       vm.targets[target_index].direction += degrees
       if old_direction != vm.targets[target_index].direction {
         request_redraw(vm)
@@ -2269,9 +2305,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "motion_turnleft" => {
       let old_direction = vm.targets[target_index].direction
-      let degrees = json_to_number_value(
-        value_from_input(vm, target_index, block, "DEGREES", 0),
-      )
+      let degrees = number_from_input(vm, target_index, block, "DEGREES", 0)
       vm.targets[target_index].direction -= degrees
       if old_direction != vm.targets[target_index].direction {
         request_redraw(vm)
@@ -2280,9 +2314,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     "motion_pointindirection" => {
       let old_direction = vm.targets[target_index].direction
       vm.targets[target_index].direction = normalized_scratch_direction(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "DIRECTION", 0),
-        ),
+        number_from_input(vm, target_index, block, "DIRECTION", 0),
       )
       if old_direction != vm.targets[target_index].direction {
         request_redraw(vm)
@@ -2346,22 +2378,18 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       }
     }
     "motion_glidesecstoxy" => {
-      let seconds = json_to_number_value(
-        value_from_input(vm, target_index, block, "SECS", 0),
-      )
+      let seconds = number_from_input(vm, target_index, block, "SECS", 0)
       move_target_with_pen(
         vm,
         target_index,
-        json_to_number_value(value_from_input(vm, target_index, block, "X", 0)),
-        json_to_number_value(value_from_input(vm, target_index, block, "Y", 0)),
+        number_from_input(vm, target_index, block, "X", 0),
+        number_from_input(vm, target_index, block, "Y", 0),
       )
       let duration = if seconds < 0.0 { 0.0 } else { seconds }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
     }
     "motion_glideto" => {
-      let seconds = json_to_number_value(
-        value_from_input(vm, target_index, block, "SECS", 0),
-      )
+      let seconds = number_from_input(vm, target_index, block, "SECS", 0)
       let menu_value = json_to_string_value(
         value_from_input(vm, target_index, block, "TO", 0),
       )
@@ -2462,9 +2490,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let effect = input_or_field_string(
         vm, target_index, block, "EFFECT", "EFFECT",
       )
-      let amount = json_to_number_value(
-        value_from_input(vm, target_index, block, "CHANGE", 0),
-      )
+      let amount = number_from_input(vm, target_index, block, "CHANGE", 0)
       set_target_looks_effect(vm, target_index, effect, amount, true)
       request_redraw(vm)
     }
@@ -2472,9 +2498,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let effect = input_or_field_string(
         vm, target_index, block, "EFFECT", "EFFECT",
       )
-      let amount = json_to_number_value(
-        value_from_input(vm, target_index, block, "VALUE", 0),
-      )
+      let amount = number_from_input(vm, target_index, block, "VALUE", 0)
       set_target_looks_effect(vm, target_index, effect, amount, false)
       request_redraw(vm)
     }
@@ -2487,16 +2511,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     | "looks_gotofrontback"
     | "looks_goforwardbackwardlayers" => ()
     "looks_changesizeby" => {
-      let delta = json_to_number_value(
-        value_from_input(vm, target_index, block, "CHANGE", 0),
-      )
+      let delta = number_from_input(vm, target_index, block, "CHANGE", 0)
       vm.targets[target_index].size += delta
       request_redraw(vm)
     }
     "looks_setsizeto" => {
-      let size = json_to_number_value(
-        value_from_input(vm, target_index, block, "SIZE", 0),
-      )
+      let size = number_from_input(vm, target_index, block, "SIZE", 0)
       vm.targets[target_index].size = size
       request_redraw(vm)
     }
@@ -2518,9 +2538,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let message = json_to_string_value(
         value_from_input(vm, target_index, block, "MESSAGE", 0),
       )
-      let seconds = json_to_number_value(
-        value_from_input(vm, target_index, block, "SECS", 0),
-      )
+      let seconds = number_from_input(vm, target_index, block, "SECS", 0)
       push_effect(vm, HostEffect::Say(vm.targets[target_index].name, message))
       let duration = if seconds < 0.0 { 0.0 } else { seconds }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
@@ -2530,9 +2548,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let message = json_to_string_value(
         value_from_input(vm, target_index, block, "MESSAGE", 0),
       )
-      let seconds = json_to_number_value(
-        value_from_input(vm, target_index, block, "SECS", 0),
-      )
+      let seconds = number_from_input(vm, target_index, block, "SECS", 0)
       push_effect(vm, HostEffect::Think(vm.targets[target_index].name, message))
       let duration = if seconds < 0.0 { 0.0 } else { seconds }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
@@ -2565,24 +2581,18 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let param = input_or_field_string(
         vm, target_index, block, "COLOR_PARAM", "COLOR_PARAM",
       )
-      let value = json_to_number_value(
-        value_from_input(vm, target_index, block, "VALUE", 0),
-      )
+      let value = number_from_input(vm, target_index, block, "VALUE", 0)
       set_target_pen_color_param(vm, target_index, param, value, true)
     }
     "pen_setPenColorParamTo" => {
       let param = input_or_field_string(
         vm, target_index, block, "COLOR_PARAM", "COLOR_PARAM",
       )
-      let value = json_to_number_value(
-        value_from_input(vm, target_index, block, "VALUE", 0),
-      )
+      let value = number_from_input(vm, target_index, block, "VALUE", 0)
       set_target_pen_color_param(vm, target_index, param, value, false)
     }
     "pen_changePenSizeBy" => {
-      let delta = json_to_number_value(
-        value_from_input(vm, target_index, block, "SIZE", 0),
-      )
+      let delta = number_from_input(vm, target_index, block, "SIZE", 0)
       vm.targets[target_index].pen_size = clamp_double(
         vm.targets[target_index].pen_size + delta,
         1.0,
@@ -2590,30 +2600,22 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       )
     }
     "pen_setPenSizeTo" => {
-      let size = json_to_number_value(
-        value_from_input(vm, target_index, block, "SIZE", 0),
-      )
+      let size = number_from_input(vm, target_index, block, "SIZE", 0)
       vm.targets[target_index].pen_size = clamp_double(size, 1.0, 1200.0)
     }
     "pen_setPenHueToNumber" => {
-      let hue = json_to_number_value(
-        value_from_input(vm, target_index, block, "HUE", 0),
-      )
+      let hue = number_from_input(vm, target_index, block, "HUE", 0)
       set_target_pen_color_param(vm, target_index, "color", hue / 2.0, false)
       set_target_pen_color_param(vm, target_index, "transparency", 0.0, false)
       apply_target_legacy_pen_shade(vm, target_index)
     }
     "pen_changePenHueBy" => {
-      let hue = json_to_number_value(
-        value_from_input(vm, target_index, block, "HUE", 0),
-      )
+      let hue = number_from_input(vm, target_index, block, "HUE", 0)
       set_target_pen_color_param(vm, target_index, "color", hue / 2.0, true)
       apply_target_legacy_pen_shade(vm, target_index)
     }
     "pen_setPenShadeToNumber" => {
-      let mut shade = json_to_number_value(
-        value_from_input(vm, target_index, block, "SHADE", 0),
-      )
+      let mut shade = number_from_input(vm, target_index, block, "SHADE", 0)
       shade = shade.mod(200.0)
       if shade < 0.0 {
         shade += 200.0
@@ -2622,9 +2624,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       apply_target_legacy_pen_shade(vm, target_index)
     }
     "pen_changePenShadeBy" => {
-      let delta = json_to_number_value(
-        value_from_input(vm, target_index, block, "SHADE", 0),
-      )
+      let delta = number_from_input(vm, target_index, block, "SHADE", 0)
       let mut shade = vm.targets[target_index].pen_legacy_shade + delta
       shade = shade.mod(200.0)
       if shade < 0.0 {
@@ -2635,14 +2635,10 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "music_playDrumForBeats" => {
       let drum = normalize_music_drum(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "DRUM", 0),
-        ),
+        number_from_input(vm, target_index, block, "DRUM", 0),
       )
       let beats = clamp_music_beats(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "BEATS", 0),
-        ),
+        number_from_input(vm, target_index, block, "BEATS", 0),
       )
       push_effect(
         vm,
@@ -2660,14 +2656,10 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "music_midiPlayDrumForBeats" => {
       let drum = normalize_music_drum(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "DRUM", 0),
-        ),
+        number_from_input(vm, target_index, block, "DRUM", 0),
       )
       let beats = clamp_music_beats(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "BEATS", 0),
-        ),
+        number_from_input(vm, target_index, block, "BEATS", 0),
       )
       push_effect(
         vm,
@@ -2685,9 +2677,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "music_restForBeats" => {
       let beats = clamp_music_beats(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "BEATS", 0),
-        ),
+        number_from_input(vm, target_index, block, "BEATS", 0),
       )
       let duration_ms = music_beats_to_ms(vm, beats)
       if duration_ms > 0 {
@@ -2696,16 +2686,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "music_playNoteForBeats" => {
       let note = clamp_double(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "NOTE", 0),
-        ),
+        number_from_input(vm, target_index, block, "NOTE", 0),
         0.0,
         130.0,
       ).to_int()
       let beats = clamp_music_beats(
-        json_to_number_value(
-          value_from_input(vm, target_index, block, "BEATS", 0),
-        ),
+        number_from_input(vm, target_index, block, "BEATS", 0),
       )
       if beats > 0.0 {
         push_effect(
@@ -2725,31 +2711,23 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       }
     }
     "music_setInstrument" => {
-      let raw = json_to_number_value(
-        value_from_input(vm, target_index, block, "INSTRUMENT", 0),
-      )
+      let raw = number_from_input(vm, target_index, block, "INSTRUMENT", 0)
       vm.targets[target_index].music_instrument = normalize_music_instrument_index(
         raw,
       )
     }
     "music_midiSetInstrument" => {
-      let raw = json_to_number_value(
-        value_from_input(vm, target_index, block, "INSTRUMENT", 0),
-      )
+      let raw = number_from_input(vm, target_index, block, "INSTRUMENT", 0)
       vm.targets[target_index].music_instrument = normalize_music_instrument_index(
         raw,
       )
     }
     "music_setTempo" => {
-      let tempo = json_to_number_value(
-        value_from_input(vm, target_index, block, "TEMPO", 0),
-      )
+      let tempo = number_from_input(vm, target_index, block, "TEMPO", 0)
       vm.music_tempo = clamp_music_tempo(tempo)
     }
     "music_changeTempo" => {
-      let delta = json_to_number_value(
-        value_from_input(vm, target_index, block, "TEMPO", 0),
-      )
+      let delta = number_from_input(vm, target_index, block, "TEMPO", 0)
       vm.music_tempo = clamp_music_tempo(vm.music_tempo + delta)
     }
     "text2speech_setVoice" => {
@@ -2799,15 +2777,11 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     }
     "sound_stopallsounds" => push_effect(vm, HostEffect::StopAllSounds)
     "sound_setvolumeto" => {
-      let volume = json_to_number_value(
-        value_from_input(vm, target_index, block, "VOLUME", 0),
-      )
+      let volume = number_from_input(vm, target_index, block, "VOLUME", 0)
       vm.targets[target_index].volume = clamp_0_100(volume)
     }
     "sound_changevolumeby" => {
-      let delta = json_to_number_value(
-        value_from_input(vm, target_index, block, "VOLUME", 0),
-      )
+      let delta = number_from_input(vm, target_index, block, "VOLUME", 0)
       let next = vm.targets[target_index].volume + delta
       vm.targets[target_index].volume = clamp_0_100(next)
     }
@@ -2880,9 +2854,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     | "data_showlist"
     | "data_hidelist" => ()
     "control_wait" => {
-      let duration_raw = json_to_number_value(
-        value_from_input(vm, target_index, block, "DURATION", 0),
-      )
+      let duration_raw = number_from_input(vm, target_index, block, "DURATION", 0)
       let duration = if duration_raw < 0.0 { 0.0 } else { duration_raw }
       thread.wait_until_ms = Some(vm.now_ms + (duration * 1000.0).to_int())
       request_redraw(vm)
@@ -2897,11 +2869,9 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       let block_hot_count = increment_block_hot_count(
         vm,
         target_index,
-        block.id,
+        block_pc,
       )
-      let times = json_to_number_value(
-          value_from_input(vm, target_index, block, "TIMES", 0),
-        )
+      let times = number_from_input(vm, target_index, block, "TIMES", 0)
         .floor()
         .to_int()
       if times > 0 {
@@ -2939,10 +2909,8 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
     "control_for_each" =>
       match block_meta.variable {
         Some(variable_ref) => {
-          let limit = json_to_number_value(
-            value_from_input(vm, target_index, block, "VALUE", 0),
-          )
-          let key = block.id
+          let limit = number_from_input(vm, target_index, block, "VALUE", 0)
+          let key = block_pc
           let index = thread.loop_counters.get_or_default(key, 0)
           if Double::from_int(index) < limit {
             let next_index = index + 1
@@ -3134,7 +3102,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         HostEffect::Log("warn", "unimplemented opcode: \{block.opcode}"),
       )
   }
-  vm.current_thread_id = None
+  clear_current_thread_context(vm)
 
   if thread.done {
     return thread
@@ -3505,7 +3473,7 @@ fn exec_opcode_once_runtime(vm : Vm, target_index : Int, pc : Int) -> Int {
   )
   vm.waiting_children.remove(thread_id)
   vm.procedure_frames.remove(thread_id)
-  vm.current_thread_id = None
+  clear_current_thread_context(vm)
   if !vm.threads.is_empty() {
     vm.running = true
   }

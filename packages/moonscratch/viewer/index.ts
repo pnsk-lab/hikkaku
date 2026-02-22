@@ -17,6 +17,7 @@ type ViewerWorkerRequest =
   | {
       type: 'load'
       projectJson: string
+      offscreenCanvas?: OffscreenCanvas
     }
   | {
       type: 'input'
@@ -26,7 +27,7 @@ type ViewerWorkerRequest =
 type ViewerWorkerResponse =
   | {
       type: 'frame'
-      frame: RenderFrame
+      frame?: RenderFrame
       workerFps: number
       workerOpsPerSecond: number
     }
@@ -146,10 +147,7 @@ if (projects.length === 0) {
 
 document.body.append(appElement)
 
-const context = canvas.getContext('2d')
-if (!context) {
-  throw new Error('canvas 2D context is unavailable')
-}
+let context: CanvasRenderingContext2D | null = null
 
 let worker: Worker | null = null
 let fpsFrames = 0
@@ -159,6 +157,7 @@ let isPointerDown = false
 const keysDown = new Set<string>()
 let workerFps = 0
 let workerOpsPerSecond = 0
+let isUsingOffscreenCanvas = false
 
 const postInput = (input: VMInputEvent): void => {
   if (!worker) {
@@ -250,9 +249,18 @@ const renderFrameToCanvas = (frame: RenderFrame): void => {
     canvas.width = width
     canvas.height = height
   }
-  const clamped = Uint8ClampedArray.from(pixels)
+  const clamped = new Uint8ClampedArray(pixels)
   const imageData = new ImageData(clamped, width, height)
-  context.putImageData(imageData, 0, 0)
+  const currentContext =
+    context ??
+    (context = (() => {
+      const nextContext = canvas.getContext('2d')
+      if (!nextContext) {
+        throw new Error('canvas 2D context is unavailable')
+      }
+      return nextContext
+    })())
+  currentContext.putImageData(imageData, 0, 0)
   updateFps()
 }
 
@@ -267,6 +275,7 @@ const stopPlayback = (): void => {
   fpsStartedAt = 0
   workerFps = 0
   workerOpsPerSecond = 0
+  isUsingOffscreenCanvas = false
 }
 
 const startPlayback = async (projectId: string) => {
@@ -288,7 +297,18 @@ const startPlayback = async (projectId: string) => {
       type: 'load',
       projectJson: selected.projectJson,
     }
-    worker.postMessage(startMessage)
+    const offscreenCanvas =
+      typeof canvas.transferControlToOffscreen === 'function'
+        ? canvas.transferControlToOffscreen()
+        : null
+    isUsingOffscreenCanvas = offscreenCanvas !== null
+    if (offscreenCanvas) {
+      startMessage.offscreenCanvas = offscreenCanvas
+      worker.postMessage(startMessage, [offscreenCanvas])
+    } else {
+      worker.postMessage(startMessage)
+      context = null
+    }
     worker.onmessage = (event) => {
       if (token !== playbackToken) {
         return
@@ -297,6 +317,13 @@ const startPlayback = async (projectId: string) => {
       if (payload.type === 'frame') {
         workerFps = payload.workerFps
         workerOpsPerSecond = payload.workerOpsPerSecond
+        if (!payload.frame) {
+          if (!isUsingOffscreenCanvas) {
+            return
+          }
+          updateFps()
+          return
+        }
         renderFrameToCanvas(payload.frame)
         return
       }

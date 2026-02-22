@@ -64,7 +64,7 @@ pub(all) struct Vm {
   mut waiting_children : Map[Int, Int]
   mut rng_state : Int
   mut control_counter : Int
-  mut hot_op_counts : Map[String, Int]
+  mut hot_op_counts : Map[Int, Int]
   mut next_clone_id : Int
   mut hat_predicates : Map[String, Bool]
   mut timer_start_ms : Int
@@ -75,6 +75,7 @@ pub(all) struct Vm {
   mut redraw_requested : Bool
   mut redraw_requested_while_warp : Bool
   mut current_thread_id : Int?
+  mut current_thread_in_warp_context : Bool
   mut mathop_sin_cache_valid : Bool
   mut mathop_sin_cache_input : Double
   mut mathop_sin_cache_output : Double

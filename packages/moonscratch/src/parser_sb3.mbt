@@ -96,7 +96,9 @@ fn opcode_tag_for(opcode : String) -> OpcodeTag {
     "pen_penUp" => OpcodeTag::PenPenUp
     "control_repeat" => OpcodeTag::ControlRepeat
     "control_repeat_until" => OpcodeTag::ControlRepeatUntil
+    "control_for_each" => OpcodeTag::ControlForEach
     "control_if" => OpcodeTag::ControlIf
+    "control_if_else" => OpcodeTag::ControlIfElse
     "data_setvariableto" => OpcodeTag::DataSetVariableTo
     "data_changevariableby" => OpcodeTag::DataChangeVariableBy
     _ => OpcodeTag::Unknown

@@ -200,6 +200,7 @@ fn vm_new_internal(precompiled : PrecompiledProject, options : VmOptions) -> Vm 
     redraw_requested: false,
     redraw_requested_while_warp: false,
     current_thread_id: None,
+    current_thread_in_warp_context: false,
     mathop_sin_cache_valid: false,
     mathop_sin_cache_input: 0.0,
     mathop_sin_cache_output: 0.0,
@@ -835,6 +836,7 @@ fn clear_threads(vm : Vm) -> Unit {
   vm.procedure_frames.clear()
   vm.frame_override = None
   vm.current_thread_id = None
+  vm.current_thread_in_warp_context = false
   vm.redraw_requested_while_warp = false
   vm.running = false
 }

@@ -197,6 +197,88 @@ fn render_blend_rgba(
 }
 
 ///|
+fn render_premultiply_rgba(src : (Int, Int, Int, Int)) -> (Int, Int, Int, Int) {
+  let (r, g, b, a) = src
+  let clamped_a = render_clamp_int(a, 0, 255)
+  if clamped_a <= 0 {
+    return (0, 0, 0, 0)
+  }
+  let clamped_r = render_clamp_int(r, 0, 255)
+  let clamped_g = render_clamp_int(g, 0, 255)
+  let clamped_b = render_clamp_int(b, 0, 255)
+  if clamped_a >= 255 {
+    return (clamped_r, clamped_g, clamped_b, 255)
+  }
+  (
+    (clamped_r * clamped_a + 127) / 255,
+    (clamped_g * clamped_a + 127) / 255,
+    (clamped_b * clamped_a + 127) / 255,
+    clamped_a,
+  )
+}
+
+///|
+fn render_unpremultiply_rgba(
+  premul : (Int, Int, Int, Int),
+) -> (Int, Int, Int, Int) {
+  let (pr, pg, pb, pa) = premul
+  if pa <= 0 {
+    return (0, 0, 0, 0)
+  }
+  if pa >= 255 {
+    return (
+      render_clamp_int(pr, 0, 255),
+      render_clamp_int(pg, 0, 255),
+      render_clamp_int(pb, 0, 255),
+      255,
+    )
+  }
+  (
+    render_clamp_int((pr * 255 + pa / 2) / pa, 0, 255),
+    render_clamp_int((pg * 255 + pa / 2) / pa, 0, 255),
+    render_clamp_int((pb * 255 + pa / 2) / pa, 0, 255),
+    render_clamp_int(pa, 0, 255),
+  )
+}
+
+///|
+fn render_clear_pen_bounds_pixels(vm : Vm) -> Unit {
+  if !vm.pen_bounds_valid {
+    return
+  }
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if width <= 0 || height <= 0 {
+    render_reset_pen_bounds(vm)
+    return
+  }
+  let required = width * height * 4
+  if vm.pen_pixels.length() < required {
+    render_reset_pen_bounds(vm)
+    return
+  }
+  let start_x = render_clamp_int(vm.pen_min_x, 0, width - 1)
+  let end_x = render_clamp_int(vm.pen_max_x, 0, width - 1)
+  let start_y = render_clamp_int(vm.pen_min_y, 0, height - 1)
+  let end_y = render_clamp_int(vm.pen_max_y, 0, height - 1)
+  if start_x > end_x || start_y > end_y {
+    render_reset_pen_bounds(vm)
+    return
+  }
+  for py in start_y..<=end_y {
+    let mut base = (py * width + start_x) * 4
+    for _ in start_x..<=end_x {
+      vm.pen_pixels[base] = b'\x00'
+      vm.pen_pixels[base + 1] = b'\x00'
+      vm.pen_pixels[base + 2] = b'\x00'
+      vm.pen_pixels[base + 3] = b'\x00'
+      base += 4
+    }
+  }
+  render_reset_pen_bounds(vm)
+}
+
+///|
 fn render_reset_pen_bounds(vm : Vm) -> Unit {
   vm.pen_bounds_valid = false
   vm.pen_min_x = 0
@@ -264,7 +346,7 @@ fn render_mark_pen_pixel_base(vm : Vm, base : Int) -> Unit {
 
 ///|
 fn vm_clear_pen_pixels(vm : Vm) -> Unit {
-  vm.pen_pixels.clear()
+  render_clear_pen_bounds_pixels(vm)
   vm.pen_vectors.clear()
   render_reset_pen_bounds(vm)
   vm.render_revision += 1
@@ -282,11 +364,8 @@ fn ensure_pen_pixels(vm : Vm) -> Unit {
   if vm.pen_pixels.length() == required {
     return
   }
-  vm.pen_pixels.clear()
+  vm.pen_pixels = Array::make(required, b'\x00')
   render_reset_pen_bounds(vm)
-  for _ in 0..<required {
-    vm.pen_pixels.push(b'\x00')
-  }
 }
 
 ///|
@@ -307,43 +386,244 @@ fn render_blend_pen_pixel_base(
   base : Int,
   src : (Int, Int, Int, Int),
 ) -> Unit {
+  let premul = render_premultiply_rgba(src)
+  if premul.3 <= 0 {
+    return
+  }
+  render_blend_pen_pixel_base_premul(vm, base, premul)
+  render_mark_pen_pixel_base(vm, base)
+}
+
+///|
+fn render_blend_pen_pixel_base_premul(
+  vm : Vm,
+  base : Int,
+  src : (Int, Int, Int, Int),
+) -> Unit {
   let (sr, sg, sb, sa) = src
   if sa <= 0 {
     return
   }
   if sa >= 255 {
-    vm.pen_pixels[base] = sr.to_byte()
-    vm.pen_pixels[base + 1] = sg.to_byte()
-    vm.pen_pixels[base + 2] = sb.to_byte()
-    vm.pen_pixels[base + 3] = sa.to_byte()
-    render_mark_pen_pixel_base(vm, base)
+    vm.pen_pixels[base] = render_clamp_int(sr, 0, 255).to_byte()
+    vm.pen_pixels[base + 1] = render_clamp_int(sg, 0, 255).to_byte()
+    vm.pen_pixels[base + 2] = render_clamp_int(sb, 0, 255).to_byte()
+    vm.pen_pixels[base + 3] = b'\xff'
     return
   }
   let da = vm.pen_pixels[base + 3].to_int()
   if da <= 0 {
-    vm.pen_pixels[base] = sr.to_byte()
-    vm.pen_pixels[base + 1] = sg.to_byte()
-    vm.pen_pixels[base + 2] = sb.to_byte()
+    vm.pen_pixels[base] = render_clamp_int(sr, 0, 255).to_byte()
+    vm.pen_pixels[base + 1] = render_clamp_int(sg, 0, 255).to_byte()
+    vm.pen_pixels[base + 2] = render_clamp_int(sb, 0, 255).to_byte()
     vm.pen_pixels[base + 3] = sa.to_byte()
-    render_mark_pen_pixel_base(vm, base)
     return
   }
-  let blended = render_blend_rgba(
+  let keep = 255 - sa
+  let out_a = sa + ((da * keep + 127) / 255)
+  let out_r = sr + ((vm.pen_pixels[base].to_int() * keep + 127) / 255)
+  let out_g = sg + ((vm.pen_pixels[base + 1].to_int() * keep + 127) / 255)
+  let out_b = sb + ((vm.pen_pixels[base + 2].to_int() * keep + 127) / 255)
+  vm.pen_pixels[base] = render_clamp_int(out_r, 0, 255).to_byte()
+  vm.pen_pixels[base + 1] = render_clamp_int(out_g, 0, 255).to_byte()
+  vm.pen_pixels[base + 2] = render_clamp_int(out_b, 0, 255).to_byte()
+  vm.pen_pixels[base + 3] = render_clamp_int(out_a, 0, 255).to_byte()
+}
+
+///|
+fn render_blend_pen_pixel_base_premul_coverage(
+  vm : Vm,
+  base : Int,
+  src : (Int, Int, Int, Int),
+  coverage : Double,
+) -> Unit {
+  if coverage <= 0.0 {
+    return
+  }
+  if coverage >= 1.0 {
+    render_blend_pen_pixel_base_premul(vm, base, src)
+    return
+  }
+  let alpha = render_clamp_int(
+    (Double::from_int(src.3) * coverage).round().to_int(),
+    0,
+    255,
+  )
+  if alpha <= 0 {
+    return
+  }
+  let premul = (
+    render_clamp_int((Double::from_int(src.0) * coverage).round().to_int(), 0, 255),
+    render_clamp_int((Double::from_int(src.1) * coverage).round().to_int(), 0, 255),
+    render_clamp_int((Double::from_int(src.2) * coverage).round().to_int(), 0, 255),
+    alpha,
+  )
+  render_blend_pen_pixel_base_premul(vm, base, premul)
+}
+
+///|
+fn render_draw_thin_pen_axis(
+  vm : Vm,
+  x0 : Double,
+  y0 : Double,
+  x1 : Double,
+  y1 : Double,
+  rgba : (Int, Int, Int, Int),
+) -> Bool {
+  let width = vm.pen_width
+  let height = vm.pen_height
+  if width <= 0 || height <= 0 {
+    return true
+  }
+  let premul = render_premultiply_rgba(rgba)
+  if premul.3 <= 0 {
+    return true
+  }
+  if x0 == x1 {
+    let x = x0
+    let px_base = (x - 0.5).floor().to_int()
+    let px_next = px_base + 1
+    let coverage_base = render_clamp_double(
+      1.0 - (Double::from_int(px_base) + 0.5 - x).abs(),
+      0.0,
+      1.0,
+    )
+    let coverage_next = render_clamp_double(
+      1.0 - (Double::from_int(px_next) + 0.5 - x).abs(),
+      0.0,
+      1.0,
+    )
+    if coverage_base <= 0.0 && coverage_next <= 0.0 {
+      return true
+    }
+    if px_base < 0 && px_next < 0 {
+      return true
+    }
+    if px_base >= width && px_next >= width {
+      return true
+    }
+    let min_py = render_min_double(y0, y1).floor().to_int()
+    let max_py = render_max_double(y0, y1).floor().to_int()
+    if max_py < 0 || min_py >= height {
+      return true
+    }
+    let start_py = render_clamp_int(min_py, 0, height - 1)
+    let end_py = render_clamp_int(max_py, 0, height - 1)
+    let mut mark_min_x = width
+    let mut mark_max_x = -1
+    for py in start_py..<=end_py {
+      let row_base = py * width * 4
+      if coverage_base > 0.0 && px_base >= 0 && px_base < width {
+        let base = row_base + px_base * 4
+        render_blend_pen_pixel_base_premul_coverage(
+          vm, base, premul, coverage_base,
+        )
+        if px_base < mark_min_x {
+          mark_min_x = px_base
+        }
+        if px_base > mark_max_x {
+          mark_max_x = px_base
+        }
+      }
+      if coverage_next > 0.0 && px_next >= 0 && px_next < width {
+        let base = row_base + px_next * 4
+        render_blend_pen_pixel_base_premul_coverage(
+          vm, base, premul, coverage_next,
+        )
+        if px_next < mark_min_x {
+          mark_min_x = px_next
+        }
+        if px_next > mark_max_x {
+          mark_max_x = px_next
+        }
+      }
+    }
+    if mark_min_x <= mark_max_x {
+      render_mark_pen_bounds(vm, mark_min_x, mark_max_x, start_py, end_py)
+    }
+    return true
+  }
+  if y0 == y1 {
+    let y = y0
+    let py_base = (y - 0.5).floor().to_int()
+    let py_next = py_base + 1
+    let coverage_base = render_clamp_double(
+      1.0 - (Double::from_int(py_base) + 0.5 - y).abs(),
+      0.0,
+      1.0,
+    )
+    let coverage_next = render_clamp_double(
+      1.0 - (Double::from_int(py_next) + 0.5 - y).abs(),
+      0.0,
+      1.0,
+    )
+    if coverage_base <= 0.0 && coverage_next <= 0.0 {
+      return true
+    }
+    if py_base < 0 && py_next < 0 {
+      return true
+    }
+    if py_base >= height && py_next >= height {
+      return true
+    }
+    let min_px = render_min_double(x0, x1).floor().to_int()
+    let max_px = render_max_double(x0, x1).floor().to_int()
+    if max_px < 0 || min_px >= width {
+      return true
+    }
+    let start_px = render_clamp_int(min_px, 0, width - 1)
+    let end_px = render_clamp_int(max_px, 0, width - 1)
+    let mut mark_min_y = height
+    let mut mark_max_y = -1
+    for px in start_px..<=end_px {
+      if coverage_base > 0.0 && py_base >= 0 && py_base < height {
+        let row_base = py_base * width * 4
+        let base = row_base + px * 4
+        render_blend_pen_pixel_base_premul_coverage(
+          vm, base, premul, coverage_base,
+        )
+        if py_base < mark_min_y {
+          mark_min_y = py_base
+        }
+        if py_base > mark_max_y {
+          mark_max_y = py_base
+        }
+      }
+      if coverage_next > 0.0 && py_next >= 0 && py_next < height {
+        let row_base = py_next * width * 4
+        let base = row_base + px * 4
+        render_blend_pen_pixel_base_premul_coverage(
+          vm, base, premul, coverage_next,
+        )
+        if py_next < mark_min_y {
+          mark_min_y = py_next
+        }
+        if py_next > mark_max_y {
+          mark_max_y = py_next
+        }
+      }
+    }
+    if mark_min_y <= mark_max_y {
+      render_mark_pen_bounds(vm, start_px, end_px, mark_min_y, mark_max_y)
+    }
+    return true
+  }
+  false
+}
+
+///|
+fn render_read_pen_pixel_unpremultiplied(
+  vm : Vm,
+  base : Int,
+) -> (Int, Int, Int, Int) {
+  render_unpremultiply_rgba(
     (
       vm.pen_pixels[base].to_int(),
       vm.pen_pixels[base + 1].to_int(),
       vm.pen_pixels[base + 2].to_int(),
-      da,
+      vm.pen_pixels[base + 3].to_int(),
     ),
-    src,
   )
-  vm.pen_pixels[base] = blended.0.to_byte()
-  vm.pen_pixels[base + 1] = blended.1.to_byte()
-  vm.pen_pixels[base + 2] = blended.2.to_byte()
-  vm.pen_pixels[base + 3] = blended.3.to_byte()
-  if blended.3 > 0 {
-    render_mark_pen_pixel_base(vm, base)
-  }
 }
 
 ///|
@@ -533,6 +813,18 @@ fn render_rasterize_pen_stroke(vm : Vm, stroke : PenVectorStroke) -> Unit {
   }
   let (x0, y0) = render_stage_to_pixel_double(vm, stroke.x0, stroke.y0)
   let (x1, y1) = render_stage_to_pixel_double(vm, stroke.x1, stroke.y1)
+  if stroke.diameter <= 1.0 &&
+    (stroke.x0 == stroke.x1 || stroke.y0 == stroke.y1) &&
+    render_draw_thin_pen_axis(
+      vm,
+      x0 + stroke.offset,
+      y0 + stroke.offset,
+      x1 + stroke.offset,
+      y1 + stroke.offset,
+      (stroke.r, stroke.g, stroke.b, stroke.a),
+    ) {
+    return
+  }
   if stroke.diameter <= 1.0 &&
     stroke.a >= 255 &&
     (stroke.x0 == stroke.x1 || stroke.y0 == stroke.y1) &&
@@ -1495,24 +1787,24 @@ fn render_blend_pen_over_opaque_pixels(vm : Vm, pixels : Array[Byte]) -> Unit {
           pixels[base + 3] = b'\xff'
         } else {
           let keep = 255 - pen_alpha
-          pixels[base] = ((
-            vm.pen_pixels[base].to_int() * pen_alpha +
-            pixels[base].to_int() * keep +
-            127
-          ) /
-          255).to_byte()
-          pixels[base + 1] = ((
-            vm.pen_pixels[base + 1].to_int() * pen_alpha +
-            pixels[base + 1].to_int() * keep +
-            127
-          ) /
-          255).to_byte()
-          pixels[base + 2] = ((
-            vm.pen_pixels[base + 2].to_int() * pen_alpha +
-            pixels[base + 2].to_int() * keep +
-            127
-          ) /
-          255).to_byte()
+          pixels[base] = render_clamp_int(
+            vm.pen_pixels[base].to_int() +
+            ((pixels[base].to_int() * keep + 127) / 255),
+            0,
+            255,
+          ).to_byte()
+          pixels[base + 1] = render_clamp_int(
+            vm.pen_pixels[base + 1].to_int() +
+            ((pixels[base + 1].to_int() * keep + 127) / 255),
+            0,
+            255,
+          ).to_byte()
+          pixels[base + 2] = render_clamp_int(
+            vm.pen_pixels[base + 2].to_int() +
+            ((pixels[base + 2].to_int() * keep + 127) / 255),
+            0,
+            255,
+          ).to_byte()
           pixels[base + 3] = b'\xff'
         }
       }
@@ -2264,14 +2556,10 @@ fn render_scene_to_frame(vm : Vm) -> RenderFrame {
                 255,
               )
             } else {
+              let pen = render_read_pen_pixel_unpremultiplied(vm, pen_base)
               color = render_blend_rgba(
                 color,
-                (
-                  vm.pen_pixels[pen_base].to_int(),
-                  vm.pen_pixels[pen_base + 1].to_int(),
-                  vm.pen_pixels[pen_base + 2].to_int(),
-                  pen_alpha,
-                ),
+                pen,
               )
             }
           }
@@ -2427,14 +2715,10 @@ fn target_is_touching_color(
             if pen_base + 3 < pen_len {
               let pen_alpha = vm.pen_pixels[pen_base + 3].to_int()
               if pen_alpha > 0 {
+                let pen = render_read_pen_pixel_unpremultiplied(vm, pen_base)
                 sampled = render_blend_rgba(
                   sampled,
-                  (
-                    vm.pen_pixels[pen_base].to_int(),
-                    vm.pen_pixels[pen_base + 1].to_int(),
-                    vm.pen_pixels[pen_base + 2].to_int(),
-                    pen_alpha,
-                  ),
+                  pen,
                 )
               }
             }
@@ -2511,14 +2795,10 @@ fn target_color_is_touching_color(
             if pen_base + 3 < pen_len {
               let pen_alpha = vm.pen_pixels[pen_base + 3].to_int()
               if pen_alpha > 0 {
+                let pen = render_read_pen_pixel_unpremultiplied(vm, pen_base)
                 sampled = render_blend_rgba(
                   sampled,
-                  (
-                    vm.pen_pixels[pen_base].to_int(),
-                    vm.pen_pixels[pen_base + 1].to_int(),
-                    vm.pen_pixels[pen_base + 2].to_int(),
-                    pen_alpha,
-                  ),
+                  pen,
                 )
               }
             }

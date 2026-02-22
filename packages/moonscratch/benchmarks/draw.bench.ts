@@ -1,6 +1,8 @@
 import { Project } from 'hikkaku'
+import { readFileSync } from 'node:fs'
 import {
   callProcedure,
+  changeVariableBy,
   changeXBy,
   changeYBy,
   defineProcedure,
@@ -14,6 +16,7 @@ import {
   penUp,
   procedureLabel,
   repeat,
+  setPenColorParamTo,
   setPenColorTo,
   setPenSizeTo,
   setVariableTo,
@@ -103,6 +106,82 @@ const stepLikeViewerFrame = (vm: {
     }
   }
   vm.renderFrame()
+}
+
+type ViewerLikeMetrics = {
+  frames: number
+  renderedFrames: number
+  avgStepMs: number
+  avgRenderMs: number
+  avgLoops: number
+}
+
+const measureViewerLikeFrames = (
+  vm: {
+    setTime(nowMs: number): void
+    stepFrame(): {
+      stopReason: string
+      isInWarp: boolean
+      shouldRender: boolean
+    }
+    renderFrame(): unknown
+    greenFlag(): void
+    stopAll(): void
+  },
+  frames: number,
+): ViewerLikeMetrics => {
+  vm.stopAll()
+  vm.greenFlag()
+  let totalStepMs = 0
+  let totalRenderMs = 0
+  let totalLoops = 0
+  let renderedFrames = 0
+  for (let frame = 0; frame < frames; frame += 1) {
+    const frameStart = performance.now()
+    vm.setTime(frameStart)
+    let loops = 0
+    let shouldRender = false
+    let isFinished = false
+    const stepStartedAt = performance.now()
+    while (true) {
+      const frameInfo = vm.stepFrame()
+      loops += 1
+      if (frameInfo.stopReason === 'finished') {
+        shouldRender = frameInfo.shouldRender
+        isFinished = true
+        break
+      }
+      if (frameInfo.shouldRender) {
+        shouldRender = true
+        break
+      }
+      const budget = frameInfo.isInWarp
+        ? FRAME_FORCE_TIMEOUT_IN_WARP_MS
+        : FRAME_FORCE_TIMEOUT_OUT_OF_WARP_MS
+      if (performance.now() - frameStart > budget) {
+        break
+      }
+    }
+    totalStepMs += performance.now() - stepStartedAt
+    totalLoops += loops
+    if (shouldRender) {
+      const renderStartedAt = performance.now()
+      vm.renderFrame()
+      totalRenderMs += performance.now() - renderStartedAt
+      renderedFrames += 1
+    }
+    if (isFinished) {
+      break
+    }
+  }
+  vm.stopAll()
+  return {
+    frames,
+    renderedFrames,
+    avgStepMs: totalStepMs / frames,
+    avgRenderMs: renderedFrames > 0 ? totalRenderMs / renderedFrames : 0,
+    avgLoops: totalLoops / frames,
+  }
 }
 
 const TESSERACT_VERTICES_2D = Array.from({ length: 16 }, (_, vertex) => {
@@ -210,6 +289,81 @@ bench('draw/tesseract-30/moonscratch', () => {
   tesseractVM.stopAll()
 })
 
+const rubikFillProject = new Project()
+const rubikFillSprite = rubikFillProject.createSprite('RubikFill')
+const scanY = rubikFillSprite.createVariable('scanY', -160)
+
+rubikFillSprite.run(() => {
+  whenFlagClicked(() => {
+    hide()
+    penUp()
+    setPenSizeTo(1)
+    setPenColorTo('#0ea5e9')
+    setPenColorParamTo('transparency', 68)
+    repeat(20, () => {
+      eraseAll()
+      setVariableTo(scanY, -160)
+      repeat(320, () => {
+        penUp()
+        gotoXY(-150, scanY.get())
+        penDown()
+        gotoXY(150, scanY.get())
+        penUp()
+        changeVariableBy(scanY, 1)
+      })
+    })
+  })
+})
+
+const rubikFillProgram = createProgramModuleFromProject({
+  projectJson: rubikFillProject.toScratch(),
+})
+const rubikFillVM = createHeadlessVM({
+  program: rubikFillProgram,
+  initialNowMs: 0,
+  options: {
+    stepTimeoutTicks: 1,
+  },
+})
+rubikFillVM.start()
+
+bench('draw/rubik-fill-20/moonscratch', () => {
+  rubikFillVM.stopAll()
+  rubikFillVM.greenFlag()
+  for (let frame = 0; frame < 20; frame += 1) {
+    stepLikeViewerFrame(rubikFillVM)
+  }
+  rubikFillVM.stopAll()
+})
+
+const rubiksViewerProgram = createProgramModuleFromProject({
+  projectJson: readFileSync('../../examples/rubiks-cube/dist/project.json', 'utf8'),
+})
+const rubiksViewerVM = createHeadlessVM({
+  program: rubiksViewerProgram,
+  initialNowMs: 0,
+  options: {
+    stepTimeoutTicks: 1,
+  },
+})
+rubiksViewerVM.start()
+const RUBIKS_VIEWER_FRAMES = 120
+
+bench('draw/rubiks-viewer-step-120/moonscratch', () => {
+  measureViewerLikeFrames(rubiksViewerVM, RUBIKS_VIEWER_FRAMES)
+})
+
 if (import.meta.main) {
+  const metrics = measureViewerLikeFrames(rubiksViewerVM, RUBIKS_VIEWER_FRAMES)
+  console.log(
+    [
+      'draw/rubiks-viewer-like:',
+      `avgStepMs=${metrics.avgStepMs.toFixed(2)}`,
+      `avgRenderMs=${metrics.avgRenderMs.toFixed(2)}`,
+      `avgLoops=${metrics.avgLoops.toFixed(2)}`,
+      `frames=${metrics.frames}`,
+      `rendered=${metrics.renderedFrames}`,
+    ].join(' '),
+  )
   await run()
 }
