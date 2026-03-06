@@ -413,23 +413,19 @@ fn try_fast_repeat_numeric_variable_loop(
         _ => number_from_input(vm, target_index, block, "VALUE", 0)
       }
       if op_kinds[i] == 0 {
-        write_variable_by_ref(
-          vm,
-          owner_index,
-          variable_id,
-          variable_slot,
-          json_number(value),
+        write_variable_number_by_ref(
+          vm, owner_index, variable_id, variable_slot, value,
         )
       } else {
-        let current = json_to_number_value(
-          read_variable_by_ref(vm, owner_index, variable_id, variable_slot),
+        let current = read_variable_number_by_ref(
+          vm, owner_index, variable_id, variable_slot,
         )
-        write_variable_by_ref(
+        write_variable_number_by_ref(
           vm,
           owner_index,
           variable_id,
           variable_slot,
-          json_number(current + value),
+          current + value,
         )
       }
     }
@@ -2118,12 +2114,12 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
           if Double::from_int(index) < limit {
             let next_index = index + 1
             thread.loop_counters[key] = next_index
-            write_variable(
+            write_variable_number(
               vm,
               target_index,
               variable_ref.id,
               Some(variable_ref.name),
-              json_number(Double::from_int(next_index)),
+              Double::from_int(next_index),
             )
             thread.stack.push(
               repeat_frame(1, block_meta.substack_pc, Some(block_pc)),
@@ -2177,20 +2173,20 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
             Some(value) =>
               match resolved {
                 Some((owner_index, variable_id, variable_slot)) =>
-                  write_variable_by_ref(
+                  write_variable_number_by_ref(
                     vm,
                     owner_index,
                     variable_id,
                     variable_slot,
-                    json_number(value),
+                    value,
                   )
                 None =>
-                  write_variable(
+                  write_variable_number(
                     vm,
                     target_index,
                     variable_ref.id,
                     Some(variable_ref.name),
-                    json_number(value),
+                    value,
                   )
               }
             None => {
@@ -2233,34 +2229,33 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
           }
           match resolved {
             Some((owner_index, variable_id, variable_slot)) => {
-              let current = json_to_number_value(
-                read_variable_by_ref(
-                  vm, owner_index, variable_id, variable_slot,
-                ),
-              )
-              write_variable_by_ref(
+              let current = read_variable_number_by_ref(
                 vm,
                 owner_index,
                 variable_id,
                 variable_slot,
-                json_number(current + delta),
+              )
+              write_variable_number_by_ref(
+                vm,
+                owner_index,
+                variable_id,
+                variable_slot,
+                current + delta,
               )
             }
             None => {
-              let current = json_to_number_value(
-                read_variable(
-                  vm,
-                  target_index,
-                  variable_ref.id,
-                  Some(variable_ref.name),
-                ),
-              )
-              write_variable(
+              let current = read_variable_number(
                 vm,
                 target_index,
                 variable_ref.id,
                 Some(variable_ref.name),
-                json_number(current + delta),
+              )
+              write_variable_number(
+                vm,
+                target_index,
+                variable_ref.id,
+                Some(variable_ref.name),
+                current + delta,
               )
             }
           }
@@ -2791,14 +2786,7 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
         Some((name, id)) =>
           match
             fast_numeric_value_for_setvariable(vm, target, target_index, block) {
-            Some(value) =>
-              write_variable(
-                vm,
-                target_index,
-                id,
-                Some(name),
-                json_number(value),
-              )
+            Some(value) => write_variable_number(vm, target_index, id, Some(name), value)
             None => {
               let value = value_from_input(vm, target_index, block, "VALUE", 0)
               write_variable(vm, target_index, id, Some(name), value)
@@ -2810,16 +2798,8 @@ fn execute_thread_once(vm : Vm, thread : Thread) -> Thread {
       match field_value(block, "VARIABLE") {
         Some((name, id)) => {
           let delta = number_from_input(vm, target_index, block, "VALUE", 0)
-          let current = json_to_number_value(
-            read_variable(vm, target_index, id, Some(name)),
-          )
-          write_variable(
-            vm,
-            target_index,
-            id,
-            Some(name),
-            json_number(current + delta),
-          )
+          let current = read_variable_number(vm, target_index, id, Some(name))
+          write_variable_number(vm, target_index, id, Some(name), current + delta)
         }
         None => ()
       }
@@ -3495,9 +3475,12 @@ fn apply_aot_commands_frame(vm : Vm) -> FrameReport {
         }
       AotCommand::ChangeVariable(target_index, variable_id, delta) =>
         if target_index >= 0 && target_index < vm.targets.length() {
-          let current = read_variable(vm, target_index, Some(variable_id), None)
-          let next_value = json_number(json_to_number_value(current) + delta)
-          write_variable(vm, target_index, Some(variable_id), None, next_value)
+          let current = read_variable_number(
+            vm, target_index, Some(variable_id), None,
+          )
+          write_variable_number(
+            vm, target_index, Some(variable_id), None, current + delta,
+          )
           op_count += 1
         }
       AotCommand::HostOpcode(target_index, pc) =>

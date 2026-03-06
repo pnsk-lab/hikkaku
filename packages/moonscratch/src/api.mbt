@@ -61,8 +61,7 @@ pub fn vm_get_variable_number_by_id(
   if target_index < 0 || target_index >= vm.targets.length() {
     return 0.0
   }
-  let current = read_variable(vm, target_index, Some(variable_id), None)
-  json_to_number_value(current)
+  read_variable_number(vm, target_index, Some(variable_id), None)
 }
 
 ///|
@@ -78,7 +77,51 @@ pub fn vm_set_variable_number_by_id(
   if target_index < 0 || target_index >= vm.targets.length() {
     return
   }
-  write_variable(vm, target_index, Some(variable_id), None, json_number(value))
+  write_variable_number(vm, target_index, Some(variable_id), None, value)
+}
+
+///|
+pub fn vm_set_variable_string_by_id(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String,
+  value : String,
+) -> Unit {
+  if variable_id == "" {
+    return
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return
+  }
+  write_variable_scalar(
+    vm,
+    target_index,
+    Some(variable_id),
+    None,
+    VariableScalarValue::VarString(value),
+  )
+}
+
+///|
+pub fn vm_set_variable_bool_by_id(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String,
+  value : Bool,
+) -> Unit {
+  if variable_id == "" {
+    return
+  }
+  if target_index < 0 || target_index >= vm.targets.length() {
+    return
+  }
+  write_variable_scalar(
+    vm,
+    target_index,
+    Some(variable_id),
+    None,
+    VariableScalarValue::VarBool(value),
+  )
 }
 
 ///|

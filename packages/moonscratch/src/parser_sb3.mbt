@@ -150,7 +150,7 @@ fn parse_variables(
   Map[String, Int],
   Map[String, Int],
   Array[String],
-  Array[Json],
+  Array[VariableScalarValue],
 ) {
   let values = {}
   let names = {}
@@ -163,13 +163,15 @@ fn parse_variables(
       Array(parts) =>
         if parts.length() >= 2 {
           let name = json_to_string_value(parts[0])
-          values[id] = parts[1]
+          let scalar_value = variable_scalar_from_json(parts[1])
+          let normalized = variable_scalar_to_json(scalar_value)
+          values[id] = normalized
           names[name] = id
           let slot = values_by_slot.length()
           slot_by_id[id] = slot
           slot_by_name[name] = slot
           ids_by_slot.push(id)
-          values_by_slot.push(parts[1])
+          values_by_slot.push(scalar_value)
         }
       _ => ()
     }
@@ -216,14 +218,6 @@ fn parse_lists(
     }
   })
   (values, names, slot_by_id, slot_by_name, ids_by_slot, values_by_slot)
-}
-
-///|
-fn json_is_numeric_comparable(value : Json) -> Bool {
-  match as_number_or_none(value) {
-    Some(number) => number == number
-    None => false
-  }
 }
 
 ///|
@@ -675,7 +669,9 @@ fn parse_target(
     variable_id_by_slot,
     variable_values,
   ) = parse_variables(raw_variables)
-  let variable_numeric_flags = variable_values.map(json_is_numeric_comparable)
+  let variable_numeric_flags = variable_values.map(
+    variable_scalar_is_numeric_comparable,
+  )
   let (
     lists,
     list_names,

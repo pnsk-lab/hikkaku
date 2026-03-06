@@ -116,6 +116,14 @@ pub(all) struct ProcedureSpec {
 } derive(Show, Eq)
 
 ///|
+pub(all) enum VariableScalarValue {
+  VarNumber(Double)
+  VarString(String)
+  VarBool(Bool)
+  VarNull
+} derive(Show, Eq)
+
+///|
 pub(all) enum PredicateHatKind {
   WhenGreaterThan
   WhenTouchingObject
@@ -196,7 +204,7 @@ pub(all) struct TargetState {
   variable_slot_by_id : Map[String, Int]
   variable_slot_by_name : Map[String, Int]
   variable_id_by_slot : Array[String]
-  mut variable_values : Array[Json]
+  mut variable_values : Array[VariableScalarValue]
   mut variable_numeric_flags : Array[Bool]
   lists : Map[String, Array[Json]]
   list_names : Map[String, String]

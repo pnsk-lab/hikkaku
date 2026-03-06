@@ -55,6 +55,18 @@ type BoundMoonscratchFactory = {
     variableId: string,
     value: number,
   ) => void
+  vm_set_variable_string_by_id?: (
+    vmHandle: unknown,
+    targetIndex: number,
+    variableId: string,
+    value: string,
+  ) => void
+  vm_set_variable_bool_by_id?: (
+    vmHandle: unknown,
+    targetIndex: number,
+    variableId: string,
+    value: boolean,
+  ) => void
   vm_set_variable_json_by_id?: (
     vmHandle: unknown,
     targetIndex: number,
@@ -401,6 +413,23 @@ const hasWasmHostBridgeApi = (binding: BoundMoonscratchFactory): boolean => {
   )
 }
 
+const decodeSimpleJsonString = (valueJson: string): string | null => {
+  if (valueJson.length < 2) {
+    return null
+  }
+  if (valueJson[0] !== '"' || valueJson[valueJson.length - 1] !== '"') {
+    return null
+  }
+  for (let index = 1; index < valueJson.length - 1; index += 1) {
+    const charCode = valueJson.charCodeAt(index)
+    // Reject escaped/invalid JSON string bytes for the fast path.
+    if (charCode === 0x5c || charCode < 0x20) {
+      return null
+    }
+  }
+  return valueJson.slice(1, -1)
+}
+
 export const precompileProgramForRuntime = ({
   program,
   runtime,
@@ -478,12 +507,56 @@ export const createHeadlessVM = ({
             )
           },
           setVarJson: (targetIndex, variableId, valueJson) => {
-            binding.vm_set_variable_json_by_id?.(
-              vm,
-              targetIndex,
-              variableId,
-              valueJson,
-            )
+            const trimmed = valueJson.trim()
+            if (typeof binding.vm_set_variable_bool_by_id === 'function') {
+              if (trimmed === 'true') {
+                binding.vm_set_variable_bool_by_id(
+                  vm,
+                  targetIndex,
+                  variableId,
+                  true,
+                )
+                return
+              }
+              if (trimmed === 'false') {
+                binding.vm_set_variable_bool_by_id(
+                  vm,
+                  targetIndex,
+                  variableId,
+                  false,
+                )
+                return
+              }
+            }
+            if (typeof binding.vm_set_variable_string_by_id === 'function') {
+              const fastDecoded = decodeSimpleJsonString(trimmed)
+              if (fastDecoded !== null) {
+                binding.vm_set_variable_string_by_id(
+                  vm,
+                  targetIndex,
+                  variableId,
+                  fastDecoded,
+                )
+                return
+              }
+              if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+                try {
+                  const parsed = JSON.parse(trimmed) as unknown
+                  if (typeof parsed === 'string') {
+                    binding.vm_set_variable_string_by_id(
+                      vm,
+                      targetIndex,
+                      variableId,
+                      parsed,
+                    )
+                    return
+                  }
+                } catch {
+                  // Fallback to VM-side JSON parsing.
+                }
+              }
+            }
+            binding.vm_set_variable_json_by_id?.(vm, targetIndex, variableId, valueJson)
           },
           execHostTail: (targetIndex, startPc) => {
             return (

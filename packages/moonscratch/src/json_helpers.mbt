@@ -151,6 +151,60 @@ fn json_to_bool_value(json : Json) -> Bool {
 }
 
 ///|
+fn variable_scalar_from_json(json : Json) -> VariableScalarValue {
+  match json {
+    Number(n, ..) => VariableScalarValue::VarNumber(n)
+    String(s) => VariableScalarValue::VarString(s)
+    True => VariableScalarValue::VarBool(true)
+    False => VariableScalarValue::VarBool(false)
+    Null => VariableScalarValue::VarNull
+    _ => VariableScalarValue::VarString(json.stringify())
+  }
+}
+
+///|
+fn variable_scalar_to_json(value : VariableScalarValue) -> Json {
+  match value {
+    VarNumber(number) => json_number(number)
+    VarString(text) => json_string(text)
+    VarBool(flag) => json_bool(flag)
+    VarNull => Json::null()
+  }
+}
+
+///|
+fn variable_scalar_to_number_value(value : VariableScalarValue) -> Double {
+  match value {
+    VarNumber(number) => number
+    VarString(text) =>
+      match parse_double_or_none(text) {
+        Some(parsed) => parsed
+        None => 0.0
+      }
+    VarBool(flag) => if flag { 1.0 } else { 0.0 }
+    VarNull => 0.0
+  }
+}
+
+///|
+fn variable_scalar_as_number_or_none(value : VariableScalarValue) -> Double? {
+  match value {
+    VarNumber(number) => Some(number)
+    VarString(text) => parse_double_or_none(text)
+    VarBool(flag) => Some(if flag { 1.0 } else { 0.0 })
+    VarNull => None
+  }
+}
+
+///|
+fn variable_scalar_is_numeric_comparable(value : VariableScalarValue) -> Bool {
+  match variable_scalar_as_number_or_none(value) {
+    Some(number) => number == number
+    None => false
+  }
+}
+
+///|
 fn json_number(value : Double) -> Json {
   Json::number(value)
 }

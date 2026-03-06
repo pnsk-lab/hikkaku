@@ -400,9 +400,7 @@ fn eval_numeric_reporter_program(
       NumericReporterOp::LoadVariable(encoded_id, name) => {
         let variable_id = if encoded_id == "" { None } else { Some(encoded_id) }
         stack.push(
-          json_to_number_value(
-            read_variable(vm, target_index, variable_id, Some(name)),
-          ),
+          read_variable_number(vm, target_index, variable_id, Some(name)),
         )
       }
       NumericReporterOp::LoadVariableByRef(owner_kind, variable_id, slot) => {
@@ -412,9 +410,7 @@ fn eval_numeric_reporter_program(
           target_index
         }
         stack.push(
-          json_to_number_value(
-            read_variable_by_ref(vm, owner_index, variable_id, slot),
-          ),
+          read_variable_number_by_ref(vm, owner_index, variable_id, slot),
         )
       }
       NumericReporterOp::LoadListItemByRef(owner_kind, list_id, slot) =>
@@ -963,8 +959,8 @@ fn compare_guard_is_numeric(
         vm.targets[owner_index].variable_numeric_flags[slot]
       } else {
         match
-          as_number_or_none(
-            read_variable_by_ref(
+          variable_scalar_as_number_or_none(
+            read_variable_scalar_by_ref(
               vm,
               owner_index,
               numeric_guard.variable_id,
@@ -977,8 +973,8 @@ fn compare_guard_is_numeric(
       }
     None =>
       match
-        as_number_or_none(
-          read_variable_by_ref(
+        variable_scalar_as_number_or_none(
+          read_variable_scalar_by_ref(
             vm,
             owner_index,
             numeric_guard.variable_id,
@@ -1469,11 +1465,7 @@ fn eval_reporter_number_block_depth(
     "data_variable" =>
       match field_value(block, "VARIABLE") {
         Some((name, id)) =>
-          Some(
-            json_to_number_value(
-              read_variable(vm, target_index, id, Some(name)),
-            ),
-          )
+          Some(read_variable_number(vm, target_index, id, Some(name)))
         None => Some(0.0)
       }
     "data_itemoflist" =>
@@ -2232,16 +2224,19 @@ fn try_number_reporter_for_compare(
             Some(variable_id) =>
               match resolve_variable_ref_by_id(vm, target_index, variable_id) {
                 Some((owner_index, resolved_id, resolved_slot)) =>
-                  as_number_or_none(
-                    read_variable_by_ref(
-                      vm, owner_index, resolved_id, resolved_slot,
+                  variable_scalar_as_number_or_none(
+                    read_variable_scalar_by_ref(
+                      vm,
+                      owner_index,
+                      resolved_id,
+                      resolved_slot,
                     ),
                   )
                 None => None
               }
             None =>
-              as_number_or_none(
-                read_variable(vm, target_index, None, Some(name)),
+              variable_scalar_as_number_or_none(
+                read_variable_scalar(vm, target_index, None, Some(name)),
               )
           }
         None => None

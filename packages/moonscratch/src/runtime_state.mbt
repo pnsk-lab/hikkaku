@@ -319,27 +319,102 @@ fn read_variable(
 }
 
 ///|
+fn read_variable_scalar(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String?,
+  variable_name : String?,
+) -> VariableScalarValue {
+  match resolve_variable_ref(vm, target_index, variable_id, variable_name) {
+    Some((owner_index, id, slot)) =>
+      read_variable_scalar_by_ref(vm, owner_index, id, slot)
+    None => VariableScalarValue::VarNull
+  }
+}
+
+///|
 fn read_variable_by_ref(
   vm : Vm,
   owner_index : Int,
   variable_id : String,
   slot : Int?,
 ) -> Json {
+  variable_scalar_to_json(
+    read_variable_scalar_by_ref(vm, owner_index, variable_id, slot),
+  )
+}
+
+///|
+fn read_variable_scalar_by_ref(
+  vm : Vm,
+  owner_index : Int,
+  variable_id : String,
+  slot : Int?,
+) -> VariableScalarValue {
   match slot {
     Some(slot) =>
       if slot >= 0 && slot < vm.targets[owner_index].variable_values.length() {
         vm.targets[owner_index].variable_values[slot]
       } else {
-        vm.targets[owner_index].variables.get_or_default(
-          variable_id,
-          Json::null(),
+        variable_scalar_from_json(
+          vm.targets[owner_index].variables.get_or_default(
+            variable_id,
+            Json::null(),
+          ),
         )
       }
     None =>
-      vm.targets[owner_index].variables.get_or_default(
-        variable_id,
-        Json::null(),
+      variable_scalar_from_json(
+        vm.targets[owner_index].variables.get_or_default(
+          variable_id,
+          Json::null(),
+        ),
       )
+  }
+}
+
+///|
+fn read_variable_number(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String?,
+  variable_name : String?,
+) -> Double {
+  variable_scalar_to_number_value(
+    read_variable_scalar(vm, target_index, variable_id, variable_name),
+  )
+}
+
+///|
+fn read_variable_number_by_ref(
+  vm : Vm,
+  owner_index : Int,
+  variable_id : String,
+  slot : Int?,
+) -> Double {
+  variable_scalar_to_number_value(
+    read_variable_scalar_by_ref(vm, owner_index, variable_id, slot),
+  )
+}
+
+///|
+fn write_variable_scalar_by_ref(
+  vm : Vm,
+  owner_index : Int,
+  variable_id : String,
+  slot : Int?,
+  value : VariableScalarValue,
+) -> Unit {
+  vm.targets[owner_index].variables[variable_id] = variable_scalar_to_json(value)
+  match slot {
+    Some(slot) =>
+      if slot >= 0 && slot < vm.targets[owner_index].variable_values.length() {
+        vm.targets[owner_index].variable_values[slot] = value
+        vm.targets[owner_index].variable_numeric_flags[slot] = variable_scalar_is_numeric_comparable(
+          value,
+        )
+      }
+    None => ()
   }
 }
 
@@ -351,17 +426,30 @@ fn write_variable_by_ref(
   slot : Int?,
   value : Json,
 ) -> Unit {
-  vm.targets[owner_index].variables[variable_id] = value
-  match slot {
-    Some(slot) =>
-      if slot >= 0 && slot < vm.targets[owner_index].variable_values.length() {
-        vm.targets[owner_index].variable_values[slot] = value
-        vm.targets[owner_index].variable_numeric_flags[slot] = json_is_numeric_comparable(
-          value,
-        )
-      }
-    None => ()
-  }
+  write_variable_scalar_by_ref(
+    vm,
+    owner_index,
+    variable_id,
+    slot,
+    variable_scalar_from_json(value),
+  )
+}
+
+///|
+fn write_variable_number_by_ref(
+  vm : Vm,
+  owner_index : Int,
+  variable_id : String,
+  slot : Int?,
+  value : Double,
+) -> Unit {
+  write_variable_scalar_by_ref(
+    vm,
+    owner_index,
+    variable_id,
+    slot,
+    VariableScalarValue::VarNumber(value),
+  )
 }
 
 ///|
@@ -372,28 +460,63 @@ fn write_variable(
   variable_name : String?,
   value : Json,
 ) -> Unit {
+  write_variable_scalar(
+    vm,
+    target_index,
+    variable_id,
+    variable_name,
+    variable_scalar_from_json(value),
+  )
+}
+
+///|
+fn write_variable_scalar(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String?,
+  variable_name : String?,
+  value : VariableScalarValue,
+) -> Unit {
   match resolve_variable_ref(vm, target_index, variable_id, variable_name) {
     Some((owner_index, id, slot)) =>
-      write_variable_by_ref(vm, owner_index, id, slot, value)
+      write_variable_scalar_by_ref(vm, owner_index, id, slot, value)
     None =>
       match variable_name {
         Some(name) => {
+          let normalized = variable_scalar_to_json(value)
           let stage_index = vm.stage_index
           let new_id = "stage_var_\{name}"
           let new_slot = vm.targets[stage_index].variable_values.length()
-          vm.targets[stage_index].variables[new_id] = value
+          vm.targets[stage_index].variables[new_id] = normalized
           vm.targets[stage_index].variable_names[name] = new_id
           vm.targets[stage_index].variable_slot_by_id[new_id] = new_slot
           vm.targets[stage_index].variable_slot_by_name[name] = new_slot
           vm.targets[stage_index].variable_id_by_slot.push(new_id)
           vm.targets[stage_index].variable_values.push(value)
           vm.targets[stage_index].variable_numeric_flags.push(
-            json_is_numeric_comparable(value),
+            variable_scalar_is_numeric_comparable(value),
           )
         }
         None => ()
       }
   }
+}
+
+///|
+fn write_variable_number(
+  vm : Vm,
+  target_index : Int,
+  variable_id : String?,
+  variable_name : String?,
+  value : Double,
+) -> Unit {
+  write_variable_scalar(
+    vm,
+    target_index,
+    variable_id,
+    variable_name,
+    VariableScalarValue::VarNumber(value),
+  )
 }
 
 ///|
@@ -553,7 +676,9 @@ fn copy_string_array(source : Array[String]) -> Array[String] {
 }
 
 ///|
-fn copy_json_array(source : Array[Json]) -> Array[Json] {
+fn copy_variable_scalar_array(
+  source : Array[VariableScalarValue],
+) -> Array[VariableScalarValue] {
   source.copy()
 }
 
@@ -638,7 +763,7 @@ fn copy_target_state_with_meta(
     variable_slot_by_id: copy_int_map(source.variable_slot_by_id),
     variable_slot_by_name: copy_int_map(source.variable_slot_by_name),
     variable_id_by_slot: source.variable_id_by_slot.copy(),
-    variable_values: copy_json_array(source.variable_values),
+    variable_values: copy_variable_scalar_array(source.variable_values),
     variable_numeric_flags: source.variable_numeric_flags.copy(),
     lists: copy_list_map(source.lists),
     list_names: copy_string_map(source.list_names),
