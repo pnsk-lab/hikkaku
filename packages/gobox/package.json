@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260311.1",
     "vite-plus": "^0.0.0-3262bda4.20260210-0221"
   }
 }
