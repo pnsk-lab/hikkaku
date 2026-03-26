@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import {
   access,
   mkdir,
@@ -41,6 +42,28 @@ const pathExists = async (targetPath: string) => {
     return false
   }
 }
+
+const runExampleBuild = async (projectDir: string, exampleId: string) =>
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn('bun', ['run', 'example:build'], {
+      cwd: projectDir,
+      stdio: 'inherit',
+      env: process.env,
+    })
+
+    child.on('error', reject)
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve()
+        return
+      }
+      reject(
+        new Error(
+          `Failed to build ${exampleId} example (exit code: ${code ?? 'unknown'}).`,
+        ),
+      )
+    })
+  })
 
 const toTitle = (id: string) =>
   id
@@ -215,6 +238,41 @@ const collectExampleIds = async () => {
   return exampleIds.sort()
 }
 
+const ensureSb3Artifacts = async (exampleIds: string[]) => {
+  const missingArtifacts = await Promise.all(
+    exampleIds.map(async (exampleId) => {
+      const projectDir = path.join(examplesDir, exampleId)
+      const sb3Path = path.join(projectDir, 'dist', 'project.sb3')
+      return (await pathExists(sb3Path))
+        ? null
+        : {
+            exampleId,
+            projectDir,
+            sb3Path,
+          }
+    }),
+  )
+
+  const missing = missingArtifacts.filter((item) => item !== null)
+  if (missing.length === 0) {
+    return
+  }
+
+  console.warn(
+    `[showcase] ${missing.length} example build artifact(s) are missing. Rebuilding examples before packaging.`,
+  )
+
+  for (const item of missing) {
+    console.log(`[showcase] rebuilding ${item.exampleId} to generate project.sb3`)
+    await runExampleBuild(item.projectDir, item.exampleId)
+    if (!(await pathExists(item.sb3Path))) {
+      throw new Error(
+        `Failed to find ${item.sb3Path} after rebuilding ${item.exampleId}.`,
+      )
+    }
+  }
+}
+
 const main = async () => {
   const exampleIds = await collectExampleIds()
   if (exampleIds.length === 0) {
@@ -234,6 +292,8 @@ const main = async () => {
     console.warn(
       '[showcase] scratch asset host is unreachable. Generating fallback pages instead of packaged HTML.',
     )
+  } else {
+    await ensureSb3Artifacts(exampleIds)
   }
 
   const buildJobs = exampleIds.map(async (exampleId) => {
