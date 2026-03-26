@@ -29,7 +29,24 @@
     "docs:build": {
       "cache": true,
       "outputs": [".vitepress/dist/**"],
-      "dependsOn": ["hikkaku-docs#build", "example:build", "hikkaku#build"]
+      "dependsOn": [
+        "hikkaku-docs#build",
+        "hikkaku#build",
+        "@repo/example-3d-ball-roll#example:build",
+        "@repo/example-3d-cube#example:build",
+        "@repo/example-bigint#example:build",
+        "@repo/example-bullet-hell#example:build",
+        "@repo/example-daw#example:build",
+        "@repo/example-gobox-counter#example:build",
+        "@repo/example-json-parser#example:build",
+        "@repo/example-markdown-renderer#example:build",
+        "@repo/example-rectangle#example:build",
+        "@repo/example-reversi#example:build",
+        "@repo/example-rubiks-cube#example:build",
+        "@repo/example-simple#example:build",
+        "@repo/example-tesseract#example:build",
+        "@repo/example-tetris#example:build"
+      ]
     }
   }
 }
