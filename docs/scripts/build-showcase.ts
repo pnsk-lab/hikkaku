@@ -43,8 +43,8 @@ const pathExists = async (targetPath: string) => {
   }
 }
 
-const runExampleBuild = async (projectDir: string, exampleId: string) =>
-  await new Promise<void>((resolve, reject) => {
+const runExampleBuild = (projectDir: string, exampleId: string) =>
+  new Promise<void>((resolve, reject) => {
     const child = spawn('bun', ['run', 'example:build'], {
       cwd: projectDir,
       stdio: 'inherit',
