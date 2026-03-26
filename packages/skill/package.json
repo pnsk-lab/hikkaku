@@ -8,7 +8,7 @@
     "build-blocks:check": "bun run scripts/build-blocks.ts --target=all --check"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "1.3.10"
   },
   "peerDependencies": {
     "typescript": "^5"
