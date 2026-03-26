@@ -263,7 +263,9 @@ const ensureSb3Artifacts = async (exampleIds: string[]) => {
   )
 
   for (const item of missing) {
-    console.log(`[showcase] rebuilding ${item.exampleId} to generate project.sb3`)
+    console.log(
+      `[showcase] rebuilding ${item.exampleId} to generate project.sb3`,
+    )
     await runExampleBuild(item.projectDir, item.exampleId)
     if (!(await pathExists(item.sb3Path))) {
       throw new Error(
