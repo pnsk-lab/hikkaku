@@ -17,6 +17,11 @@ const VIRTUAL_MODULE_IDS = {
 export interface HikkakuViteInit {
   entry: string
 }
+
+interface BuildAssetEmitter {
+  emitBuildAssets?: (outputDir: string) => Promise<void>
+}
+
 export default function hikkaku(init: HikkakuViteInit): PluginOption {
   let runner: ModuleRunner | null = null
   let additionalAssets = new Map<string, Uint8Array>()
@@ -95,10 +100,11 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
         const filePath = path.join(process.cwd(), 'dist/.tmp', 'project.mjs')
         const fileURL = pathToFileURL(filePath)
         const { default: project } = (await import(fileURL.href)) as {
-          default: Project
+          default: Project & BuildAssetEmitter
         }
         const projectJSON = project.toScratch()
         const assets = project.getAdditionalAssets()
+        await project.emitBuildAssets?.(path.join(process.cwd(), 'dist'))
 
         const projectJSONData = new TextEncoder().encode(
           JSON.stringify(projectJSON),
@@ -139,7 +145,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
           type: 'asset',
           fileName: 'project.json',
           name: 'project.json',
-          source: JSON.stringify(projectJSON, null, 2),
+          source: projectJSONData,
         })
         for (const [assetId, data] of assets.entries()) {
           this.emitFile({
