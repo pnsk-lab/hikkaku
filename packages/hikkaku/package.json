@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@turbowarp/packager": "^3.11.0",
-    "@types/bun": "latest",
+    "@types/bun": "1.3.10",
     "@typescript/native-preview": "^7.0.0-dev.20260127.1",
     "@vitest/coverage-v8": "4.0.18",
     "rolldown": "1.0.0-rc.4",

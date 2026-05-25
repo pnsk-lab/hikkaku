@@ -1,0 +1,25 @@
+{
+  "name": "@repo/example-bigint",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "bun run example:build",
+    "typecheck": "tsgo",
+    "example:build": "bun --bun vite build"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+    "vite": "8.0.0-beta.14"
+  },
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "author": {
+    "name": "Kingping",
+    "url": "https://scratch.mit.edu/users/Kangping/"
+  }
+}
