@@ -8,6 +8,7 @@
 - `packages/skill/` contains skill docs and guides (`guides/`, `practices/`).
 - `packages/testing/` provides Vitest-oriented Hikkaku + MoonScratch test helpers.
 - `examples/example1/` is the dev playground app for running the library with Vite.
+- `examples/decimal/` demonstrates V8-oriented arbitrary-precision decimal arithmetic in Scratch.
 - Root configs: `biome.json`, `tsconfig.json`, and workspace `package.json`.
 
 ## AGENTS.md Maintenance Policy

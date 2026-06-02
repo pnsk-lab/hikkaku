@@ -37,6 +37,7 @@
         "@repo/example-bigint#example:build",
         "@repo/example-bullet-hell#example:build",
         "@repo/example-daw#example:build",
+        "@repo/example-decimal#example:build",
         "@repo/example-gobox-counter#example:build",
         "@repo/example-json-parser#example:build",
         "@repo/example-markdown-renderer#example:build",
