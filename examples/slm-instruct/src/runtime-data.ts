@@ -1,12 +1,12 @@
+import { once } from 'node:events'
 import { createWriteStream } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
-import { once } from 'node:events'
 import { join } from 'node:path'
 import type { ListReference, Project } from 'hikkaku'
 import { SafetensorsFile } from './build/safetensors'
 import type {
-  SlmConfig,
   ModelRuntimeMetadata,
+  SlmConfig,
   TensorRuntimeEntry,
   TokenizerRuntimeMetadata,
 } from './build/types'
@@ -45,12 +45,13 @@ const readEnv = (primary: string, legacy: string) =>
   process.env[primary] ?? process.env[legacy]
 
 const staticFloatPrecision = (() => {
-  const raw = readEnv('SLM_STATIC_FLOAT_PRECISION', 'DOGE_STATIC_FLOAT_PRECISION')
+  const raw = readEnv(
+    'SLM_STATIC_FLOAT_PRECISION',
+    'DOGE_STATIC_FLOAT_PRECISION',
+  )
   const rawValue = Number(raw ?? 6)
   if (!Number.isFinite(rawValue) || rawValue < 1) {
-    throw new Error(
-      `Invalid SLM_STATIC_FLOAT_PRECISION: ${raw ?? ''}`,
-    )
+    throw new Error(`Invalid SLM_STATIC_FLOAT_PRECISION: ${raw ?? ''}`)
   }
   return Math.floor(rawValue)
 })()

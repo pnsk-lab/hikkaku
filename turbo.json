@@ -9,6 +9,7 @@
     "typecheck": {
       "dependsOn": [
         "@hikkaku/gobox#build",
+        "@hikkaku/onnx#build",
         "moonscratch#build",
         "@hikkaku/testing#build"
       ],

@@ -20,7 +20,6 @@ jobs:
         with:
           path: |
             ~/.bun/install
-            ~/.moon
             ~/.turbo
             **/.turbo
           key: ${{ runner.os }}-bun-moonbit-turbo-${{ hashFiles('bun.lock', 'turbo.json', 'package.json') }}
@@ -32,12 +31,21 @@ jobs:
 
       - name: Set up MoonBit
         run: |
-          if [ ! -x "$HOME/.moon/bin/moon" ]; then
-            curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          else
-            echo "MoonBit is already available from cache."
-          fi
-          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+          # This project still uses moon.mod.json, which newer MoonBit releases reject.
+          # Pin a compatible toolchain and core; do not reuse an unversioned cache.
+          base='https://github.com/moonbit-community/moonbit-overlay/releases/download/v0.10.9%2B6e6c44045%2Bfc2a4ee'
+          curl -fsSL "$base/moonbit-linux-x86_64.tar.gz" -o /tmp/moonbit.tar.gz
+          curl -fsSL "$base/moonbit-core.tar.gz" -o /tmp/moonbit-core.tar.gz
+          echo '0e81deb35eca29e892415cf954ea42b48a43bcf277ad36a3ae1e97d2d1dfe732  /tmp/moonbit.tar.gz' | sha256sum -c -
+          echo 'd92b84ea0bc11ec9a9fe57d313416a6694a5826f4307e8e65d5075079ee913ca  /tmp/moonbit-core.tar.gz' | sha256sum -c -
+          mkdir -p "$HOME/.moon/lib"
+          tar -xf /tmp/moonbit.tar.gz -C "$HOME/.moon"
+          tar -xf /tmp/moonbit-core.tar.gz -C "$HOME/.moon/lib"
+          chmod +x "$HOME/.moon/bin/"* "$HOME/.moon/bin/internal/tcc"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C "$HOME/.moon/lib/core" bundle --warn-list -a --all --quiet
+          moon -C "$HOME/.moon/lib/core" bundle --warn-list -a --target wasm-gc --quiet
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       - name: Lint
         run: bun lint

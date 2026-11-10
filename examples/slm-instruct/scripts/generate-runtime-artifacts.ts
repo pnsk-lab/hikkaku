@@ -2,8 +2,8 @@ import { mkdir } from 'node:fs/promises'
 import { SafetensorsFile } from '../src/build/safetensors'
 import { createTokenizerRuntimeMetadata } from '../src/build/tokenizer'
 import type {
-  SlmConfig,
   ModelRuntimeMetadata,
+  SlmConfig,
   TensorRuntimeEntry,
   TokenizerRuntimeMetadata,
 } from '../src/build/types'
@@ -14,7 +14,11 @@ const runtimeDir = new URL('../artifacts/runtime/', import.meta.url)
 const readEnv = (primary: string, legacy: string) =>
   process.env[primary] ?? process.env[legacy]
 
-const parseLimit = (primaryName: string, legacyName: string, fallback: number) => {
+const parseLimit = (
+  primaryName: string,
+  legacyName: string,
+  fallback: number,
+) => {
   const raw = readEnv(primaryName, legacyName)
   if (!raw) {
     return fallback
@@ -27,9 +31,17 @@ const parseLimit = (primaryName: string, legacyName: string, fallback: number) =
 }
 
 const limits = {
-  maxPromptTokens: parseLimit('SLM_MAX_PROMPT_TOKENS', 'DOGE_MAX_PROMPT_TOKENS', 128),
+  maxPromptTokens: parseLimit(
+    'SLM_MAX_PROMPT_TOKENS',
+    'DOGE_MAX_PROMPT_TOKENS',
+    128,
+  ),
   maxNewTokens: parseLimit('SLM_MAX_NEW_TOKENS', 'DOGE_MAX_NEW_TOKENS', 8),
-  maxTotalTokens: parseLimit('SLM_MAX_TOTAL_TOKENS', 'DOGE_MAX_TOTAL_TOKENS', 144),
+  maxTotalTokens: parseLimit(
+    'SLM_MAX_TOTAL_TOKENS',
+    'DOGE_MAX_TOTAL_TOKENS',
+    144,
+  ),
 } as const
 
 if (limits.maxPromptTokens + limits.maxNewTokens > limits.maxTotalTokens) {
