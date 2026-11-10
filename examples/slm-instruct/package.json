@@ -1,0 +1,27 @@
+{
+  "name": "@repo/example-slm-instruct",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "bun run example:build",
+    "typecheck": "tsgo",
+    "example:build": "bun --bun vite build",
+    "model:fetch": "bun run ./scripts/fetch-model.ts",
+    "model:generate": "bun run ./scripts/generate-runtime-artifacts.ts",
+    "model:fixtures": "uv run --index https://download.pytorch.org/whl/cpu --script ./scripts/generate-reference-fixtures.py",
+    "model:refresh": "bun run model:fetch && bun run model:generate && bun run model:fixtures"
+  },
+  "dependencies": {
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+    "moonscratch": "workspace:*",
+    "vite": "8.0.0-beta.14"
+  },
+  "exports": {
+    ".": "./src/main.ts"
+  }
+}

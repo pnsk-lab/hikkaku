@@ -1,0 +1,4 @@
+import {
+  "nakasyou/moonscratch" @moonscratch,
+  "moonbitlang/core/json" @json,
+}

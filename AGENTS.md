@@ -3,9 +3,12 @@
 ## Project Structure & Module Organization
 - `packages/hikkaku/` is the main library package. Source lives in `packages/hikkaku/src/` (e.g., `blocks/`, `core/`, `client/`, `vite/`, `utils/`).
 - `packages/gobox/` provides high-level typed value/signal/function abstractions on top of `hikkaku`.
+- `packages/minifier/` provides Scratch `project.json` minification helpers plus a Vite plugin for emitted project assets.
+- `packages/onnx/` provides minimal ONNX decoding plus Gobox-backed inference helpers for small neural-network examples.
 - `packages/skill/` contains skill docs and guides (`guides/`, `practices/`).
 - `packages/testing/` provides Vitest-oriented Hikkaku + MoonScratch test helpers.
 - `examples/example1/` is the dev playground app for running the library with Vite.
+- `examples/decimal/` demonstrates V8-oriented arbitrary-precision decimal arithmetic in Scratch.
 - Root configs: `biome.json`, `tsconfig.json`, and workspace `package.json`.
 
 ## AGENTS.md Maintenance Policy

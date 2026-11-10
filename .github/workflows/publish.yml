@@ -14,6 +14,7 @@ on:
           - moonscratch
           - testing
           - gobox
+          - minifier
       release_type:
         description: 'Version bump type'
         required: true
@@ -91,7 +92,7 @@ jobs:
           package="$PACKAGE_NAME"
           release_type="$INPUT_RELEASE_TYPE"
 
-          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager|moonscratch|testing|gobox)$ ]]; then
+          if ! [[ "$package" =~ ^(hikkaku|create-hikkaku|vite-plugin-turbowarp-packager|moonscratch|testing|gobox|minifier)$ ]]; then
             echo "Unsupported package: $package"
             exit 1
           fi
@@ -210,6 +211,10 @@ jobs:
         if: steps.metadata.outputs.package == 'gobox'
         run: bun run --cwd packages/gobox build
 
+      - name: Build minifier
+        if: steps.metadata.outputs.package == 'minifier'
+        run: bun run --cwd packages/minifier build
+
       - name: Build gpts zip
         if: steps.metadata.outputs.package == 'hikkaku'
         run: bun run --filter gpts-zip build
@@ -236,6 +241,9 @@ jobs:
               ;;
             gobox)
               dir='packages/gobox'
+              ;;
+            minifier)
+              dir='packages/minifier'
               ;;
             *)
               echo "Unsupported package: ${{ steps.metadata.outputs.package }}"

@@ -17,10 +17,24 @@ const VIRTUAL_MODULE_IDS = {
 export interface HikkakuViteInit {
   entry: string
 }
+
+interface BuildAssetEmitter {
+  emitBuildAssets?: (outputDir: string) => Promise<void>
+}
+
 export default function hikkaku(init: HikkakuViteInit): PluginOption {
   let runner: ModuleRunner | null = null
   let additionalAssets = new Map<string, Uint8Array>()
   const assetCache = new Map<string, Uint8Array | false>()
+
+  const loadProjectFromRunner = async (): Promise<Project> => {
+    if (!runner) {
+      throw new Error('Module runner is not initialized.')
+    }
+    const project: Project = (await runner.import(init.entry)).default
+    additionalAssets = project.getAdditionalAssets()
+    return project
+  }
 
   // Helper function to set Content-Type based on file extension
   const setContentType = (res: ServerResponse, assetId: string) => {
@@ -95,10 +109,11 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
         const filePath = path.join(process.cwd(), 'dist/.tmp', 'project.mjs')
         const fileURL = pathToFileURL(filePath)
         const { default: project } = (await import(fileURL.href)) as {
-          default: Project
+          default: Project & BuildAssetEmitter
         }
         const projectJSON = project.toScratch()
         const assets = project.getAdditionalAssets()
+        await project.emitBuildAssets?.(path.join(process.cwd(), 'dist'))
 
         const projectJSONData = new TextEncoder().encode(
           JSON.stringify(projectJSON),
@@ -139,7 +154,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
           type: 'asset',
           fileName: 'project.json',
           name: 'project.json',
-          source: JSON.stringify(projectJSON, null, 2),
+          source: projectJSONData,
         })
         for (const [assetId, data] of assets.entries()) {
           this.emitFile({
@@ -169,10 +184,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
         if (id === VIRTUAL_MODULE_IDS.project) {
           if (this.environment.mode === 'dev') {
             // in dev mode, use entry file
-            if (!runner) {
-              throw new Error('Module runner is not initialized.')
-            }
-            const project: Project = (await runner.import(init.entry)).default
+            const project = await loadProjectFromRunner()
 
             return `
             export default ${JSON.stringify(project.toScratch())}
@@ -198,11 +210,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
       },
       async hotUpdate(options) {
         if (this.environment.name !== 'hikkaku') return
-        if (!runner) {
-          throw new Error('Module runner is not initialized.')
-        }
-        const project: Project = (await runner.import(init.entry)).default
-        additionalAssets = project.getAdditionalAssets()
+        const project = await loadProjectFromRunner()
         options.server.environments.client.hot.send(
           'hikkaku:project',
           project.toScratch(),
@@ -217,11 +225,7 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
         //server.watcher.add(init.entry)
         runner = createServerModuleRunner(hikkakuEnv)
         server.environments.client.hot.on('vite:client:connect', async () => {
-          if (!runner) {
-            throw new Error('Module runner is not initialized.')
-          }
-          const project: Project = (await runner.import(init.entry)).default
-          additionalAssets = project.getAdditionalAssets()
+          const project = await loadProjectFromRunner()
           server.environments.client.hot.send(
             'hikkaku:project',
             project.toScratch(),
@@ -238,7 +242,11 @@ export default function hikkaku(init: HikkakuViteInit): PluginOption {
               res.end('Asset ID is required')
               return
             }
-            const assetData = additionalAssets.get(assetId)
+            let assetData = additionalAssets.get(assetId)
+            if (!assetData && runner) {
+              await loadProjectFromRunner()
+              assetData = additionalAssets.get(assetId)
+            }
             if (!assetData) {
               // fallback to network fetch
               if (assetCache.has(assetId)) {

@@ -1,0 +1,48 @@
+{
+  "name": "@hikkaku/onnx",
+  "version": "0.1.0",
+  "module": "dist/index.js",
+  "private": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
+    "./model": {
+      "import": "./dist/model.mjs",
+      "types": "./dist/model.d.mts"
+    },
+    "./runtime": {
+      "import": "./dist/runtime.mjs",
+      "types": "./dist/runtime.d.mts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vp test run",
+    "build": "vp pack",
+    "typecheck": "tsc"
+  },
+  "repository": {
+    "url": "https://github.com/pnsk-lab/hikkaku",
+    "type": "git",
+    "directory": "packages/onnx"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hikkaku/gobox": "workspace:*",
+    "hikkaku": "workspace:*",
+    "onnx-proto": "^8.0.1"
+  },
+  "devDependencies": {
+    "@hikkaku/testing": "workspace:*",
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  }
+}

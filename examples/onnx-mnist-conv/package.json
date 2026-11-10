@@ -1,0 +1,26 @@
+{
+  "name": "@repo/example-onnx-mnist-conv",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "bun run example:build",
+    "typecheck": "tsgo",
+    "example:build": "bun --bun vite build",
+    "model:train": "uv run --index https://download.pytorch.org/whl/cpu --script ./train.py",
+    "model:generate": "bun run ./scripts/generate-model.ts",
+    "model:refresh": "bun run model:train && bun run model:generate"
+  },
+  "dependencies": {
+    "@hikkaku/onnx": "workspace:*",
+    "hikkaku": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260127.1",
+    "vite": "8.0.0-beta.14"
+  },
+  "exports": {
+    ".": "./src/main.ts"
+  }
+}

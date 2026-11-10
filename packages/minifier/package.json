@@ -1,0 +1,42 @@
+{
+  "name": "@hikkaku/minifier",
+  "version": "0.1.0",
+  "module": "dist/index.js",
+  "private": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
+    "./vite": {
+      "import": "./dist/vite.mjs",
+      "types": "./dist/vite.d.mts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vp test run",
+    "build": "vp pack",
+    "typecheck": "tsc"
+  },
+  "repository": {
+    "url": "https://github.com/pnsk-lab/hikkaku",
+    "type": "git",
+    "directory": "packages/minifier"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "sb3-types": "^0.1.16",
+    "vite": "8.0.0-beta.14"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "^7.0.0-dev.20260213.1",
+    "vite-plus": "^0.0.0-3262bda4.20260210-0221"
+  }
+}

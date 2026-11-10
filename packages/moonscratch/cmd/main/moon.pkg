@@ -1,0 +1,7 @@
+import {
+  "nakasyou/moonscratch" @moonscratch,
+}
+
+options(
+  "is-main": true,
+)
