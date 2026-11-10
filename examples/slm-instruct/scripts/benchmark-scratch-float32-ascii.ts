@@ -19,7 +19,6 @@ import {
   gt,
   ifElse,
   ifThen,
-  join,
   length,
   letterOf,
   mathop,
@@ -39,7 +38,8 @@ const ROOT = new URL('..', import.meta.url)
 const ARTIFACTS = new URL('../artifacts/', import.meta.url)
 const DEFAULT_TENSOR_NAME = 'model.layers.0.feed_forward.down_proj.weight'
 const DEFAULT_COUNTS = [16, 64, 256]
-const BASE64URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+const BASE64URL_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 const BLANK_COSTUME = '__blank__'
 const LN_2 = Math.log(2)
 const TWO_POW_23 = 8388608
@@ -62,16 +62,15 @@ const ensureScratchVmCss = async () => {
 }
 
 const encodeBase64Url = (bytes: Uint8Array) =>
-  Buffer.from(bytes)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
+  Buffer.from(bytes).toString('base64').replace(/\+/g, '-').replace(/\//g, '_')
 
 const floatsToBytes = (values: Float32Array) =>
   new Uint8Array(values.buffer, values.byteOffset, values.byteLength)
 
 const loadSampleValues = async (tensorName: string, count: number) => {
-  const safetensors = await SafetensorsFile.fromFile(new URL('model.safetensors', ARTIFACTS))
+  const safetensors = await SafetensorsFile.fromFile(
+    new URL('model.safetensors', ARTIFACTS),
+  )
   return safetensors.getTensorData(tensorName).slice(0, count)
 }
 
@@ -164,14 +163,18 @@ const createAsciiProject = (encoded: string, floatCount: number) => {
       [procedureLabel('resolve base64 char'), procedureStringOrNumber('char')],
       ({ char }) => {
         setVariableTo(currentChar, char.getter())
-        ifElse(equals(read(currentChar), '='), () => {
-          setVariableTo(sextetValue, -1)
-        }, () => {
-          switchBackdropTo(BLANK_COSTUME)
-          switchBackdropTo(read(currentChar))
-          setVariableTo(backdropNumber, getBackdropNumberName('number'))
-          setVariableTo(sextetValue, add(read(backdropNumber), -2))
-        })
+        ifElse(
+          equals(read(currentChar), '='),
+          () => {
+            setVariableTo(sextetValue, -1)
+          },
+          () => {
+            switchBackdropTo(BLANK_COSTUME)
+            switchBackdropTo(read(currentChar))
+            setVariableTo(backdropNumber, getBackdropNumberName('number'))
+            setVariableTo(sextetValue, add(read(backdropNumber), -2))
+          },
+        )
         return undefined
       },
       true,
@@ -186,30 +189,48 @@ const createAsciiProject = (encoded: string, floatCount: number) => {
         setVariableTo(charIndex, 1)
         repeatUntil(gt(read(charIndex), length(read(encodedText))), () => {
           callProcedure(resolveBase64Char, {
-            [resolveBase64Char.reference.arguments.char.id]: letterOf(read(charIndex), read(encodedText)),
+            [resolveBase64Char.reference.arguments.char.id]: letterOf(
+              read(charIndex),
+              read(encodedText),
+            ),
           })
           setVariableTo(sextet1, read(sextetValue))
           callProcedure(resolveBase64Char, {
-            [resolveBase64Char.reference.arguments.char.id]: letterOf(add(read(charIndex), 1), read(encodedText)),
+            [resolveBase64Char.reference.arguments.char.id]: letterOf(
+              add(read(charIndex), 1),
+              read(encodedText),
+            ),
           })
           setVariableTo(sextet2, read(sextetValue))
           callProcedure(resolveBase64Char, {
-            [resolveBase64Char.reference.arguments.char.id]: letterOf(add(read(charIndex), 2), read(encodedText)),
+            [resolveBase64Char.reference.arguments.char.id]: letterOf(
+              add(read(charIndex), 2),
+              read(encodedText),
+            ),
           })
           setVariableTo(sextet3, read(sextetValue))
           callProcedure(resolveBase64Char, {
-            [resolveBase64Char.reference.arguments.char.id]: letterOf(add(read(charIndex), 3), read(encodedText)),
+            [resolveBase64Char.reference.arguments.char.id]: letterOf(
+              add(read(charIndex), 3),
+              read(encodedText),
+            ),
           })
           setVariableTo(sextet4, read(sextetValue))
 
           addToList(
             byteBuffer,
-            add(multiply(read(sextet1), 4), mathop('floor', divide(read(sextet2), 16))),
+            add(
+              multiply(read(sextet1), 4),
+              mathop('floor', divide(read(sextet2), 16)),
+            ),
           )
           ifThen(gt(read(sextet3), -1), () => {
             addToList(
               byteBuffer,
-              add(multiply(mod(read(sextet2), 16), 16), mathop('floor', divide(read(sextet3), 4))),
+              add(
+                multiply(mod(read(sextet2), 16), 16),
+                mathop('floor', divide(read(sextet3), 4)),
+              ),
             )
             ifThen(gt(read(sextet4), -1), () => {
               addToList(
@@ -224,39 +245,61 @@ const createAsciiProject = (encoded: string, floatCount: number) => {
         setVariableTo(byteIndex, 1)
         repeatUntil(gt(read(byteIndex), multiply(floatCount, 4)), () => {
           setVariableTo(byte0, getItemOfList(byteBuffer, read(byteIndex)))
-          setVariableTo(byte1, getItemOfList(byteBuffer, add(read(byteIndex), 1)))
-          setVariableTo(byte2, getItemOfList(byteBuffer, add(read(byteIndex), 2)))
-          setVariableTo(byte3, getItemOfList(byteBuffer, add(read(byteIndex), 3)))
+          setVariableTo(
+            byte1,
+            getItemOfList(byteBuffer, add(read(byteIndex), 1)),
+          )
+          setVariableTo(
+            byte2,
+            getItemOfList(byteBuffer, add(read(byteIndex), 2)),
+          )
+          setVariableTo(
+            byte3,
+            getItemOfList(byteBuffer, add(read(byteIndex), 3)),
+          )
           setVariableTo(
             bits,
             add(
               add(read(byte0), multiply(read(byte1), 256)),
-              add(multiply(read(byte2), 65536), multiply(read(byte3), 16777216)),
+              add(
+                multiply(read(byte2), 65536),
+                multiply(read(byte3), 16777216),
+              ),
             ),
           )
-          setVariableTo(signFlag, mathop('floor', divide(read(bits), TWO_POW_31)))
+          setVariableTo(
+            signFlag,
+            mathop('floor', divide(read(bits), TWO_POW_31)),
+          )
           ifThen(equals(read(signFlag), 1), () => {
             setVariableTo(bits, subtract(read(bits), TWO_POW_31))
           })
-          setVariableTo(exponent, mathop('floor', divide(read(bits), TWO_POW_23)))
+          setVariableTo(
+            exponent,
+            mathop('floor', divide(read(bits), TWO_POW_23)),
+          )
           setVariableTo(mantissa, mod(read(bits), TWO_POW_23))
-          ifElse(equals(read(exponent), 0), () => {
-            setVariableTo(
-              decodedValue,
-              multiply(
-                divide(read(mantissa), TWO_POW_23),
-                mathop('e ^', multiply(LN_2, -126)),
-              ),
-            )
-          }, () => {
-            setVariableTo(
-              decodedValue,
-              multiply(
-                add(1, divide(read(mantissa), TWO_POW_23)),
-                mathop('e ^', multiply(LN_2, add(read(exponent), -127))),
-              ),
-            )
-          })
+          ifElse(
+            equals(read(exponent), 0),
+            () => {
+              setVariableTo(
+                decodedValue,
+                multiply(
+                  divide(read(mantissa), TWO_POW_23),
+                  mathop('e ^', multiply(LN_2, -126)),
+                ),
+              )
+            },
+            () => {
+              setVariableTo(
+                decodedValue,
+                multiply(
+                  add(1, divide(read(mantissa), TWO_POW_23)),
+                  mathop('e ^', multiply(LN_2, add(read(exponent), -127))),
+                ),
+              )
+            },
+          )
           ifThen(equals(read(signFlag), 1), () => {
             setVariableTo(decodedValue, multiply(-1, read(decodedValue)))
           })

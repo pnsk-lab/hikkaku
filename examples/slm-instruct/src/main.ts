@@ -47,12 +47,8 @@ import {
   switchBackdropTo,
   whenFlagClicked,
   whenKeyPressed,
-  waitUntil,
 } from 'hikkaku/blocks'
-import {
-  loadSlmRuntimeArtifacts,
-  withInjectedStageLists,
-} from './runtime-data'
+import { loadSlmRuntimeArtifacts, withInjectedStageLists } from './runtime-data'
 
 const readEnv = (primary: string, legacy: string) =>
   process.env[primary] ?? process.env[legacy]
@@ -609,7 +605,10 @@ stage.run(() => {
             )
           },
           () => {
-            setVariableTo(currentChar, letterOf(read(charIndex), read(workingText)))
+            setVariableTo(
+              currentChar,
+              letterOf(read(charIndex), read(workingText)),
+            )
             ifElse(
               equals(read(currentChar), '/'),
               () => {
@@ -649,7 +648,10 @@ stage.run(() => {
           ifElse(
             and(
               gt(lengthOfList(parameterSource), 0),
-              lt(lengthOfList(parameterSource), add(PARAMETER_SOURCE_CHUNK_COUNT, 1)),
+              lt(
+                lengthOfList(parameterSource),
+                add(PARAMETER_SOURCE_CHUNK_COUNT, 1),
+              ),
             ),
             () => {
               callProcedure(showRuntimeUi, {})
@@ -1131,7 +1133,10 @@ stage.run(() => {
 
     for (let head = 1; head <= NUM_KEY_VALUE_HEADS; head += 1) {
       forEach(outputIndex, HALF_HEAD_DIM, () => {
-        setVariableTo(lowValue, getItemOfList(kVector, kvIndex(head, read(outputIndex))))
+        setVariableTo(
+          lowValue,
+          getItemOfList(kVector, kvIndex(head, read(outputIndex))),
+        )
         setVariableTo(
           highValue,
           getItemOfList(
@@ -2299,63 +2304,57 @@ stage.run(() => {
             setVariableTo(stopChat, 1)
           },
           () => {
-            ifThen(
-              equals(getAnswer(), NEW_CHAT_COMMAND),
-              () => {
-                deleteAllOfList(promptTokenIds)
-                deleteAllOfList(generatedTokenIds)
-                deleteAllOfList(conversationTurns)
-                deleteAllOfList(conversationView)
-                setVariableTo(outputText, '')
-                setVariableTo(assistantLineIndex, 0)
-                setVariableTo(generatedCount, 0)
-                setVariableTo(
-                  status,
-                  'Context reset',
-                )
-              },
-            )
-            ifThen(
-              not(equals(getAnswer(), NEW_CHAT_COMMAND)),
-              () => {
-                addToList(conversationTurns, getAnswer())
-                callProcedure(appendConversationLine, {
-                  [appendConversationLine.reference.arguments.label.id]:
-                    USER_LABEL,
-                  [appendConversationLine.reference.arguments.text.id]:
-                    getAnswer(),
-                })
-                callProcedure(buildPromptFromConversation, {})
-                ifThen(equals(read(tokenizationError), 1), () => {
+            ifThen(equals(getAnswer(), NEW_CHAT_COMMAND), () => {
+              deleteAllOfList(promptTokenIds)
+              deleteAllOfList(generatedTokenIds)
+              deleteAllOfList(conversationTurns)
+              deleteAllOfList(conversationView)
+              setVariableTo(outputText, '')
+              setVariableTo(assistantLineIndex, 0)
+              setVariableTo(generatedCount, 0)
+              setVariableTo(status, 'Context reset')
+            })
+            ifThen(not(equals(getAnswer(), NEW_CHAT_COMMAND)), () => {
+              addToList(conversationTurns, getAnswer())
+              callProcedure(appendConversationLine, {
+                [appendConversationLine.reference.arguments.label.id]:
+                  USER_LABEL,
+                [appendConversationLine.reference.arguments.text.id]:
+                  getAnswer(),
+              })
+              callProcedure(buildPromptFromConversation, {})
+              ifThen(equals(read(tokenizationError), 1), () => {
+                stop('this script')
+              })
+              ifThen(
+                gt(
+                  lengthOfList(promptTokenIds),
+                  runtime.limits.maxPromptTokens,
+                ),
+                () => {
+                  setVariableTo(
+                    status,
+                    concatText(
+                      'Prompt too long ',
+                      lengthOfList(promptTokenIds),
+                      '/',
+                      runtime.limits.maxPromptTokens,
+                      ' tokens',
+                    ),
+                  )
                   stop('this script')
-                })
-                ifThen(
-                  gt(lengthOfList(promptTokenIds), runtime.limits.maxPromptTokens),
-                  () => {
-                    setVariableTo(
-                      status,
-                      concatText(
-                        'Prompt too long ',
-                        lengthOfList(promptTokenIds),
-                        '/',
-                        runtime.limits.maxPromptTokens,
-                        ' tokens',
-                      ),
-                    )
-                    stop('this script')
-                  },
-                )
-                callProcedure(appendConversationLine, {
-                  [appendConversationLine.reference.arguments.label.id]:
-                    ASSISTANT_LABEL,
-                  [appendConversationLine.reference.arguments.text.id]: '',
-                })
-                setVariableTo(assistantLineIndex, lengthOfList(conversationView))
-                callProcedure(generate, {})
-                addToList(conversationTurns, read(outputText))
-                setVariableTo(assistantLineIndex, 0)
-              },
-            )
+                },
+              )
+              callProcedure(appendConversationLine, {
+                [appendConversationLine.reference.arguments.label.id]:
+                  ASSISTANT_LABEL,
+                [appendConversationLine.reference.arguments.text.id]: '',
+              })
+              setVariableTo(assistantLineIndex, lengthOfList(conversationView))
+              callProcedure(generate, {})
+              addToList(conversationTurns, read(outputText))
+              setVariableTo(assistantLineIndex, 0)
+            })
           },
         )
       })
