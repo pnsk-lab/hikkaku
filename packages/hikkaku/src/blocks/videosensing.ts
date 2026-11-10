@@ -8,7 +8,7 @@ import type {
 } from '../core/types'
 
 export type VideoSensingAttribute = 'motion' | 'direction'
-export type VideoSensingSubject = 'this sprite' | 'stage'
+export type VideoSensingSubject = 'this sprite' | 'Stage' | 'stage'
 export type VideoState = 'on' | 'off' | 'on-flipped'
 
 /**
@@ -85,7 +85,7 @@ export const menuOfVideoSensingSubject = (
 ) => {
   return valueBlock<HikkakuString>('videoSensing_menu_SUBJECT', {
     fields: {
-      SUBJECT: [subject, null],
+      SUBJECT: [subject === 'stage' ? 'Stage' : subject, null],
     },
     isShadow: true,
   })

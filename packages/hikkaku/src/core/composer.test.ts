@@ -1,5 +1,7 @@
 import { Shadow } from 'sb3-types/enum'
 import { describe, expect, test } from 'vite-plus/test'
+import { whenFlagClicked, whenKeyPressed } from '../blocks/events'
+import { moveSteps } from '../blocks/motion'
 import {
   __unstable_forbidStopInCurrentScope,
   __unstable_getBuildScopeFrame,
@@ -29,6 +31,35 @@ describe('core/composer', () => {
     expect(move?.next).toBeNull()
     expect(top?.x).toBe(64)
     expect(top?.y).toBe(72)
+  })
+
+  test('preserves attached event stacks when later blocks are added', () => {
+    let flagId = ''
+    let firstId = ''
+    let secondId = ''
+    let followingId = ''
+    let keyId = ''
+    let keyFollowingId = ''
+    const blocks = createBlocks(() => {
+      flagId = whenFlagClicked(() => {
+        firstId = moveSteps(10).id
+        secondId = moveSteps(20).id
+      }).id
+      followingId = moveSteps(30).id
+      keyId = whenKeyPressed('space', () => {}).id
+      keyFollowingId = moveSteps(40).id
+    })
+
+    expect(blocks[flagId]?.next).toBe(firstId)
+    expect(blocks[firstId]?.parent).toBe(flagId)
+    expect(blocks[firstId]?.next).toBe(secondId)
+    expect(blocks[secondId]?.parent).toBe(firstId)
+    expect(blocks[secondId]?.next).toBe(followingId)
+    expect(blocks[followingId]?.parent).toBe(secondId)
+    expect(blocks[followingId]?.next).toBeNull()
+    expect(blocks[keyId]?.parent).toBeNull()
+    expect(blocks[keyId]?.next).toBe(keyFollowingId)
+    expect(blocks[keyFollowingId]?.parent).toBe(keyId)
   })
 
   test('attaches value blocks via input references', () => {

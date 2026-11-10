@@ -202,6 +202,15 @@ const applyNextAndParent = (blocks: sb3.Block[]) => {
     }
 
     lastBlock = [blockId, block]
+    // An attached stack was captured separately, so append after its tail.
+    while (lastBlock[1].next) {
+      const nextId: string = lastBlock[1].next
+      const nextBlock: sb3.Block | undefined = ctx.blocks[nextId]
+      if (!nextBlock) {
+        throw new Error(`Block with ID ${nextId} not found`)
+      }
+      lastBlock = [nextId, nextBlock]
+    }
   }
 }
 const catchNewBlocks = (

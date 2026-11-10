@@ -3,13 +3,7 @@ import { fromPrimitiveSource, menuInput } from '../core/block-helper'
 import { block, valueBlock } from '../core/composer'
 import type { HikkakuString, PrimitiveSource } from '../core/types'
 
-export type TextToSpeechVoice =
-  | 'ALTO'
-  | 'TENOR'
-  | 'SQUEAK'
-  | 'GIANT'
-  | 'KITTEN'
-  | 'GOOGLE'
+export type TextToSpeechVoice = 'ALTO' | 'TENOR' | 'SQUEAK' | 'GIANT' | 'KITTEN'
 
 /**
  * Speaks text and waits until completion.
@@ -54,6 +48,13 @@ export function setVoice(
   voice: PrimitiveSource<HikkakuString>,
 ): ReturnType<typeof block>
 export function setVoice(voice: PrimitiveSource<HikkakuString>) {
+  if (
+    typeof voice === 'string' &&
+    !['ALTO', 'TENOR', 'SQUEAK', 'GIANT', 'KITTEN'].includes(voice) &&
+    Number.isNaN(Number.parseInt(voice, 10))
+  ) {
+    throw new RangeError(`Unsupported text-to-speech voice: ${voice}`)
+  }
   return block('text2speech_setVoice', {
     inputs: {
       VOICE: menuInput(voice, menuOfTextToSpeechVoice),
