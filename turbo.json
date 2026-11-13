@@ -23,16 +23,29 @@
       "outputs": ["src/blocks/**"]
     },
     "example:build": {
-      "dependsOn": ["^example:build", "^@hikkaku/gobox#build"],
+      "dependsOn": [
+        "^example:build",
+        "^@hikkaku/gobox#build",
+        "^@hikkaku/onnx#build"
+      ],
       "outputs": ["dist/**", "build/**"],
+      "cache": true
+    },
+    "@hikkaku/onnx#build": {
+      "dependsOn": ["@hikkaku/gobox#build"],
+      "outputs": ["dist/**", "build/**", ".vitepress/dist/**", "_build/**"],
       "cache": true
     },
     "docs:build": {
       "cache": true,
       "outputs": [".vitepress/dist/**"],
+      "dependsOn": ["hikkaku-docs#build"]
+    },
+    "hikkaku-docs#build": {
+      "cache": true,
+      "outputs": ["dist/**", "build/**", ".vitepress/dist/**", "_build/**"],
       "dependsOn": [
-        "hikkaku-docs#build",
-        "hikkaku#build",
+        "^build",
         "@repo/example-3d-ball-roll#example:build",
         "@repo/example-3d-cube#example:build",
         "@repo/example-bigint#example:build",
@@ -42,6 +55,8 @@
         "@repo/example-gobox-counter#example:build",
         "@repo/example-json-parser#example:build",
         "@repo/example-markdown-renderer#example:build",
+        "@repo/example-onnx-mnist-conv#example:build",
+        "@repo/example-onnx-neural-network#example:build",
         "@repo/example-rectangle#example:build",
         "@repo/example-reversi#example:build",
         "@repo/example-rubiks-cube#example:build",

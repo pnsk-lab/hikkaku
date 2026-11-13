@@ -1,6 +1,7 @@
 {
   "name": "@repo/example-slm-instruct",
   "private": true,
+  "showcase": false,
   "type": "module",
   "scripts": {
     "dev": "vite",

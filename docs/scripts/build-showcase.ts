@@ -232,6 +232,14 @@ const collectExampleIds = async () => {
       continue
     }
 
+    const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8')) as {
+      showcase?: unknown
+    }
+    if (packageJson.showcase === false) {
+      console.log(`[showcase] skipping ${entry.name} (showcase disabled)`)
+      continue
+    }
+
     exampleIds.push(entry.name)
   }
 
